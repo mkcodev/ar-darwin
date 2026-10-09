@@ -41,3 +41,6 @@ Thumbs.db
 
 # Claude Code (personal settings)
 .claude/settings.local.json
+
+# Local state of the impeccable design tool
+.impeccable/
