@@ -10,18 +10,41 @@ La app se siente como un cuaderno de dibujo de noche: fondo grafito, texto color
 
 > Esta paleta es el punto de partida, no un dogma. Ver "Proceso".
 
+## Decisión (fase 1, issue #4)
+
+Elegida «Grafito y luz» entre tres direcciones (registro en `docs/design/directions.html`; se conserva como base de la landing, issue #12), con dos préstamos:
+
+- De «Cianotipo»: marcas de medida en la guía del imán (cada 20 px, mayor cada 5).
+- De «Cuaderno de campo»: el logotipo es el árbol «I think» del cuaderno de Darwin de 1837, con el origen «1» en bermellón; y los avisos de estado (imán activado, posición bloqueada) llegan como etiquetas que se enderezan con muelle.
+
+Dos temas diseñados por separado, con la misma forma tipada (`packages/ui/src/themes`): **oscuro** (por defecto de la identidad) y **claro** (versión papel). El selector es Sistema / Claro / Oscuro y por defecto sigue al sistema.
+
 ## Color
 
-| Token | Valor | Uso |
-| --- | --- | --- |
-| graphite-950 | #0F0F0E | Fondo principal (modo oscuro por defecto) |
-| graphite-900 | #1A1A18 | Superficies, hojas inferiores |
-| graphite-700 | #3A3A36 | Bordes y separadores |
-| paper | #F3EEE4 | Texto principal; fondo en modo claro |
-| ink-vermilion | #FF5A1F | Acento: botón principal, estado activo, racha de retos |
-| ink-nonphoto | #7FD3F7 | Guías del imán, cuadrícula, zonas extendidas del divisor |
+Los valores viven solo en `packages/ui`. Resumen de los semánticos:
 
-Contraste mínimo AA en todo el texto. Comprobar el bermellón sobre `paper` en modo claro.
+| Token | Oscuro | Claro | Uso |
+| --- | --- | --- | --- |
+| bg.canvas | #161614 | #E8E9E1 | Fondo |
+| bg.surface | #201F1C | #F4F4EE | Superficies, hojas |
+| bg.raised | #2C2B27 | #FFFFFB | Elementos sobre superficie |
+| text.primary | #F1ECE1 | #1E2229 | Texto |
+| text.muted | #ADA799 | #545954 | Texto secundario |
+| accent | #FF5A1F | #C93A0A | Acción y estado activo |
+| text.onAccent | #170A03 | #FFF9F2 | Texto sobre el acento |
+| guide | #7FD3F7 | #1F7FB8 | Guías y cuadrícula sobre la interfaz |
+| camera.guide / guideCase | #7FD3F7 / #0E1418 | igual | Guía del imán sobre la cámara |
+
+### Hallazgos de contraste
+
+Medidos sobre tres fotos de folio (flexo de noche, luz de día, poca luz; extremos oscuro y claro de cada una), gris medio y papel blanco. Están en tests (`packages/ui/src/themes/contrast.test.ts`): si un color cambia y rompe el contraste, falla `pnpm test`.
+
+- **Guía con doble trazo.** El azul no-foto solo no llega a 3:1 sobre ningún folio, ni sobre blanco (1,7:1). La guía se dibuja con núcleo azul sobre una funda casi negra; el conjunto da ≥ 3,8:1 en todos los fondos.
+- **Texto grafito sobre bermellón.** El blanco sobre #FF5A1F da 3,2:1; el grafito #170A03 da 6,2:1. El bermellón pulsado sube a #E54A12 (un tono más oscuro baja de 4,5:1 con texto grafito).
+- **Filo de papel en las píldoras.** Una píldora grafito sobre la mesa a oscuras da 1,6:1. Con un filo de papel al 46 % el borde llega a 3,5:1.
+- **Bermellón en claro.** #FF5A1F no llega a 3:1 sobre papel; el tema claro usa #C93A0A (mismo tono, más oscuro), con texto papel encima.
+- **Guía en claro.** El azul de lápiz de «Cuaderno» daba 2,4:1 sobre papel; #1F7FB8 da ≥ 3:1.
+- El bermellón nunca va directamente sobre la foto (1,3:1 sobre gris medio): siempre sobre una píldora o superficie.
 
 ## Tipografía
 
@@ -29,7 +52,7 @@ Contraste mínimo AA en todo el texto. Comprobar el bermellón sobre `paper` en 
 - **Interfaz:** Geist.
 - **Medidas y valores:** Geist Mono (112 %, 15 px, A1).
 
-Las tres son gratuitas.
+Las tres tienen licencia OFL; los archivos y sus licencias van en `packages/ui/assets/fonts`.
 
 ## Forma
 
