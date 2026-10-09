@@ -26,6 +26,13 @@ const ZERO_SIZE: Size = { width: 0, height: 0 };
  *
  * The fit runs in a `useDerivedValue` on the UI thread, the same place #18's gestures will
  * live, so swapping this static transform for the gesture one later is a one-line change.
+ *
+ * Sized with Skia's `onSize`, not a plain `onLayout`: Skia's Canvas doesn't support `onLayout`
+ * on the New Architecture (see https://shopify.github.io/react-native-skia/docs/canvas/overview/#getting-the-canvas-size).
+ * `onSize` calls Reanimated's `measure()` internally, which can warn about an undefined
+ * `LayoutMetrics` on the first frames before the view has a layout yet — the warning's own text
+ * says "may not be a bug", and there's no supported way around it (see issue #25): it settles on
+ * its own once the first layout lands.
  */
 export function TestImageCanvas({ source }: TestImageCanvasProps) {
   const image = useImage(source);

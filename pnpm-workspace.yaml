@@ -1,5 +1,11 @@
 packages:
   - apps/*
   - packages/*
+# Hoisted, no aislado: con el aislado por defecto, apps/mobile depende directamente de
+# react-native-vision-camera y react-native-nitro-image, y vision-camera tiene nitro-image como
+# peer no opcional; esa dependencia cruzada hacía que pnpm creara dos copias físicas de cada uno
+# (mismo contenido, distinto hash de peers) y Metro las empaquetaba las dos, registrando dos veces
+# las vistas nativas de vision-camera y Skia. Ver issue #25 y docs.expo.dev/guides/monorepos.
+nodeLinker: hoisted
 allowBuilds:
   '@shopify/react-native-skia': true
