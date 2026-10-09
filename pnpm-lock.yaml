@@ -57,6 +57,9 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@ar-darwin/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@ar-darwin/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n

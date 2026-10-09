@@ -10,6 +10,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@ar-darwin/core": "workspace:*",
     "@ar-darwin/i18n": "workspace:*",
     "@ar-darwin/ui": "workspace:*",
     "@expo/ui": "~57.0.22",
