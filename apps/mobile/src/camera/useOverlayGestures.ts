@@ -1,4 +1,11 @@
-import { applyGesture, fitTransform, nudge, rotationDeadZone, type Size } from "@ar-darwin/core";
+import {
+  applyGesture,
+  fitTransform,
+  nudge,
+  radiansToDegrees,
+  rotationDeadZone,
+  type Size,
+} from "@ar-darwin/core";
 import { resolveMotion, spring, toReanimatedSpring } from "@ar-darwin/ui";
 import { Gesture } from "react-native-gesture-handler";
 import {
@@ -14,8 +21,6 @@ type Options = {
   canvasSize: SharedValue<Size>;
 };
 
-const toDegrees = (radians: number) => (radians * 180) / Math.PI;
-
 /**
  * Drag, pinch and rotate the test image with two fingers at once, all on the UI thread.
  * Double tap resets to `fitTransform`. No magnet here (that is phase 3): see the comment at
@@ -27,6 +32,10 @@ const toDegrees = (radians: number) => (radians * 180) / Math.PI;
  * `onChange`'s `changeX/Y`, `scaleChange` and `rotationChange` are each already relative to the
  * previous frame instead, so every gesture folds its own contribution into the same x/y/scale/
  * rotation shared values independently, with no rebasing needed — see `applyGesture` (core).
+ *
+ * Everything the pan/pinch/rotation callbacks and the reaction call runs on the UI thread and
+ * must be a worklet: only core's transform.ts functions (checked by its tests) and inline
+ * math. The double tap is the exception: `runOnJS(true)`, so `reset` may call plain JS.
  */
 export function useOverlayGestures({ imageSize, canvasSize }: Options) {
   const reduce = useReducedMotion();
@@ -116,7 +125,7 @@ export function useOverlayGestures({ imageSize, canvasSize }: Options) {
     })
     .onChange((e) => {
       const before = rotationDeadZone(rotationAccum.value);
-      rotationAccum.value += toDegrees(e.rotationChange);
+      rotationAccum.value += radiansToDegrees(e.rotationChange);
       const after = rotationDeadZone(rotationAccum.value);
       // Phase 3 magnet: same note as pinch above.
       const next = applyGesture(

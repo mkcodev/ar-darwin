@@ -160,7 +160,7 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 - Límite del solape, por eje con cortes: ancho mínimo de los `coreRect` si `cols > 1`, alto mínimo si `rows > 1`; devuelve `floor(menor / 2)`. Con 1×1, 0.
 - Misma validación que `computeTiles`. La UI lo usa como máximo del slider del borde extendido.
 
-`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone` y `normalizeRotation` (en `transform.ts`) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones.
+Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone`, `radiansToDegrees`, `normalizeRotation` y los helpers internos) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones, y sin constantes externas en valores por defecto de parámetros (el plugin de worklets no las captura). `transform.worklet.test.ts` lo comprueba en CI, porque Vitest ejecuta JS normal y esos fallos solo aparecen en el móvil.
 
 ### `snapTransform(transform, imageSize, viewport, options?): { transform, activeGuides }`
 

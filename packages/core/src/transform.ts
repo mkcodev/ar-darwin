@@ -53,6 +53,12 @@ export const NUDGE_STEPS: Record<NudgeStep, { move: number; scale: number; rotat
 /** Tolerance to decide that a feature lies on a guide after snapping. */
 const EPSILON = 1e-6;
 
+/** Radians (as gesture handlers report them) to degrees (as Transform stores them). */
+export function radiansToDegrees(radians: number): number {
+  "worklet";
+  return (radians * 180) / Math.PI;
+}
+
 /** Maps any angle in degrees to (-180, 180]. */
 export function normalizeRotation(degrees: number): number {
   "worklet";
