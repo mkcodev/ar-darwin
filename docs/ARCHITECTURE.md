@@ -67,14 +67,14 @@ type Transform = {
 type SplitConfig = {
   rows: number;            // 1..10
   cols: number;            // 1..10
-  overlapPx: number;       // 0 = corte al ras
+  overlapPx: number;       // entero ≥ 0; 0 = corte al ras
   showOverlapTint: boolean;
 };
 
 type Tile = {
-  id: string;              // "A1", "A2", "B1"...
-  row: number;
-  col: number;
+  id: string;              // "A1", "A2", "B1"... (columna 1-based)
+  row: number;             // 0-based
+  col: number;             // 0-based
   rect: Rect;              // recorte final, con bordes extendidos solo hacia dentro
   coreRect: Rect;          // recorte al ras, sin solapamiento
 };
@@ -99,10 +99,16 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 ### `computeTiles(image, config): Tile[]`
 
 - Divide la imagen en `rows × cols`. Los `coreRect` cubren la imagen entera sin huecos ni solapes; los límites se redondean con `Math.round(i * width / cols)`.
-- `overlapPx = 0` → `rect === coreRect`.
+- `overlapPx = 0` → `rect` igual (por valor) a `coreRect`.
 - `overlapPx > 0` → cada trozo se extiende `overlapPx` solo por sus bordes interiores.
-- `overlapPx` se limita a la mitad del lado más corto de un trozo.
-- Orden por filas, de izquierda a derecha. ids: fila en letra, columna en número.
+- `overlapPx` se limita a `maxOverlapPx` (ver abajo).
+- Orden por filas, de izquierda a derecha. `row` y `col` empiezan en 0; el id es la fila en letra y la columna empezando en 1 (`row 0, col 0` → `A1`).
+- Valida con Zod: imagen con lados enteros > 0, `rows`/`cols` enteros 1..10, `overlapPx` entero ≥ 0, y `width ≥ cols`, `height ≥ rows`. Si no, lanza un `Error` que empieza por `computeTiles:`.
+
+### `maxOverlapPx(image, rows, cols): number`
+
+- Límite del solape, por eje con cortes: ancho mínimo de los `coreRect` si `cols > 1`, alto mínimo si `rows > 1`; devuelve `floor(menor / 2)`. Con 1×1, 0.
+- Misma validación que `computeTiles`. La UI lo usa como máximo del slider del borde extendido.
 
 ### `snapTransform(transform, imageSize, viewport, options): { transform, activeGuides }`
 

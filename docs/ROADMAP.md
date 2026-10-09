@@ -29,7 +29,7 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 - [x] CLAUDE.md en la raíz
 - [x] Monorepo con pnpm + Turborepo, Biome y TypeScript estricto (Prompt 1)
 - [ ] `packages/ui` con los tokens y `packages/i18n` con es/en
-- [ ] `packages/core`: `computeTiles` y tests (Prompt 2)
+- [x] `packages/core`: `computeTiles` y tests (Prompt 2)
 - [ ] `packages/core`: `snapTransform`, `nudge` y tests (Prompt 3)
 - [x] GitHub Actions: tipos, lint y tests en cada PR y en main
 
