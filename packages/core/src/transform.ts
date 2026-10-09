@@ -295,3 +295,62 @@ export function fitTransform(imageSize: Size, viewport: Size): Transform {
     flipY: false,
   };
 }
+
+/** Rotation ignored below this many accumulated degrees, so a pinch that is not quite straight
+ *  does not tilt the image. */
+export const ROTATION_DEAD_ZONE_DEGREES = 4;
+
+/**
+ * Maps the gesture's raw accumulated rotation to the amount that should actually land on the
+ * transform: 0 inside the dead zone, continuous at its edge (no jump once it is crossed).
+ * Callers accumulate the gesture's raw per-frame change themselves and diff two calls to this
+ * function to get the incremental amount to apply that frame (see `applyGesture`'s call sites).
+ */
+export function rotationDeadZone(
+  accumulatedDegrees: number,
+  zone: number = ROTATION_DEAD_ZONE_DEGREES,
+): number {
+  "worklet";
+  if (Math.abs(accumulatedDegrees) <= zone) return 0;
+  return accumulatedDegrees - Math.sign(accumulatedDegrees) * zone;
+}
+
+/** One frame of a pan/pinch/rotation gesture, all relative to the previous frame (not the
+ *  gesture's start): `changeX/Y` in viewport px, `scaleChange` as a ratio (1 = no change),
+ *  `rotationChange` in degrees. `focalX/Y` is the pinch focal point or rotation anchor, in
+ *  viewport px; irrelevant when `scaleChange` is 1 and `rotationChange` is 0 (pure pan). */
+export type GestureStep = {
+  changeX: number;
+  changeY: number;
+  scaleChange: number;
+  rotationChange: number;
+  focalX: number;
+  focalY: number;
+};
+
+/**
+ * Applies one frame of a simultaneous pan/pinch/rotation gesture to `transform`, scaling and
+ * rotating around `focalX/Y` so the point under the fingers does not drift. Built to be called
+ * once per gesture type per frame (pan with only `changeX/Y` set, pinch with only `scaleChange`,
+ * rotation with only `rotationChange`), each call folding its own contribution into the same
+ * transform — see apps/mobile's `useOverlayGestures`. Scale never drops below MIN_SCALE, same
+ * floor as `nudge`/`fitTransform`; flips pass through untouched.
+ *
+ * Phase 3 magnet: display `snapTransform` on the result while the gesture runs; store the raw
+ * (unsnapped) result as the base for the next frame, same contract as `snapTransform` today.
+ */
+export function applyGesture(transform: Transform, step: GestureStep): Transform {
+  "worklet";
+  const radians = (step.rotationChange * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const dx = transform.x - step.focalX;
+  const dy = transform.y - step.focalY;
+  return {
+    ...transform,
+    x: step.focalX + step.changeX + step.scaleChange * (dx * cos - dy * sin),
+    y: step.focalY + step.changeY + step.scaleChange * (dx * sin + dy * cos),
+    scale: Math.max(MIN_SCALE, transform.scale * step.scaleChange),
+    rotation: normalizeRotation(transform.rotation + step.rotationChange),
+  };
+}
