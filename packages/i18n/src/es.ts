@@ -239,6 +239,7 @@ export const es = {
       fail: "no llega",
     },
     type: {
+      title: "Tipografía",
       meta: "{role} · {size}/{line} · {weight}",
       sample: {
         display: "Del boceto a la línea",
@@ -261,7 +262,7 @@ export const es = {
       durationItem: "{ms} ms",
       stagger: "Escalonado entre elementos de una secuencia: {ms} ms.",
       springs: "Muelles",
-      springMeta: "k {k} · c {c} · ζ {zeta} · {ms} ms",
+      springMeta: "k {k} · c {c} · ζ {zeta} · {ms} ms",
       easings: "Curvas",
       plotLabel: "Curva de {name}",
       reduced: {

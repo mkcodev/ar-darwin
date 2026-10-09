@@ -238,6 +238,7 @@ export const en = {
       fail: "fails",
     },
     type: {
+      title: "Typography",
       meta: "{role} · {size}/{line} · {weight}",
       sample: {
         display: "From sketch to line",
@@ -260,7 +261,7 @@ export const en = {
       durationItem: "{ms} ms",
       stagger: "Stagger between items of a sequence: {ms} ms.",
       springs: "Springs",
-      springMeta: "k {k} · c {c} · ζ {zeta} · {ms} ms",
+      springMeta: "k {k} · c {c} · ζ {zeta} · {ms} ms",
       easings: "Curves",
       plotLabel: "{name} curve",
       reduced: {
