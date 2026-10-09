@@ -70,6 +70,10 @@ export const signature = {
   inkMaxMs: 180,
   /** Status labels start tilted by this many degrees and straighten with `playful`. */
   labelTiltDeg: 6,
+  /** Status labels stay this long before fading out. */
+  labelHoldMs: 1600,
+  /** Wheel or pinch counts as finished (guides fade, transform is stored) after this pause. */
+  gestureSettleMs: 280,
 } as const;
 
 export function dampingRatio(s: Pick<SpringToken, "stiffness" | "damping" | "mass">): number {

@@ -83,6 +83,8 @@ export const logoMark = {
   grid: 48,
   stroke: 2,
   origin: { cx: 10, cy: 42, r: 3 },
+  /** The «1» Darwin wrote by the root, in the accent. Drawn first, then the branches grow. */
+  numeral: "M3 34.5l2.2-1.7v8.2",
   branches: [
     "M10 42C12 34 16 28 22 24",
     "M22 24C26 18 32 13 40 9",
