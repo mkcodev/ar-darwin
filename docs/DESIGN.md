@@ -8,7 +8,7 @@ La app se siente como un cuaderno de dibujo de noche: fondo grafito, texto color
 
 **Por qué dos tintas.** El acento bermellón marca lo activo y las acciones principales. El azul no-foto es el lápiz que usan los ilustradores para bocetar; aquí pinta las guías del imán, la cuadrícula y las zonas extendidas del divisor. Los dos contrastan sobre papel blanco y sobre grafito, que es justo donde se van a ver.
 
-> Esta paleta es el punto de partida, no un dogma. Ver "Proceso".
+> Paleta y tipografía decididas en la fase 1 (issue #4). Si cambia un color, los tests de contraste de `packages/ui` dicen si sigue valiendo.
 
 ## Decisión (fase 1, issue #4)
 
@@ -94,12 +94,41 @@ Leve y con muelle (Reanimated en móvil, Motion en web).
 | Microinteracciones (pulsar, toggle) | 120–180 ms |
 | Transiciones de pantalla y hojas | 220–320 ms |
 
+Tokens (`packages/ui/src/motion.ts`); cada uno lleva su versión reducida:
+
+| Muelle | Rigidez / amortiguación | Uso | Con «reducir movimiento» |
+| --- | --- | --- | --- |
+| snappy | 420 / 31 (ζ 0,76) | Guía del imán, interruptores | Fundido 120 ms |
+| gentle | 170 / 24 (ζ 0,92) | Trozos del divisor, píldoras que vuelven | Fundido 120 ms |
+| sheet | 260 / 30 (ζ 0,93) | Hojas inferiores | Fundido 120 ms |
+| screen | 220 / 30 (ζ 1,01) | Transiciones de pantalla, entrada a la cámara (sin rebote) | Fundido 120 ms |
+| playful | 300 / 17 (ζ 0,49) | Racha, etiquetas de estado | Sin animación |
+
 Momentos de firma:
 
 - Trazo que se dibuja: logo, iconos al activarse y estados vacíos.
 - Guía del imán: aparece con un pequeño rebote y vibración ligera al encajar.
 - Divisor: los trozos se separan escalonados (unos 40 ms entre cada uno).
 - Racha de Retos: el contador avanza con muelle.
+- Pulsación «tinta que empapa» en los botones (≤ 180 ms).
+- Etiquetas de estado que llegan torcidas 6° y se enderezan.
+- Menú de la cámara que se retira 8 px y se desvanece tras 3 s sin tocar; sigue siendo alcanzable con teclado (el foco lo despierta).
+
+## Hápticos
+
+Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:
+
+| Evento | Háptico |
+| --- | --- |
+| La imagen encaja en una guía del imán | Impacto ligero |
+| Bloquear o desbloquear | Impacto medio |
+| Siguiente trozo / elegir trozo | Selección |
+| Un paso de ajuste fino (no en la repetición) | Selección |
+| Un valor llega a su límite | Aviso |
+
+## Iconos
+
+Set propio en `packages/ui/src/icons.ts` (20 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos). Web los pinta en SVG; móvil los pintará con Skia en la fase 2 (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo.
 
 Todo respeta la opción del sistema de reducir movimiento (sustituir por fundidos cortos o nada).
 

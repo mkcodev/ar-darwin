@@ -27,7 +27,7 @@ apps/mobile (Expo)          apps/desktop (Vite PWA)
 | PC | Vite + React como PWA; Tauri si se quiere instalable | La app no necesita servidor ni SEO, así que Vite basta |
 | Animación web | Motion | Muelles equivalentes a los del móvil |
 | Validación | Zod | Modelos y datos importados seguros |
-| Tests | Vitest (core, i18n), Playwright (PC), Maestro (móvil) | La lógica pura se testea desde el día 1 |
+| Tests | Vitest (core, ui, i18n), Playwright (PC), Maestro (móvil) | La lógica pura se testea desde el día 1 |
 | Calidad | Biome + GitHub Actions | Lint, formato, tipos y tests en cada PR y en main |
 | Backend (fase 3) | Supabase | Cuenta, almacenamiento y sincronización |
 
@@ -39,10 +39,11 @@ La landing (dominio por decidir) va aparte, con Astro o Next.js, porque ahí sí
 ar-darwin/
 ├─ apps/
 │  ├─ mobile/          # Expo: cámara, biblioteca, divisor, retos
-│  └─ desktop/         # Vite PWA: mesa de luz, preparación, QR
+│  └─ desktop/         # Vite PWA: mesa de luz, preparación, QR; /playground del sistema de diseño
 ├─ packages/
 │  ├─ core/            # lógica pura: split, snap, nudge, modelos
-│  ├─ ui/              # tokens: color, tipo, espaciado, movimiento
+│  ├─ ui/              # tokens: temas claro/oscuro, tipo, espaciado, movimiento, hápticos,
+│  │                   #   iconos y contraste; datos planos sin dependencias (web y nativo)
 │  └─ i18n/            # es.ts, en.ts y t() tipado, sin dependencias
 ├─ docs/
 ├─ .claude/settings.json

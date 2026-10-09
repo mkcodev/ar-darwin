@@ -19,7 +19,7 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 
 - [ ] Probar las 5 apps de AR drawing más descargadas y anotar qué falla
 - [ ] Leer reseñas de 1–3 estrellas y agrupar las quejas
-- [ ] Moodboard y dirección visual con `frontend-design` y `ui-ux-pro-max`
+- [x] Moodboard y dirección visual con `frontend-design` y `ui-ux-pro-max` (issue #4: «Grafito y luz»)
 - [ ] Maquetar en Figma: inicio/biblioteca, cámara con menú, divisor, Retos, onboarding
 - [ ] Comprobar disponibilidad del nombre (tiendas, dominio, redes)
 
@@ -28,7 +28,7 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 - [x] `docs/` con PRD, arquitectura, diseño, roadmap y prompts
 - [x] CLAUDE.md en la raíz
 - [x] Monorepo con pnpm + Turborepo, Biome y TypeScript estricto (Prompt 1)
-- [ ] `packages/ui` con los tokens
+- [x] `packages/ui` con los tokens (temas claro y oscuro, movimiento, hápticos, iconos; playground en `/playground`)
 - [x] `packages/i18n` con es/en y claves tipadas
 - [x] `packages/core`: `computeTiles` y tests (Prompt 2)
 - [x] `packages/core`: `snapTransform`, `nudge`, `fitTransform` y tests (Prompt 3)
@@ -90,6 +90,6 @@ Marcadores en el papel, cuenta y sincronización, modo por pasos, webcam cenital
 ## Decisiones pendientes
 
 - [ ] ¿iOS primero, Android primero o las dos a la vez?
-- [ ] Paleta y tipografía definitivas tras ver las alternativas del Prompt 5
+- [x] Paleta y tipografía definitivas: «Grafito y luz», Instrument Serif + Geist + Geist Mono (issue #4)
 - [ ] Nombre definitivo y dominio
 - [ ] Monetización futura: pago único o funciones premium (sin anuncios en ningún caso)
