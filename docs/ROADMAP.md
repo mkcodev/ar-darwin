@@ -36,32 +36,41 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 
 ## 2 · Spike de cámara
 
-- [ ] Expo con development build en el móvil
-- [ ] Vista de cámara a pantalla completa con imagen superpuesta en Skia
-- [ ] Opacidad, pellizcar, arrastrar y rotar con Reanimated
-- [ ] Bloqueo de toques y pantalla siempre encendida
-- [ ] Probarlo dibujando de verdad durante 10 minutos
+- [ ] Development build de Android en el móvil (EAS) con las nativas del spike y del MVP
+- [ ] Cámara trasera a pantalla completa (vision-camera) con imagen de prueba en Canvas de Skia
+- [ ] Gestos simultáneos (arrastrar, pellizcar, rotar) y slider de opacidad en el hilo de UI
+- [ ] Bloqueo de toques (pulsación larga de 1 s en el candado) y pantalla siempre encendida
+- [ ] Prueba real de 10 min dibujando: medir fps (también en un Android modesto) y anotar resultados
 
 **Puerta:** fluido en móvil real (también en un Android modesto) y la imagen no se mueve al bloquear.
 
 ## 3 · MVP móvil
 
-- [ ] Sistema de diseño en código (Prompt 5)
-- [ ] Biblioteca e importación de imágenes, guardado local
-  - Redimensionar al importar a máx. 4096 px por el lado largo
-- [ ] Modo imán con guías y vibración
-- [ ] Botones de ajuste fino con dos velocidades, pulsación larga, reset y candado
+- [ ] Componentes base nativos desde `packages/ui` (botón, píldora, hoja, slider, toggle) e iconos en Skia
+- [ ] Modelo `Project` y guardado local con expo-sqlite
+- [ ] Navegación y estructura de pantallas (Expo Router)
+- [ ] Biblioteca: importar desde galería, cámara o archivos; reducir a 4096 px; lista de proyectos
+- [ ] Cámara del proyecto: abrir, restaurar y guardar el último ajuste
+- [ ] Espejo H/V, linterna y ajustes de imagen (contraste, brillo, invertir) con Skia
+- [ ] Modo imán con guías y vibración (`snapTransform`)
+- [ ] Ajuste fino: dos velocidades, pulsación larga, reset y candado (`nudge`)
+- [ ] Menú flotante en píldora que se oculta solo
 - [ ] Pantalla del divisor con vista previa en vivo (Prompt 6)
 - [ ] Minimapa y botón Siguiente trozo en la cámara
-- [ ] Onboarding, permisos y textos en español e inglés
+- [ ] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja, reducir movimiento, idioma
+- [ ] Onboarding de 3 pantallas y permiso de cámara explicado (es/en)
 - [ ] Pasada de `impeccable` y `web-design-guidelines` sobre cada pantalla (Prompt 7)
+- [ ] Flujo principal con Maestro (importar, dividir, calcar un trozo)
 
 **Puerta:** terminas un dibujo real de 4 trozos solo con la app.
 
 ## 4 · Beta y lanzamiento
 
-- [ ] Beta cerrada (TestFlight y prueba interna de Google Play)
-- [ ] Landing con vídeo de demo
+- [ ] Nombre, icono y splash definitivos en la config
+- [ ] Perfiles `preview`/`production` en eas.json, firma y versión
+- [ ] Política de privacidad (la exigen las tiendas por el permiso de cámara)
+- [ ] Prueba interna de Google Play (y TestFlight si se decide iOS)
+- [ ] Landing con vídeo de demo (issue #12)
 - [ ] Capturas y fichas de las tiendas
 - [ ] Publicar y anunciarlo en LinkedIn y GitHub como pieza de portfolio
 
@@ -69,11 +78,34 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 
 ## 5 · Fase 2
 
-Versión PC, foto a boceto, time-lapse, Retos, envío por QR, divisor por tamaño de papel y exportación. Se desglosa en tareas al llegar.
+Versión PC, foto a boceto, time-lapse, Retos, envío por QR, divisor por tamaño de papel y exportación.
+
+- [ ] PC: estructura de la app (rutas, tema, i18n) y biblioteca en IndexedDB
+- [ ] PC: preparar imagen (recortar, rotar, ajustes)
+- [ ] Spike: cómo viaja la imagen PC → móvil sin servidor (decisión documentada)
+- [ ] PC → móvil: envío por código QR
+- [ ] PC: modo mesa de luz
+- [ ] Core: divisor por tamaño de papel (cm, A4, A3) y grosor en mm, con tests
+- [ ] Divisor por tamaño de papel en la UI
+- [ ] Exportar trozos a imágenes y PDF
+- [ ] Foto a boceto con niveles de detalle (shader Skia)
+- [ ] Cuadrícula para aprender a dibujar sin calcar
+- [ ] Time-lapse: capturar fotogramas mientras se dibuja
+- [ ] Time-lapse: montar el vídeo (móvil o PC, ver riesgo)
+- [ ] Retos: reto diario y semanal, racha con contador animado (plurales en i18n)
+- [ ] Retos: historial con foto y time-lapse
+- [ ] Compartir resultado y time-lapse en redes
 
 ## 6 · Fase 3
 
-Marcadores en el papel, cuenta y sincronización, modo por pasos, webcam cenital. Se desglosa en tareas al llegar.
+Marcadores en el papel, cuenta y sincronización, modo por pasos, webcam cenital.
+
+- [ ] Spike: detección de marcadores en las esquinas del papel
+- [ ] Anclaje del overlay a los marcadores e imán a los bordes del folio
+- [ ] Cuenta e inicio de sesión con Supabase
+- [ ] Sincronización de proyectos e imágenes móvil ↔ PC
+- [ ] Modo por pasos: contornos, detalles, sombras
+- [ ] PC: modo webcam cenital
 
 ## Riesgos
 
