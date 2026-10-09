@@ -1,7 +1,10 @@
-import en from "./en.json";
-import es from "./es.json";
-
-export type Messages = typeof es;
-export type Locale = "es" | "en";
-
-export const messages: Record<Locale, Messages> = { es, en };
+export type { MessageKey, Messages } from "./es";
+export {
+  createTranslator,
+  createTranslatorFrom,
+  FALLBACK_LOCALE,
+  LOCALES,
+  type Locale,
+  resolveLocale,
+} from "./translator";
+export type { Params, Translator } from "./types";

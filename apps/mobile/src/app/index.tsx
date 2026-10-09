@@ -1,10 +1,13 @@
-import { messages } from "@ar-darwin/i18n";
+import { createTranslator, resolveLocale } from "@ar-darwin/i18n";
+import { getLocales } from "expo-localization";
 import { StyleSheet, Text, View } from "react-native";
+
+const t = createTranslator(resolveLocale(getLocales().map((locale) => locale.languageTag)));
 
 export default function Index() {
   return (
     <View style={styles.container}>
-      <Text>{messages.es.appName}</Text>
+      <Text>{t("app.name")}</Text>
     </View>
   );
 }

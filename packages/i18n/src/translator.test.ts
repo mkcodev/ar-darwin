@@ -1,6 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { en } from "./en";
-import { es } from "./es";
+import type { en } from "./en";
+import type { es, MessageKey } from "./es";
 import {
   createTranslator,
   createTranslatorFrom,
@@ -8,7 +8,7 @@ import {
   LOCALES,
   resolveLocale,
 } from "./translator";
-import type { KeyOf, MessageKey, Params, ParamsOf, Shape } from "./types";
+import type { KeyOf, Params, ParamsOf, Shape } from "./types";
 
 // Fixture with nested keys and params, so the machinery is covered while es/en are still tiny.
 const source = {
