@@ -53,6 +53,24 @@ La landing (dominio por decidir) va aparte, con Astro o Next.js, porque ahí sí
   con `resvg-cli`, no son arte final. Sin `backgroundImage` en `adaptiveIcon`: pisaba `backgroundColor`
   y por eso el primer build no mostraba el bermellón de desarrollo.
 
+## Spike de cámara (apps/mobile, issue #17)
+
+- `<Camera device="back" isActive={isFocused} constraints={[{ fps: 30 }]} />` (vision-camera 5):
+  sin `constraints`, la preview negocia solo por `ResolutionBiasConstraint` y prefiere cualquier
+  formato «al menos tan grande como la pantalla», ignorando aspecto — ya suele quedar lejos de la
+  resolución máxima del sensor. Fijar `fps: 30` acota además el formato a uno que la soporte.
+  Pendiente de medir en la puerta de la fase 2 (issue #20): fps real, consumo y si compensa acotar
+  también la resolución explícitamente.
+- El `<Canvas>` de Skia va encima de `<Camera>` sin ser `opaque`, así que en Android usa
+  `TextureView` (el valor por defecto): compone como una vista normal de React Native, respetando
+  el orden de apilado con la cámara, a costa de una copia de textura extra. Alternativa a probar en
+  el #20 si hay tirones: `android={{ surfaceType: "SurfaceView", zOrderOnTop: true }}`, más rápido
+  pero sin recortes ni transformaciones del padre.
+- Imágenes de prueba en `apps/mobile/assets/images/test/` (no se usan en producción): una
+  cuadrícula generada sin dependencias (`apps/mobile/scripts/generate-calibration.mjs`) a 4096 px,
+  el máximo que la app aceptará al importar una foto, y el boceto «I think» de Darwin (dominio
+  público). Ver `SOURCES.md` en esa carpeta.
+
 ## Estructura del repo
 
 ```
