@@ -101,6 +101,39 @@ export function toCssEasing(e: Easing): string {
   return `cubic-bezier(${e.join(", ")})`;
 }
 
+/**
+ * Position of a spring going from 0 to 1, sampled every `stepMs` for `totalMs` (semi-implicit
+ * Euler at 1 ms). Used to draw spring curves and to check overshoot in tests.
+ */
+export function sampleSpring(
+  s: Pick<SpringToken, "stiffness" | "damping" | "mass">,
+  totalMs: number,
+  stepMs = 8,
+): number[] {
+  const out: number[] = [0];
+  let x = 0;
+  let v = 0;
+  const h = 0.001;
+  for (let t = 1; t <= totalMs; t++) {
+    v += ((-s.stiffness * (x - 1) - s.damping * v) / s.mass) * h;
+    x += v * h;
+    if (t % stepMs === 0) out.push(x);
+  }
+  return out;
+}
+
+/** Milliseconds until a 0→1 spring stays within `tolerance` of 1. */
+export function springSettleMs(
+  s: Pick<SpringToken, "stiffness" | "damping" | "mass">,
+  tolerance = 0.005,
+): number {
+  const samples = sampleSpring(s, 3000, 1);
+  for (let i = samples.length - 1; i >= 0; i--) {
+    if (Math.abs((samples[i] ?? 1) - 1) > tolerance) return i + 1;
+  }
+  return 0;
+}
+
 export type ResolvedMotion<T> = { kind: "full"; token: T } | ReducedMotion;
 
 /** What to actually run: the token itself, or its reduced equivalent when the user asked for it. */

@@ -64,6 +64,11 @@ export const icons = {
     { type: "circle", cx: 16, cy: 7, r: 2.5 },
     { type: "circle", cx: 9, cy: 17, r: 2.5 },
   ],
+  camera: [
+    { type: "rect", x: 3, y: 7, width: 18, height: 13, rx: 2.5 },
+    path("M8.5 7l1.5-3h4l1.5 3"),
+    { type: "circle", cx: 12, cy: 13.5, r: 3.5 },
+  ],
   plus: [path("M12 5v14M5 12h14")],
   minus: [path("M5 12h14")],
 } as const satisfies Record<string, readonly IconShape[]>;

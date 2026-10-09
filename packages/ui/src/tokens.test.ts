@@ -6,14 +6,16 @@ import {
   dampingRatio,
   duration,
   resolveMotion,
+  sampleSpring,
   spring,
+  springSettleMs,
   toCssEasing,
   toMotionSpring,
   toReanimatedSpring,
 } from "./motion";
 import { DEFAULT_THEME_PREFERENCE, darkTheme, lightTheme, resolveTheme } from "./themes";
 import { toNativeTextStyle, toWebTextStyle, typography } from "./typography";
-import { toCssVariables } from "./web/toCssVariables";
+import { toCssTokenVariables, toCssVariables } from "./web/toCssVariables";
 
 describe("spacing and shape", () => {
   it("spacing is base 4", () => {
@@ -104,7 +106,39 @@ describe("toCssVariables", () => {
   });
 });
 
+describe("toCssTokenVariables", () => {
+  it("exposes layout, motion and type tokens with units", () => {
+    const vars = toCssTokenVariables();
+    expect(vars["--space-4"]).toBe("16px");
+    expect(vars["--radius-sheet"]).toBe("24px");
+    expect(vars["--duration-micro"]).toBe("150ms");
+    expect(vars["--easing-draw"]).toBe("cubic-bezier(0.2, 0.7, 0.2, 1)");
+    expect(vars["--type-value-numeric"]).toBe("tabular-nums");
+    expect(vars["--type-display-style"]).toBe("italic");
+    expect(vars["--touch-target"]).toBe("48px");
+  });
+});
+
+describe("spring sampling", () => {
+  const peak = (s: (typeof spring)[keyof typeof spring]) => Math.max(...sampleSpring(s, 1500));
+  it("ends at the target", () => {
+    for (const s of Object.values(spring)) expect(sampleSpring(s, 2000).at(-1)).toBeCloseTo(1, 2);
+  });
+  it("screen never overshoots; snappy and playful do", () => {
+    expect(peak(spring.screen)).toBeLessThanOrEqual(1.0005);
+    expect(peak(spring.snappy)).toBeGreaterThan(1.01);
+    expect(peak(spring.playful)).toBeGreaterThan(peak(spring.snappy));
+  });
+  it("micro springs settle within the transition band", () => {
+    expect(springSettleMs(spring.snappy)).toBeLessThan(400);
+    expect(springSettleMs(spring.sheet)).toBeLessThan(500);
+  });
+});
+
 describe("haptics, icons and handedness", () => {
+  it("has the 20 icons of the set", () => {
+    expect(Object.keys(icons)).toHaveLength(20);
+  });
   it("map every semantic event to an expo-haptics family", () => {
     for (const h of Object.values(haptics))
       expect(["impact", "selection", "notification"]).toContain(h.kind);
