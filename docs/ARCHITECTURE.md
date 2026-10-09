@@ -48,6 +48,10 @@ La landing (dominio por decidir) va aparte, con Astro o Next.js, porque ahí sí
   extensión en paquetes `"type": "module"`. `packages/ui` no se importa desde `app.config.ts`: su
   barrel reexporta todo el paquete y arrastra el mismo problema; los colores de iconos nativos van
   literales en el config, igual que ya hacía `app.json`.
+- Icono (provisional, issue #22): `android-icon-foreground(-dev).png`, `android-icon-monochrome.png`
+  e `icon(-dev).png` se generan desde el `logoMark` de `packages/ui/src/icons.ts` (el árbol de Darwin)
+  con `resvg-cli`, no son arte final. Sin `backgroundImage` en `adaptiveIcon`: pisaba `backgroundColor`
+  y por eso el primer build no mostraba el bermellón de desarrollo.
 
 ## Estructura del repo
 
