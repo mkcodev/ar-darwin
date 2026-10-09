@@ -33,6 +33,16 @@ apps/mobile (Expo)          apps/desktop (Vite PWA)
 
 La landing (dominio por decidir) va aparte, con Astro o Next.js, porque ahí sí importa el SEO.
 
+## Monorepo (pnpm)
+
+`pnpm-workspace.yaml` fija `nodeLinker: hoisted` (no el aislado por defecto de pnpm): con el
+aislado, `apps/mobile` depende a la vez de `react-native-vision-camera` y de
+`react-native-nitro-image`, y `vision-camera` tiene `nitro-image` como peer dependency no opcional;
+esa dependencia cruzada hacía que pnpm creara dos copias físicas de cada paquete (mismo contenido,
+distinto hash de peers) y Metro las empaquetaba las dos, registrando dos veces las vistas nativas
+(`PreviewView`, `SkiaPictureView`...). Es el fix que recomienda la propia guía de Expo para
+monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
+
 ## Development build (apps/mobile)
 
 - `app.config.ts` sustituye a `app.json`: variantes por `APP_VARIANT` (lo fija `eas.json`). `development` →
