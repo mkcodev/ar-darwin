@@ -21,6 +21,12 @@ export const cameraPill = {
   gap: 4,
 } as const;
 
+export const opacitySlider = {
+  trackHeight: 4,
+  thumbSize: 24,
+  edgeWidth: 1,
+} as const;
+
 export const bottomSheet = {
   /** Dragging further than this fraction of the sheet's height closes it on release. */
   closeThreshold: 0.33,

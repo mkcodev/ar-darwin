@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { IDENTITY_TRANSFORM, MIN_SCALE, type Transform } from "./models";
 import {
+  applyGesture,
   fitTransform,
   NUDGE_STEPS,
   type NudgeAction,
   type NudgeStep,
   nudge,
+  ROTATION_DEAD_ZONE_DEGREES,
+  rotationDeadZone,
   snapTransform,
 } from "./transform";
 
@@ -318,5 +321,100 @@ describe("fitTransform", () => {
     const base = fitTransform({ width: 1000, height: 500 }, VIEWPORT);
     const moved = nudge(nudge(base, "moveLeft", "coarse"), "scaleUp", "coarse");
     expect(nudge(moved, "reset", "fine", { base })).toEqual(base);
+  });
+});
+
+describe("rotationDeadZone", () => {
+  it("absorbs anything inside the zone", () => {
+    expect(rotationDeadZone(0)).toBe(0);
+    expect(rotationDeadZone(3)).toBe(0);
+    expect(rotationDeadZone(-3)).toBe(0);
+    expect(rotationDeadZone(ROTATION_DEAD_ZONE_DEGREES)).toBe(0);
+  });
+
+  it("is continuous right past the edge", () => {
+    expect(rotationDeadZone(ROTATION_DEAD_ZONE_DEGREES + 0.001)).toBeCloseTo(0.001, 10);
+    expect(rotationDeadZone(-(ROTATION_DEAD_ZONE_DEGREES + 0.001))).toBeCloseTo(-0.001, 10);
+  });
+
+  it.each([
+    [10, 6],
+    [-10, -6],
+  ])("subtracts the zone outside it: %d° -> %d°", (accumulated, expected) => {
+    expect(rotationDeadZone(accumulated)).toBe(expected);
+  });
+
+  it("honours a custom zone", () => {
+    expect(rotationDeadZone(5, 10)).toBe(0);
+    expect(rotationDeadZone(12, 10)).toBe(2);
+  });
+});
+
+describe("applyGesture", () => {
+  const FOCAL = { focalX: 50, focalY: 50 };
+  const IDENTITY_STEP = { changeX: 0, changeY: 0, scaleChange: 1, rotationChange: 0, ...FOCAL };
+
+  it("is a no-op with an identity step", () => {
+    const t = transform({ x: 12, y: 34, scale: 1.5, rotation: 20 });
+    expect(applyGesture(t, IDENTITY_STEP)).toEqual(t);
+  });
+
+  it("pans by changeX/changeY regardless of the focal point", () => {
+    const t = transform({ x: 100, y: 200 });
+    const result = applyGesture(t, { ...IDENTITY_STEP, changeX: 10, changeY: -5 });
+    expect(result).toEqual(transform({ x: 110, y: 195 }));
+  });
+
+  it("scales around the focal point: the point under the fingers does not move", () => {
+    const t = transform({ x: 50, y: 50 }); // the focal point itself
+    const result = applyGesture(t, { ...IDENTITY_STEP, scaleChange: 2 });
+    expect(result).toEqual(transform({ x: 50, y: 50, scale: 2 }));
+  });
+
+  it("scales a point away from the focal, doubling its offset", () => {
+    const t = transform({ x: 150, y: 50 }); // 100 px to the right of the focal
+    const result = applyGesture(t, { ...IDENTITY_STEP, scaleChange: 2 });
+    expect(result).toEqual(transform({ x: 250, y: 50, scale: 2 }));
+  });
+
+  it("clamps scale at MIN_SCALE, same floor as nudge", () => {
+    const t = transform({ x: 50, y: 50, scale: 0.06 });
+    const result = applyGesture(t, { ...IDENTITY_STEP, scaleChange: 0.1 });
+    expect(result.scale).toBe(MIN_SCALE);
+  });
+
+  it("rotates 90° around the focal point (clockwise, y axis down)", () => {
+    const t = transform({ x: 150, y: 50 }); // 100 px to the right of the focal
+    const result = applyGesture(t, { ...IDENTITY_STEP, rotationChange: 90 });
+    expect(result.x).toBeCloseTo(50, 10);
+    expect(result.y).toBeCloseTo(150, 10);
+    expect(result.rotation).toBe(90);
+  });
+
+  it("composes pan, scale and rotation in one step", () => {
+    const t = transform({ x: 150, y: 50, scale: 1, rotation: 10 });
+    const result = applyGesture(t, {
+      changeX: 5,
+      changeY: 5,
+      scaleChange: 2,
+      rotationChange: 90,
+      ...FOCAL,
+    });
+    expect(result.x).toBeCloseTo(55, 10);
+    expect(result.y).toBeCloseTo(255, 10);
+    expect(result.scale).toBe(2);
+    expect(result.rotation).toBe(100);
+  });
+
+  it("leaves flips untouched", () => {
+    const t = transform({ x: 50, y: 50, flipX: true, flipY: true });
+    const result = applyGesture(t, { ...IDENTITY_STEP, scaleChange: 1.5, rotationChange: 30 });
+    expect(result).toMatchObject({ flipX: true, flipY: true });
+  });
+
+  it("never mutates the input", () => {
+    const t = transform({ x: 50, y: 50 });
+    applyGesture(t, { ...IDENTITY_STEP, changeX: 10, scaleChange: 2, rotationChange: 45 });
+    expect(t).toEqual(transform({ x: 50, y: 50 }));
   });
 });
