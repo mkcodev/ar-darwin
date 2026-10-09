@@ -4,8 +4,14 @@ import type { ConfigContext, ExpoConfig } from "expo/config";
 /** Set by eas.json's "development" build profile; anything else is production. */
 const isDev = process.env.APP_VARIANT === "development";
 
-/** vermilion[500] (packages/ui/src/primitives.ts): accent color, used here to flag the dev build's icon. */
+// Adaptive icon background colors, copied from packages/ui/src/primitives.ts (not imported:
+// app.config.ts runs on plain Node, and that package's barrel needs a bundler to resolve its
+// extensionless imports). The foreground mark's own color lives baked into each PNG instead
+// (android-icon-foreground(-dev).png), generated from packages/ui's logoMark.
+/** vermilion[500]: flags the dev build's icon. */
 const DEV_ICON_BACKGROUND = "#FF5A1F";
+/** graphite[950]: the app's actual dark theme, for the production icon. */
+const PROD_ICON_BACKGROUND = "#161614";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
@@ -13,7 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: "ar-darwin",
   version: "1.0.0",
   orientation: "portrait",
-  icon: "./assets/images/icon.png",
+  icon: isDev ? "./assets/images/icon-dev.png" : "./assets/images/icon.png",
   scheme: "ardarwin",
   userInterfaceStyle: "automatic",
   ios: {
@@ -30,9 +36,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     package: isDev ? "com.mkcodev.ardarwin.dev" : "com.mkcodev.ardarwin",
     adaptiveIcon: {
-      backgroundColor: isDev ? DEV_ICON_BACKGROUND : "#E6F4FE",
-      foregroundImage: "./assets/images/android-icon-foreground.png",
-      backgroundImage: "./assets/images/android-icon-background.png",
+      backgroundColor: isDev ? DEV_ICON_BACKGROUND : PROD_ICON_BACKGROUND,
+      foregroundImage: isDev
+        ? "./assets/images/android-icon-foreground-dev.png"
+        : "./assets/images/android-icon-foreground.png",
       monochromeImage: "./assets/images/android-icon-monochrome.png",
     },
     permissions: ["android.permission.CAMERA"],
