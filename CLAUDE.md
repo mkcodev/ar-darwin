@@ -2,7 +2,7 @@
 
 App para calcar dibujos con la cámara (móvil) y preparar/proyectar imágenes (PC).
 Sin anuncios. Prioridad: precisión, fluidez y un diseño propio.
-Contexto completo: @docs/PRD.md, @docs/ARCHITECTURE.md, @docs/DESIGN.md, @docs/ROADMAP.md.
+Contexto en docs/PRD.md, docs/ARCHITECTURE.md, docs/DESIGN.md y docs/ROADMAP.md: léelos cuando la tarea lo necesite.
 Prompts por fase: docs/PROMPTS.md. Flujo de git (issue, rama, PR, squash): docs/FLUJO.md.
 
 ## Estructura
