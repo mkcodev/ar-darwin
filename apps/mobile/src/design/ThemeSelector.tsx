@@ -8,7 +8,7 @@ import {
   typography,
 } from "@ar-darwin/ui";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { t } from "./i18n";
+import { t } from "../i18n";
 
 type ThemeSelectorProps = {
   theme: Theme;

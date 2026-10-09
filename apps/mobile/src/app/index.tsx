@@ -10,6 +10,7 @@ export default function Index() {
     <View style={styles.container}>
       <Text>{t("app.name")}</Text>
       {__DEV__ && <Link href="/dev/design">{t("devDesign.open")}</Link>}
+      {__DEV__ && <Link href="/dev/camera">{t("cameraSpike.open")}</Link>}
     </View>
   );
 }

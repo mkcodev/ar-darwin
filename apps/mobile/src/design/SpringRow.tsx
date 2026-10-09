@@ -19,7 +19,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { t } from "./i18n";
+import { t } from "../i18n";
 
 type SpringRowProps = { name: string; token: SpringToken; theme: Theme };
 

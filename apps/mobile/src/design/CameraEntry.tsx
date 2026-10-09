@@ -19,7 +19,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { t } from "./i18n";
+import { t } from "../i18n";
 
 type CameraEntryProps = {
   theme: Theme;

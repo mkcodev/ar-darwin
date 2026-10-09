@@ -15,8 +15,8 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from "react-native";
+import { t } from "../i18n";
 import { CameraEntry } from "./CameraEntry";
-import { t } from "./i18n";
 import { playHaptic } from "./playHaptic";
 import { SpringRow } from "./SpringRow";
 import { ThemeSelector } from "./ThemeSelector";
