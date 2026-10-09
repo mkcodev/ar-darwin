@@ -14,6 +14,7 @@ App para calcar dibujos con la cámara del móvil, con versión para PC. Sin anu
 | [docs/DESIGN.md](docs/DESIGN.md) | Dirección visual, tokens y movimiento |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Fases, puertas y tareas |
 | [docs/PROMPTS.md](docs/PROMPTS.md) | Prompts listos para Claude Code |
+| [docs/FLUJO.md](docs/FLUJO.md) | Flujo de git: issue, rama, PR y squash merge |
 | [CLAUDE.md](CLAUDE.md) | Reglas para Claude Code |
 
 ## Empezar
