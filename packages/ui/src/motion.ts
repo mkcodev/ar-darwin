@@ -47,6 +47,8 @@ export const spring = {
   gentle: { stiffness: 170, damping: 24, mass: 1, reduced: fadeShort },
   /** ζ ≈ 0.93. Bottom sheet open, close and drag release. */
   sheet: { stiffness: 260, damping: 30, mass: 1, reduced: fadeShort },
+  /** ζ ≈ 1.01. Screen transitions, e.g. fading to dark before the camera opens: no bounce. */
+  screen: { stiffness: 220, damping: 30, mass: 1, reduced: fadeShort },
   /** ζ ≈ 0.49. Streak digits and status labels straightening: visible bounce, used sparingly. */
   playful: { stiffness: 300, damping: 17, mass: 1, reduced: none },
 } as const satisfies Record<string, SpringToken>;

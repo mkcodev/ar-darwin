@@ -21,5 +21,6 @@ export function resolveTheme(
   return themes[systemScheme ?? "dark"];
 }
 
-export type { ColorTokens, Theme, ThemeName } from "./types";
+export { cameraBackdropColor, cameraColors } from "./camera";
+export type { ColorTokens, StatusBarStyle, Theme, ThemeName } from "./types";
 export { darkTheme, lightTheme };

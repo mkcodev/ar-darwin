@@ -48,7 +48,15 @@ export type ColorTokens = {
 
 export type ThemeName = "dark" | "light";
 
+/** Content colour of the system status bar ("light" = white icons, as expo-status-bar names it). */
+export type StatusBarStyle = "light" | "dark";
+
 export type Theme = {
   name: ThemeName;
   color: ColorTokens;
+  statusBar: {
+    app: StatusBarStyle;
+    /** Inside the camera, always light: the camera is dark in both themes. */
+    camera: "light";
+  };
 };

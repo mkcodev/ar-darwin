@@ -84,6 +84,11 @@ describe("themes", () => {
     expect(resolveTheme("system", null)).toBe(darkTheme);
     expect(resolveTheme("dark", "light")).toBe(darkTheme);
   });
+  it("share one always-dark camera and a light status bar inside it", () => {
+    expect(lightTheme.color.camera).toBe(darkTheme.color.camera);
+    expect(lightTheme.statusBar.camera).toBe("light");
+    expect(lightTheme.statusBar.app).toBe("dark");
+  });
   it("have the same token keys", () => {
     expect(Object.keys(toCssVariables(lightTheme))).toEqual(Object.keys(toCssVariables(darkTheme)));
   });

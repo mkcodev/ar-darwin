@@ -1,4 +1,5 @@
-import { graphite, ink, nonPhotoBlue, paper, signal, vermilion } from "../primitives";
+import { ink, nonPhotoBlue, paper, signal, vermilion } from "../primitives";
+import { cameraColors } from "./camera";
 import type { Theme } from "./types";
 
 /** Paper version of «Grafito y luz»: ledger paper, iron-gall ink, the same vermilion at a darker value. */
@@ -32,17 +33,8 @@ export const lightTheme: Theme = {
     },
     danger: signal.dangerOnLight,
     focus: ink[900],
-    camera: {
-      pill: "rgba(244, 244, 238, 0.97)",
-      pillSolid: paper[100],
-      // Ink edge: the paper fill alone disappears against a white sheet.
-      pillEdge: ink[900],
-      text: ink[900],
-      muted: paper[600],
-      accent: vermilion[600],
-      guide: nonPhotoBlue[300],
-      guideCase: graphite.case,
-      guideTint: "rgba(127, 211, 247, 0.30)",
-    },
+    // Always dark: a paper pill would glare next to the drawing (see camera.ts).
+    camera: cameraColors,
   },
+  statusBar: { app: "dark", camera: "light" },
 };
