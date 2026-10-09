@@ -46,6 +46,23 @@ Medidos sobre tres fotos de folio (flexo de noche, luz de día, poca luz; extrem
 - **Guía en claro.** El azul de lápiz de «Cuaderno» daba 2,4:1 sobre papel; #1F7FB8 da ≥ 3:1.
 - El bermellón nunca va directamente sobre la foto (1,3:1 sobre gris medio): siempre sobre una píldora o superficie.
 
+### La cámara es siempre oscura
+
+En los dos temas, la cámara usa las mismas píldoras grafito (`cameraColors`); el tema claro se aplica a biblioteca, divisor, ajustes y hojas.
+
+Las píldoras claras pasaban el contraste gracias a su borde de tinta, pero son una fuente de luz junto al dibujo. Comparando la luminancia de la píldora con la del papel más iluminado de cada foto de prueba:
+
+| Fondo | Píldora papel | Píldora grafito |
+| --- | --- | --- |
+| Flexo de noche | 1,44 × más brillante que el folio | 0,02 × |
+| Luz de día | 1,27 × | 0,02 × |
+| Poca luz | 4,25 × | 0,05 × |
+
+Con poca luz, la píldora clara sería lo más brillante de la pantalla y apartaría la vista del trazo. Es el mismo criterio de las apps de cámara del sistema, que son oscuras con cualquier tema.
+
+- **Entrada a la cámara en tema claro:** fundido a grafito (`cameraBackdropColor`) con el muelle `screen` (sin rebote) antes de que aparezca la imagen en vivo; nunca un salto de papel a negro. Con «reducir movimiento», fundido corto de 120 ms.
+- **Barra de estado:** contenido claro dentro de la cámara en los dos temas (`theme.statusBar.camera`); fuera de ella sigue al tema.
+
 ## Tipografía
 
 - **Titulares:** Instrument Serif, cursiva (editorial, nada genérica).
