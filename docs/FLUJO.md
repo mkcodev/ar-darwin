@@ -10,8 +10,13 @@ Fuente de verdad del flujo de git. Una tarea del roadmap = un issue = una rama =
    - Ejemplos: `feat(core): add computeTiles`, `fix(mobile): keep image still when locked`, `chore: bump turbo`.
 4. **PR** hacia `main` con la plantilla; el cuerpo lleva `Closes #N` para cerrar el issue al fusionar.
 5. **CI** (`.github/workflows/ci.yml`) ejecuta typecheck, lint y test en cada PR y en `main`. La regla de `main` exige PR y el check `verify` en verde: no se fusiona en rojo.
-6. **Revisión.** Revisas el diff antes de fusionar.
-7. **Fusión** solo con «Squash and merge»: `main` queda con un commit por tarea. El título del squash también va en Conventional Commits con scope (ej. `feat(core): add computeTiles`).
+6. **Revisión.** El plan aprobado es la revisión previa. Claude fusiona automáticamente solo si se cumplen las tres condiciones:
+   - el CI está en verde;
+   - no se ha desviado del plan aprobado;
+   - no ha añadido dependencias sin aprobar.
+
+   Si falla alguna, se para y avisa para que revises el diff tú. Tras fusionar, deja un resumen corto de qué entró.
+7. **Fusión** solo con «Squash and merge» (`gh pr merge N --squash --delete-branch --subject "..."`): `main` queda con un commit por tarea. El título del squash también va en Conventional Commits con scope (ej. `feat(core): add computeTiles`).
 8. Al fusionar, GitHub borra la rama. La tarea se marca en `docs/ROADMAP.md` y los docs afectados se actualizan dentro de la misma PR.
 
 Antes de abrir la PR: `pnpm typecheck && pnpm test && pnpm lint` deben pasar en local.

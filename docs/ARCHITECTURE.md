@@ -23,11 +23,11 @@ apps/mobile (Expo)          apps/desktop (Vite PWA)
 | Cámara | react-native-vision-camera | Vista de cámara rápida y capturas para el time-lapse |
 | Dibujo del overlay | @shopify/react-native-skia | Imagen, guías y filtros a 60 fps; shaders para el boceto |
 | Gestos y animación | Reanimated + Gesture Handler | Pellizcar, arrastrar, rotar y muelles en el hilo de UI |
-| Extras nativos | expo-haptics, expo-keep-awake, expo-image-picker, expo-sqlite | Vibración del imán, pantalla encendida, importar, guardar |
+| Extras nativos | expo-haptics, expo-keep-awake, expo-image-picker, expo-sqlite, expo-localization | Vibración del imán, pantalla encendida, importar, guardar, idioma del sistema |
 | PC | Vite + React como PWA; Tauri si se quiere instalable | La app no necesita servidor ni SEO, así que Vite basta |
 | Animación web | Motion | Muelles equivalentes a los del móvil |
 | Validación | Zod | Modelos y datos importados seguros |
-| Tests | Vitest (core), Playwright (PC), Maestro (móvil) | La lógica pura se testea desde el día 1 |
+| Tests | Vitest (core, i18n), Playwright (PC), Maestro (móvil) | La lógica pura se testea desde el día 1 |
 | Calidad | Biome + GitHub Actions | Lint, formato, tipos y tests en cada PR y en main |
 | Backend (fase 3) | Supabase | Cuenta, almacenamiento y sincronización |
 
@@ -43,7 +43,7 @@ ar-darwin/
 ├─ packages/
 │  ├─ core/            # lógica pura: split, snap, nudge, modelos
 │  ├─ ui/              # tokens: color, tipo, espaciado, movimiento
-│  └─ i18n/            # es.json, en.json
+│  └─ i18n/            # es.ts, en.ts y t() tipado, sin dependencias
 ├─ docs/
 ├─ .claude/settings.json
 ├─ CLAUDE.md
@@ -135,6 +135,15 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 ### `fitTransform(imageSize, viewport): Transform`
 
 - Centra la imagen en el viewport y la escala para que quepa entera (`min(W / w, H / h)`), sin rotación ni espejo. Siempre encaja, aunque la escala quede por debajo de `MIN_SCALE`. La UI la usa como `base` del `reset`.
+
+## Textos (packages/i18n)
+
+Sin librerías: unas 60 líneas de TypeScript que funcionan igual en Expo (Hermes) y en Vite.
+
+- `es.ts` es la fuente de verdad (`as const`). `en.ts` lleva `satisfies Messages`: si falta o sobra una clave, falla `pnpm typecheck`. Un test de tipos comprueba que cada clave tiene los mismos `{param}` en los dos idiomas.
+- `createTranslator(locale)` devuelve `t(key, params?)`. Las claves son rutas con punto (`"app.name"`) y los parámetros se infieren del texto: con `"Trozo {id}"`, `t("camera.tile", { id })` es obligatorio; sin `{…}`, no admite parámetros.
+- `resolveLocale(tags)` elige el primer idioma soportado de la lista (`"es-MX"` → `es`) y, si no hay ninguno, `en`. Cada app le pasa los idiomas del sistema: `getLocales()` de expo-localization en móvil y `navigator.languages` en PC.
+- Pendiente: plurales con `Intl.PluralRules` (ej. claves con forma `{ one, other }`) cuando llegue Retos; la API de `t` debe admitirlo sin romper llamadas.
 
 ## Almacenamiento
 

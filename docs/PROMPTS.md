@@ -144,6 +144,6 @@ Después pásale web-design-guidelines para accesibilidad.
 2. Siempre en modo plan: lees el plan, corriges y apruebas.
 3. En `packages/core`, tests primero; Claude no da la tarea por hecha si no pasan.
 4. Cita los documentos en el prompt (`@docs/PRD.md`) en vez de explicar de nuevo.
-5. Una rama por tarea con commits pequeños; squash merge para dejar un commit por tarea en `main`, después de revisar el diff. Detalle en `docs/FLUJO.md`.
+5. Una rama por tarea con commits pequeños; squash merge para dejar un commit por tarea en `main`. Claude fusiona solo (título Conventional con `--subject`) si el CI está en verde, no se ha desviado del plan aprobado y no ha añadido dependencias sin aprobar; si no, se para y avisa. Tras fusionar, resume qué entró. Detalle en `docs/FLUJO.md`.
 6. Pruebas en tu móvil real al final de cada tarea de cámara: el simulador no tiene cámara de verdad.
 7. Si corriges a Claude dos veces por lo mismo, esa regla va al CLAUDE.md.
