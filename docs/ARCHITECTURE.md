@@ -33,6 +33,22 @@ apps/mobile (Expo)          apps/desktop (Vite PWA)
 
 La landing (dominio por decidir) va aparte, con Astro o Next.js, porque ahí sí importa el SEO.
 
+## Development build (apps/mobile)
+
+- `app.config.ts` sustituye a `app.json`: variantes por `APP_VARIANT` (lo fija `eas.json`). `development` →
+  `com.mkcodev.ardarwin.dev`, nombre «AR-Darwin Dev», icono adaptativo bermellón. Cualquier otro valor
+  (producción) → `com.mkcodev.ardarwin`, «AR-Darwin», icono normal.
+- `eas.json`: perfil `development` (`developmentClient`, `distribution: internal`, APK). Perfiles
+  `preview`/`production` se añaden en la fase 4.
+- Permisos de cámara y galería (`NSCameraUsageDescription`, `expo-image-picker`) desde
+  `packages/i18n` (`permissions.camera`/`permissions.photos`, es/en), nunca a mano en el config.
+- `packages/i18n` expone `es`/`en` como valores (no solo tipos) para que `app.config.ts` los lea en
+  tiempo de build; sus imports relativos usan extensión `.ts` explícita (`allowImportingTsExtensions`
+  en `tsconfig.base.json`) porque el loader de `expo config` corre en Node ESM puro, que exige
+  extensión en paquetes `"type": "module"`. `packages/ui` no se importa desde `app.config.ts`: su
+  barrel reexporta todo el paquete y arrastra el mismo problema; los colores de iconos nativos van
+  literales en el config, igual que ya hacía `app.json`.
+
 ## Estructura del repo
 
 ```
