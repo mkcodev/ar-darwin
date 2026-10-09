@@ -1,9 +1,10 @@
 import { duration, type Easing } from "@ar-darwin/ui";
 import { useAnimate } from "motion/react";
-import { Button } from "../../components/Button";
+import { formatNumber } from "../../format";
 import { t } from "../../i18n";
 import { useReduceMotion } from "../../theme/ReduceMotion";
 import { tweenPlan } from "../../theme/transitions";
+import { ReplayButton } from "../ReplayButton";
 import { runDot } from "./runDot";
 
 type EasingCardProps = { name: string; easing: Easing };
@@ -22,8 +23,8 @@ export function EasingCard({ name, easing }: EasingCardProps) {
   return (
     <div className="curve-card" ref={scope}>
       <div className="curve-head">
-        <code>{name}</code>
-        <span className="value-text">{easing.join(", ")}</span>
+        <code translate="no">{name}</code>
+        <span className="value-text">{easing.map((n) => formatNumber(n, 2)).join(" · ")}</span>
       </div>
       <svg
         className="curve-plot curve-plot-square"
@@ -39,9 +40,7 @@ export function EasingCard({ name, easing }: EasingCardProps) {
       </div>
       <div className="curve-foot">
         <span className="pg-note">{t("tokens.motion.reduced.fade")}</span>
-        <Button variant="ghost" onClick={replay}>
-          {t("common.replay")}
-        </Button>
+        <ReplayButton onClick={replay} />
       </div>
     </div>
   );

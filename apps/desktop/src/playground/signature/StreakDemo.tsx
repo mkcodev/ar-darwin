@@ -55,7 +55,7 @@ export function StreakDemo() {
         <Button variant="primary" onClick={() => setDays((n) => n + 1)}>
           {t("signature.streak.add")}
         </Button>
-        <Button variant="ghost" onClick={() => setDays((n) => n + 72)}>
+        <Button variant="secondary" onClick={() => setDays((n) => n + 72)}>
           {t("signature.streak.jump")}
         </Button>
       </div>

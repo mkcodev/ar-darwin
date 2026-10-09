@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Button } from "../../components/Button";
 import { Logo } from "../../components/Logo";
 import { t } from "../../i18n";
+import { ReplayButton } from "../ReplayButton";
 
 /** The tree draws itself: the «1», a fast sketch, then the final line over it. */
 export function LogoDemo() {
@@ -17,9 +17,7 @@ export function LogoDemo() {
       <h3 className="token-title">{t("signature.logo.title")}</h3>
       <p className="pg-note">{t("signature.logo.body")}</p>
       <p className="pg-note reduced-note">{t("signature.logo.reduced")}</p>
-      <Button variant="ghost" onClick={() => setPlay((p) => p + 1)}>
-        {t("common.replay")}
-      </Button>
+      <ReplayButton onClick={() => setPlay((p) => p + 1)} />
     </div>
   );
 }

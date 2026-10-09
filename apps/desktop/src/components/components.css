@@ -73,7 +73,13 @@
 .btn-ghost:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
 }
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-pressed);
+}
 .btn:disabled {
+  background: var(--color-bg-raised);
+  color: var(--color-text-muted);
+  border-color: var(--color-border-subtle);
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
@@ -377,6 +383,7 @@
   background: var(--color-bg-overlay);
 }
 .sheet {
+  overscroll-behavior: contain;
   position: absolute;
   left: 50%;
   bottom: 0;

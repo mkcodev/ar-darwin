@@ -7,6 +7,7 @@ const roles = Object.keys(typography) as TypeRoleName[];
 export function TypeScale() {
   return (
     <div className="token-block">
+      <h3 className="token-title">{t("tokens.type.title")}</h3>
       <ul className="type-scale">
         {roles.map((role) => {
           const r = typography[role];

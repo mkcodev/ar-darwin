@@ -13,7 +13,7 @@ export function MotionTokens() {
       <ul className="duration-list">
         {Object.entries(duration).map(([name, d]) => (
           <li key={name}>
-            <code>{name}</code>
+            <code translate="no">{name}</code>
             <span className="duration-bar" style={{ width: `${(d.ms / maxMs) * 100}%` }} />
             <span className="value-text">
               {t("tokens.motion.durationItem", { ms: d.ms })} ·{" "}

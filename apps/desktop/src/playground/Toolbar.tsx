@@ -15,7 +15,7 @@ type ToolbarProps = {
 export function Toolbar({ preference, onPreference, hand, onHand }: ToolbarProps) {
   const { reduce, setReduce } = useReduceMotion();
   return (
-    <div className="pg-toolbar" role="toolbar" aria-label={t("playground.toolbar")}>
+    <div className="pg-toolbar" role="group" aria-label={t("playground.toolbar")}>
       <SegmentedControl
         label={t("playground.theme.label")}
         options={[

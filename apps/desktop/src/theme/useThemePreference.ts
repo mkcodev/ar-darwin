@@ -55,6 +55,18 @@ export function useThemePreference(): {
     root.style.setProperty("--color-camera-backdrop", cameraBackdropColor);
     root.style.colorScheme = theme.name;
     root.dataset.theme = theme.name;
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "theme-color";
+      document.head.appendChild(meta);
+    }
+    meta.content = theme.color.bg.canvas;
+    // Enable the cross-fade after the first themed frame, never for the initial paint.
+    const frame = requestAnimationFrame(() => {
+      root.dataset.themeReady = "true";
+    });
+    return () => cancelAnimationFrame(frame);
   }, [theme]);
 
   const setPreference = (p: ThemePreference) => {

@@ -48,8 +48,9 @@ export function FloatingPill({
         ...plan.transition,
         opacity: opacityTransition(plan, { duration: duration.medium.ms / 1000 }),
       }}
+      // Taps pass through while retreated, but the pill stays in the tab order: focusing it
+      // wakes the menu, so keyboard users never lose the camera controls.
       style={{ pointerEvents: retreated ? "none" : "auto" }}
-      inert={retreated}
     >
       {children}
     </motion.div>

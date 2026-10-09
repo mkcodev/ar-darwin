@@ -38,11 +38,11 @@ export function Playground() {
   return (
     <div className="pg">
       <header className="pg-header">
-        <Logo size={56} label={t("logo.label")} playKey={1} />
-        <div>
+        <div className="pg-brand">
+          <Logo size={56} label={t("logo.label")} playKey={1} />
           <h1 className="pg-title">{t("playground.title")}</h1>
-          <p className="pg-lead">{t("playground.lead")}</p>
         </div>
+        <p className="pg-lead">{t("playground.lead")}</p>
       </header>
       <Toolbar preference={preference} onPreference={setPreference} hand={hand} onHand={setHand} />
 

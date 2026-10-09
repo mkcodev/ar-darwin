@@ -13,7 +13,7 @@ export function LibraryScreen({ onOpenCamera }: LibraryScreenProps) {
     <div className="library">
       <h3 className="library-title">{t("library.title")}</h3>
       <article className="project-card">
-        <img className="project-thumb" src={ARTWORK_ON_PAPER_URL} alt="" />
+        <img className="project-thumb" src={ARTWORK_ON_PAPER_URL} alt="" width={64} height={64} />
         <div className="project-meta">
           <span className="project-name">{t("library.projectName")}</span>
           <span className="value-text project-detail">{t("library.projectDetail")}</span>

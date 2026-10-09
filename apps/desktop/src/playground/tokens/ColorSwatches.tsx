@@ -1,11 +1,12 @@
 import { contrastRatio, MIN_CONTRAST, parseColor, type Theme } from "@ar-darwin/ui";
+import { formatNumber } from "../../format";
 import { t } from "../../i18n";
 
 type ColorSwatchesProps = { theme: Theme };
 
 type Swatch = { name: string; value: string; ratio?: number; min?: number };
 
-const fmt = (r: number) => t("common.ratio", { value: r.toFixed(1) });
+const fmt = (r: number) => t("common.ratio", { value: formatNumber(r, 1) });
 
 /** Semantic colours of the active theme, with the contrast each one must reach. */
 export function ColorSwatches({ theme }: ColorSwatchesProps) {
@@ -81,7 +82,9 @@ export function ColorSwatches({ theme }: ColorSwatchesProps) {
         <span className={`swatch-chip${translucent ? " swatch-chip-checker" : ""}`}>
           <i style={{ background: s.value }} />
         </span>
-        <code className="swatch-name">{s.name}</code>
+        <code className="swatch-name" translate="no">
+          {s.name}
+        </code>
         <span className="value-text swatch-value">{s.value}</span>
         {s.ratio !== undefined && (
           <span className="value-text swatch-ratio" data-pass={pass}>

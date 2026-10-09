@@ -1,9 +1,10 @@
 import { dampingRatio, type SpringToken, sampleSpring, springSettleMs } from "@ar-darwin/ui";
 import { useAnimate } from "motion/react";
-import { Button } from "../../components/Button";
+import { formatNumber } from "../../format";
 import { t } from "../../i18n";
 import { useReduceMotion } from "../../theme/ReduceMotion";
 import { springPlan } from "../../theme/transitions";
+import { ReplayButton } from "../ReplayButton";
 import { runDot } from "./runDot";
 
 type SpringCardProps = { name: string; token: SpringToken };
@@ -31,12 +32,12 @@ export function SpringCard({ name, token }: SpringCardProps) {
   return (
     <div className="curve-card" ref={scope}>
       <div className="curve-head">
-        <code>{name}</code>
+        <code translate="no">{name}</code>
         <span className="value-text">
           {t("tokens.motion.springMeta", {
             k: token.stiffness,
             c: token.damping,
-            zeta: dampingRatio(token).toFixed(2),
+            zeta: formatNumber(dampingRatio(token), 2),
             ms: springSettleMs(token),
           })}
         </span>
@@ -55,9 +56,7 @@ export function SpringCard({ name, token }: SpringCardProps) {
       </div>
       <div className="curve-foot">
         <span className="pg-note">{t(`tokens.motion.reduced.${token.reduced.kind}`)}</span>
-        <Button variant="ghost" onClick={replay}>
-          {t("common.replay")}
-        </Button>
+        <ReplayButton onClick={replay} />
       </div>
     </div>
   );
