@@ -15,7 +15,7 @@ type ToolbarProps = {
 export function Toolbar({ preference, onPreference, hand, onHand }: ToolbarProps) {
   const { reduce, setReduce } = useReduceMotion();
   return (
-    <div className="pg-toolbar" role="group" aria-label={t("playground.toolbar")}>
+    <section className="pg-toolbar" aria-label={t("playground.toolbar")}>
       <SegmentedControl
         label={t("playground.theme.label")}
         options={[
@@ -36,6 +36,6 @@ export function Toolbar({ preference, onPreference, hand, onHand }: ToolbarProps
         onChange={onHand}
       />
       <Toggle label={t("playground.reduceMotion")} checked={reduce} onChange={setReduce} />
-    </div>
+    </section>
   );
 }

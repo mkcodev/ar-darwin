@@ -524,10 +524,8 @@ code {
   object-fit: cover;
   object-position: 50% 40%;
 }
-.sig-stage-camera .status-demo {
-  position: relative;
-}
 .status-demo {
+  position: relative;
   display: grid;
   justify-items: center;
   gap: var(--space-2);
