@@ -37,7 +37,7 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 ## 2 · Spike de cámara
 
 - [x] Development build de Android en el móvil (EAS) con las nativas del spike y del MVP (issue #16)
-- [ ] Cámara trasera a pantalla completa (vision-camera) con imagen de prueba en Canvas de Skia
+- [x] Cámara trasera a pantalla completa (vision-camera) con imagen de prueba en Canvas de Skia (issue #17)
 - [ ] Gestos simultáneos (arrastrar, pellizcar, rotar) y slider de opacidad en el hilo de UI
 - [ ] Bloqueo de toques (pulsación larga de 1 s en el candado) y pantalla siempre encendida
 - [ ] Prueba real de 10 min dibujando: medir fps (también en un Android modesto) y anotar resultados

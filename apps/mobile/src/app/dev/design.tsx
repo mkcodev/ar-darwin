@@ -1,6 +1,6 @@
 import { Redirect, Stack } from "expo-router";
 import { DevDesignScreen } from "../../design/DevDesignScreen";
-import { t } from "../../design/i18n";
+import { t } from "../../i18n";
 
 /** Design system check, development builds only. */
 export default function DevDesign() {

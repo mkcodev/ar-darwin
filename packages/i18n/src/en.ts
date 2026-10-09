@@ -216,6 +216,17 @@ export const en = {
     camera: "Entering the camera",
     closeCamera: "Leave the camera",
   },
+  cameraSpike: {
+    open: "Camera (spike)",
+    title: "Camera spike",
+    permissionTitle: "Camera permission",
+    permissionBody: "AR-Darwin needs the camera for this spike.",
+    grant: "Grant permission",
+    openSettings: "Open settings",
+    noDevice: "No back camera found",
+    showCalibration: "Grid",
+    showSketch: "Darwin sketch",
+  },
   gallery: {
     buttons: "Buttons",
     secondary: "Secondary",
