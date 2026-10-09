@@ -1,5 +1,4 @@
-import { fitTransform, type Size } from "@ar-darwin/core";
-import { opacity } from "@ar-darwin/ui";
+import type { Size } from "@ar-darwin/core";
 import {
   Canvas,
   Group,
@@ -10,22 +9,29 @@ import {
   useImage,
 } from "@shopify/react-native-skia";
 import { useEffect } from "react";
-import { StyleSheet } from "react-native";
-import { type DerivedValue, useDerivedValue, useSharedValue } from "react-native-reanimated";
+import { StyleSheet, View } from "react-native";
+import { GestureDetector } from "react-native-gesture-handler";
+import {
+  type DerivedValue,
+  type SharedValue,
+  useDerivedValue,
+  useSharedValue,
+} from "react-native-reanimated";
+import { useOverlayGestures } from "./useOverlayGestures";
 
 type TestImageCanvasProps = {
   /** `require(...)` result of the active test image. */
   source: number;
+  /** 0–1, shared with the opacity slider. */
+  opacity: SharedValue<number>;
 };
 
 const ZERO_SIZE: Size = { width: 0, height: 0 };
 
 /**
- * Test image over the camera, fit to the canvas ("contain") with core's fitTransform.
- * Opacity is fixed at `opacity.overlayImage` (packages/ui): no slider yet, that is #18.
- *
- * The fit runs in a `useDerivedValue` on the UI thread, the same place #18's gestures will
- * live, so swapping this static transform for the gesture one later is a one-line change.
+ * Test image over the camera: drag, pinch and rotate with two fingers at once
+ * (`useOverlayGestures`, #18), fit to the canvas with `fitTransform` on first layout and on
+ * every new test image, double tap to reset. Opacity comes from the slider next to it.
  *
  * Sized with Skia's `onSize`, not a plain `onLayout`: Skia's Canvas doesn't support `onLayout`
  * on the New Architecture (see https://shopify.github.io/react-native-skia/docs/canvas/overview/#getting-the-canvas-size).
@@ -34,7 +40,7 @@ const ZERO_SIZE: Size = { width: 0, height: 0 };
  * says "may not be a bug", and there's no supported way around it (see issue #25): it settles on
  * its own once the first layout lands.
  */
-export function TestImageCanvas({ source }: TestImageCanvasProps) {
+export function TestImageCanvas({ source, opacity }: TestImageCanvasProps) {
   const image = useImage(source);
   const canvasSize = useSharedValue<Size>(ZERO_SIZE);
   const imageSize = useSharedValue<Size>(ZERO_SIZE);
@@ -43,33 +49,38 @@ export function TestImageCanvas({ source }: TestImageCanvasProps) {
     imageSize.value = image ? { width: image.width(), height: image.height() } : ZERO_SIZE;
   }, [image, imageSize]);
 
+  const { gesture, x, y, scale, rotation } = useOverlayGestures({ imageSize, canvasSize });
+
   const matrix = useDerivedValue(() => {
     const img = imageSize.value;
-    const canvas = canvasSize.value;
-    if (img.width === 0 || canvas.width === 0) return Skia.Matrix();
-    const t = fitTransform(img, canvas);
+    if (img.width === 0) return Skia.Matrix();
     return Skia.Matrix()
-      .translate(t.x, t.y)
-      .rotate((t.rotation * Math.PI) / 180)
-      .scale(t.scale, t.scale)
+      .translate(x.value, y.value)
+      .rotate((rotation.value * Math.PI) / 180)
+      .scale(scale.value, scale.value)
       .translate(-img.width / 2, -img.height / 2);
   });
 
   return (
-    <Canvas style={StyleSheet.absoluteFill} onSize={canvasSize}>
-      {image && <ImageLayer image={image} matrix={matrix} />}
-    </Canvas>
+    <GestureDetector gesture={gesture}>
+      <View style={StyleSheet.absoluteFill}>
+        <Canvas style={StyleSheet.absoluteFill} onSize={canvasSize}>
+          {image && <ImageLayer image={image} matrix={matrix} opacity={opacity} />}
+        </Canvas>
+      </View>
+    </GestureDetector>
   );
 }
 
 type ImageLayerProps = {
   image: SkImage;
   matrix: DerivedValue<SkMatrix>;
+  opacity: SharedValue<number>;
 };
 
-function ImageLayer({ image, matrix }: ImageLayerProps) {
+function ImageLayer({ image, matrix, opacity }: ImageLayerProps) {
   return (
-    <Group matrix={matrix} opacity={opacity.overlayImage}>
+    <Group matrix={matrix} opacity={opacity}>
       <Image image={image} x={0} y={0} width={image.width()} height={image.height()} />
     </Group>
   );
