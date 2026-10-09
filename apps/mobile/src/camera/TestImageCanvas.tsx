@@ -10,7 +10,6 @@ import {
   useImage,
 } from "@shopify/react-native-skia";
 import { useEffect } from "react";
-import type { LayoutChangeEvent } from "react-native";
 import { StyleSheet } from "react-native";
 import { type DerivedValue, useDerivedValue, useSharedValue } from "react-native-reanimated";
 
@@ -28,10 +27,12 @@ const ZERO_SIZE: Size = { width: 0, height: 0 };
  * The fit runs in a `useDerivedValue` on the UI thread, the same place #18's gestures will
  * live, so swapping this static transform for the gesture one later is a one-line change.
  *
- * Measured with the Canvas's own `onLayout`, not Skia's `onSize`: `onSize` calls Reanimated's
- * `measure()` internally, which warns about an undefined `LayoutMetrics` on the first frames
- * before the view has a layout yet (see issue #25). `onLayout` is a plain native event, nothing
- * to measure.
+ * Sized with Skia's `onSize`, not a plain `onLayout`: Skia's Canvas doesn't support `onLayout`
+ * on the New Architecture (see https://shopify.github.io/react-native-skia/docs/canvas/overview/#getting-the-canvas-size).
+ * `onSize` calls Reanimated's `measure()` internally, which can warn about an undefined
+ * `LayoutMetrics` on the first frames before the view has a layout yet — the warning's own text
+ * says "may not be a bug", and there's no supported way around it (see issue #25): it settles on
+ * its own once the first layout lands.
  */
 export function TestImageCanvas({ source }: TestImageCanvasProps) {
   const image = useImage(source);
@@ -41,11 +42,6 @@ export function TestImageCanvas({ source }: TestImageCanvasProps) {
   useEffect(() => {
     imageSize.value = image ? { width: image.width(), height: image.height() } : ZERO_SIZE;
   }, [image, imageSize]);
-
-  const onLayout = (e: LayoutChangeEvent) => {
-    const { width, height } = e.nativeEvent.layout;
-    canvasSize.value = { width, height };
-  };
 
   const matrix = useDerivedValue(() => {
     const img = imageSize.value;
@@ -60,7 +56,7 @@ export function TestImageCanvas({ source }: TestImageCanvasProps) {
   });
 
   return (
-    <Canvas style={StyleSheet.absoluteFill} onLayout={onLayout}>
+    <Canvas style={StyleSheet.absoluteFill} onSize={canvasSize}>
       {image && <ImageLayer image={image} matrix={matrix} />}
     </Canvas>
   );
