@@ -3,7 +3,7 @@
 App para calcar dibujos con la cámara (móvil) y preparar/proyectar imágenes (PC).
 Sin anuncios. Prioridad: precisión, fluidez y un diseño propio.
 Contexto completo: @docs/PRD.md, @docs/ARCHITECTURE.md, @docs/DESIGN.md, @docs/ROADMAP.md.
-Prompts por fase: docs/PROMPTS.md.
+Prompts por fase: docs/PROMPTS.md. Flujo de git (issue, rama, PR, squash): docs/FLUJO.md.
 
 ## Estructura
 - apps/mobile   Expo (development build, Expo Router), vision-camera, Skia, Reanimated
@@ -13,7 +13,6 @@ Prompts por fase: docs/PROMPTS.md.
 - packages/i18n textos es/en
 
 ## Comandos
-(Se crean en la fase 1. Si aún no existen, no los inventes: créalos según el plan.)
 - pnpm install
 - pnpm dev:mobile  /  pnpm dev:desktop
 - pnpm test        (Vitest)
@@ -44,7 +43,7 @@ Prompts por fase: docs/PROMPTS.md.
 - Una tarea del roadmap por sesión. Empieza en modo plan y espera mi OK.
 - Lee los archivos implicados antes de cambiar nada.
 - Al terminar: pnpm typecheck && pnpm test && pnpm lint deben pasar.
-- Commits pequeños con Conventional Commits (feat:, fix:, refactor:...).
+- Commits pequeños con Conventional Commits y scope por paquete (feat(core):, fix(mobile):...), según docs/FLUJO.md.
 - Si algo de docs/ queda desactualizado por tu cambio, actualízalo en el mismo commit.
 - Marca en docs/ROADMAP.md las tareas que completes.
 - Si dudas entre dos enfoques, pregunta. No inventes requisitos.

@@ -28,7 +28,7 @@ apps/mobile (Expo)          apps/desktop (Vite PWA)
 | Animación web | Motion | Muelles equivalentes a los del móvil |
 | Validación | Zod | Modelos y datos importados seguros |
 | Tests | Vitest (core), Playwright (PC), Maestro (móvil) | La lógica pura se testea desde el día 1 |
-| Calidad | Biome + GitHub Actions | Lint, formato, tipos y tests en cada push |
+| Calidad | Biome + GitHub Actions | Lint, formato, tipos y tests en cada PR y en main |
 | Backend (fase 3) | Supabase | Cuenta, almacenamiento y sincronización |
 
 La landing (dominio por decidir) va aparte, con Astro o Next.js, porque ahí sí importa el SEO.

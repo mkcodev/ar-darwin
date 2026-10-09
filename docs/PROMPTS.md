@@ -14,7 +14,7 @@ Tarea: montar la base del monorepo. Usa modo plan y espera mi OK.
 1. Monorepo con pnpm workspaces + Turborepo: apps/mobile, apps/desktop, packages/core, packages/ui, packages/i18n.
 2. TypeScript estricto compartido (tsconfig base), Biome para lint y formato, Vitest en packages/core.
 3. Scripts raíz: dev:mobile, dev:desktop, test, typecheck, lint.
-4. GitHub Actions que ejecute typecheck, lint y test en cada push.
+4. GitHub Actions que ejecute typecheck, lint y test en cada PR y en main.
 5. .gitignore adecuado e inicializa git.
 
 De momento apps/mobile y apps/desktop solo como esqueleto que arranca (Expo con development build y Vite + React).
@@ -144,6 +144,6 @@ Después pásale web-design-guidelines para accesibilidad.
 2. Siempre en modo plan: lees el plan, corriges y apruebas.
 3. En `packages/core`, tests primero; Claude no da la tarea por hecha si no pasan.
 4. Cita los documentos en el prompt (`@docs/PRD.md`) en vez de explicar de nuevo.
-5. Una rama y un commit pequeño por tarea; revisas el diff antes de fusionar.
+5. Una rama por tarea con commits pequeños; squash merge para dejar un commit por tarea en `main`, después de revisar el diff. Detalle en `docs/FLUJO.md`.
 6. Pruebas en tu móvil real al final de cada tarea de cámara: el simulador no tiene cámara de verdad.
 7. Si corriges a Claude dos veces por lo mismo, esa regla va al CLAUDE.md.
