@@ -24,8 +24,8 @@ export const TransformSchema = z.object({
   /** Center of the image, in viewport px. */
   x: z.number(),
   y: z.number(),
-  /** Relative to the image's natural px. */
-  scale: z.number().min(MIN_SCALE),
+  /** Relative to the image's natural px. Can be below MIN_SCALE only via fitTransform. */
+  scale: z.number().positive(),
   /** Degrees, clockwise (y axis points down). Normalized to (-180, 180] by core functions. */
   rotation: z.number(),
   flipX: z.boolean(),

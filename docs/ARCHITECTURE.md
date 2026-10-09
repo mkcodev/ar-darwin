@@ -58,7 +58,7 @@ type Rect = { x: number; y: number; width: number; height: number };
 type Transform = {
   x: number;          // centro de la imagen, en px del viewport
   y: number;
-  scale: number;      // relativo a los px naturales de la imagen; ≥ MIN_SCALE (0.05)
+  scale: number;      // relativo a los px naturales de la imagen; > 0 (MIN_SCALE = 0.05 limita los gestos, no fitTransform)
   rotation: number;   // grados, horario (eje y hacia abajo); las funciones de core lo dejan en (-180, 180]
   flipX: boolean;
   flipY: boolean;
@@ -128,13 +128,13 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 
 - Acciones: `scaleUp`, `scaleDown`, `moveUp`, `moveDown`, `moveLeft`, `moveRight`, `rotateCw`, `rotateCcw`, `reset`.
 - `step`: `'fine' | 'coarse'`, con valores en `NUDGE_STEPS` (mover 1/10 px, escala 1 %/5 %, rotar 1°/5°).
-- Escala multiplicativa y simétrica: `scaleUp` multiplica por `1 + p`, `scaleDown` divide. Nunca baja de `MIN_SCALE` (0.05).
+- Escala multiplicativa y simétrica: `scaleUp` multiplica por `1 + p`, `scaleDown` divide. Nunca baja de `MIN_SCALE` (0.05), y `scaleDown` nunca agranda: si la escala ya es menor que `MIN_SCALE`, se queda igual.
 - `rotateCw` suma grados; la rotación sale normalizada a (-180, 180].
 - `reset`: toma `x`, `y`, `scale` y `rotation` de `options.base` (por defecto `IDENTITY_TRANSFORM`) y conserva `flipX`/`flipY` actuales.
 
 ### `fitTransform(imageSize, viewport): Transform`
 
-- Centra la imagen en el viewport y la escala para que quepa entera (`min(W / w, H / h)`), sin rotación ni espejo. La UI la usa como `base` del `reset`.
+- Centra la imagen en el viewport y la escala para que quepa entera (`min(W / w, H / h)`), sin rotación ni espejo. Siempre encaja, aunque la escala quede por debajo de `MIN_SCALE`. La UI la usa como `base` del `reset`.
 
 ## Almacenamiento
 

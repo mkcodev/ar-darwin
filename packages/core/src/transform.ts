@@ -252,7 +252,14 @@ export function nudge(
       next = { ...transform, scale: Math.max(MIN_SCALE, transform.scale * (1 + scale)) };
       break;
     case "scaleDown":
-      next = { ...transform, scale: Math.max(MIN_SCALE, transform.scale / (1 + scale)) };
+      // Never grows: a scale already below MIN_SCALE (e.g. fitTransform on a huge image) stays.
+      next = {
+        ...transform,
+        scale:
+          transform.scale < MIN_SCALE
+            ? transform.scale
+            : Math.max(MIN_SCALE, transform.scale / (1 + scale)),
+      };
       break;
     case "rotateCw":
       next = { ...transform, rotation: transform.rotation + rotate };

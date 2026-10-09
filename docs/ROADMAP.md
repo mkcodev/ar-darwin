@@ -47,6 +47,7 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 
 - [ ] Sistema de diseño en código (Prompt 5)
 - [ ] Biblioteca e importación de imágenes, guardado local
+  - Redimensionar al importar a máx. 4096 px por el lado largo
 - [ ] Modo imán con guías y vibración
 - [ ] Botones de ajuste fino con dos velocidades, pulsación larga, reset y candado
 - [ ] Pantalla del divisor con vista previa en vivo (Prompt 6)

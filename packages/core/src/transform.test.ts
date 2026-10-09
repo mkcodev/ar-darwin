@@ -251,6 +251,14 @@ describe("nudge", () => {
     expect(t.scale).toBe(MIN_SCALE);
   });
 
+  it("never grows on scaleDown when already below MIN_SCALE", () => {
+    // fitTransform on a 20000 px image in a 400 px viewport gives scale 0.02.
+    const tiny = fitTransform({ width: 20000, height: 10000 }, VIEWPORT);
+    expect(tiny.scale).toBe(0.02);
+    expect(nudge(tiny, "scaleDown", "fine").scale).toBe(0.02);
+    expect(nudge(tiny, "scaleDown", "coarse").scale).toBe(0.02);
+  });
+
   it.each([
     [179, "rotateCw", "coarse", -176],
     [-178, "rotateCcw", "coarse", 177],
