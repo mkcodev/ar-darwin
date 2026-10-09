@@ -30,7 +30,7 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 - [x] Monorepo con pnpm + Turborepo, Biome y TypeScript estricto (Prompt 1)
 - [ ] `packages/ui` con los tokens y `packages/i18n` con es/en
 - [x] `packages/core`: `computeTiles` y tests (Prompt 2)
-- [ ] `packages/core`: `snapTransform`, `nudge` y tests (Prompt 3)
+- [x] `packages/core`: `snapTransform`, `nudge`, `fitTransform` y tests (Prompt 3)
 - [x] GitHub Actions: tipos, lint y tests en cada PR y en main
 
 ## 2 · Spike de cámara
@@ -47,6 +47,7 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 
 - [ ] Sistema de diseño en código (Prompt 5)
 - [ ] Biblioteca e importación de imágenes, guardado local
+  - Redimensionar al importar a máx. 4096 px por el lado largo
 - [ ] Modo imán con guías y vibración
 - [ ] Botones de ajuste fino con dos velocidades, pulsación larga, reset y candado
 - [ ] Pantalla del divisor con vista previa en vivo (Prompt 6)

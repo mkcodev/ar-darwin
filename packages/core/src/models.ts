@@ -14,6 +14,34 @@ export const ImageSizeSchema = z.object({
 });
 export type ImageSize = z.infer<typeof ImageSizeSchema>;
 
+/** Width and height in px. Unlike ImageSize, not limited to integers (e.g. a viewport). */
+export type Size = { width: number; height: number };
+
+/** Smallest scale a transform can reach (5 % of the image's natural size). */
+export const MIN_SCALE = 0.05;
+
+export const TransformSchema = z.object({
+  /** Center of the image, in viewport px. */
+  x: z.number(),
+  y: z.number(),
+  /** Relative to the image's natural px. Can be below MIN_SCALE only via fitTransform. */
+  scale: z.number().positive(),
+  /** Degrees, clockwise (y axis points down). Normalized to (-180, 180] by core functions. */
+  rotation: z.number(),
+  flipX: z.boolean(),
+  flipY: z.boolean(),
+});
+export type Transform = z.infer<typeof TransformSchema>;
+
+export const IDENTITY_TRANSFORM: Transform = {
+  x: 0,
+  y: 0,
+  scale: 1,
+  rotation: 0,
+  flipX: false,
+  flipY: false,
+};
+
 export const MAX_SPLIT = 10;
 
 export const SplitConfigSchema = z.object({

@@ -56,13 +56,14 @@ ar-darwin/
 type Rect = { x: number; y: number; width: number; height: number };
 
 type Transform = {
-  x: number;
+  x: number;          // centro de la imagen, en px del viewport
   y: number;
-  scale: number;
-  rotation: number;   // grados
+  scale: number;      // relativo a los px naturales de la imagen; > 0 (MIN_SCALE = 0.05 limita los gestos, no fitTransform)
+  rotation: number;   // grados, horario (eje y hacia abajo); las funciones de core lo dejan en (-180, 180]
   flipX: boolean;
   flipY: boolean;
 };
+// IDENTITY_TRANSFORM = { x: 0, y: 0, scale: 1, rotation: 0, flipX: false, flipY: false }
 
 type SplitConfig = {
   rows: number;            // 1..10
@@ -110,18 +111,30 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 - Límite del solape, por eje con cortes: ancho mínimo de los `coreRect` si `cols > 1`, alto mínimo si `rows > 1`; devuelve `floor(menor / 2)`. Con 1×1, 0.
 - Misma validación que `computeTiles`. La UI lo usa como máximo del slider del borde extendido.
 
-### `snapTransform(transform, imageSize, viewport, options): { transform, activeGuides }`
+`snapTransform`, `nudge`, `fitTransform` y `normalizeRotation` (en `transform.ts`) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones.
 
-- Guías: centro horizontal y vertical del viewport y sus 4 bordes.
-- Encaja si el centro o un borde de la imagen transformada queda a menos de `options.threshold` px.
-- Rotación: encaja en múltiplos de 45° si está a menos de `options.rotationThreshold` grados.
-- Debe poder ejecutarse dentro de un worklet de Reanimated (sin closures sobre objetos no serializables).
+### `snapTransform(transform, imageSize, viewport, options?): { transform, activeGuides }`
 
-### `nudge(transform, action, step): Transform`
+- `options` parcial sobre `DEFAULT_SNAP_OPTIONS = { threshold: 8, rotationThreshold: 3, mode: 'move' }`.
+- Guías (`activeGuides`): `left`, `centerX`, `right`, `top`, `centerY`, `bottom` del viewport.
+- Primero la rotación: se normaliza a (-180, 180] y encaja en el múltiplo de 45° más cercano si está a menos de `rotationThreshold` grados (estricto).
+- Después, la caja envolvente de la imagen rotada y escalada:
+  - `mode: 'move'`: por eje, el rasgo (borde inicial, centro o borde final) más cercano a una guía, si está a menos de `threshold` px, desplaza `x`/`y` para encajar exacto.
+  - `mode: 'scale'`: centro, posición y rotación fijos; solo cambia `scale` para que el borde más cercano (de cualquiera de los dos ejes) caiga exacto en una guía. Ignora encajes que exigirían una escala menor que `MIN_SCALE`.
+- `activeGuides`: guías sobre las que queda un rasgo imantable tras encajar, en el orden de arriba. Vacío si no encaja nada (`threshold: 0` lo desactiva). La UI vibra cuando pasa de vacío a no vacío.
+- Uso: se aplica a la transformada en bruto del gesto **solo para mostrar**. Nunca se guarda el resultado como base del gesto, o la imagen se queda pegada a la guía. El valor imantado se guarda solo al soltar.
+
+### `nudge(transform, action, step, options?): Transform`
 
 - Acciones: `scaleUp`, `scaleDown`, `moveUp`, `moveDown`, `moveLeft`, `moveRight`, `rotateCw`, `rotateCcw`, `reset`.
 - `step`: `'fine' | 'coarse'`, con valores en `NUDGE_STEPS` (mover 1/10 px, escala 1 %/5 %, rotar 1°/5°).
-- La escala nunca baja de 0.05.
+- Escala multiplicativa y simétrica: `scaleUp` multiplica por `1 + p`, `scaleDown` divide. Nunca baja de `MIN_SCALE` (0.05), y `scaleDown` nunca agranda: si la escala ya es menor que `MIN_SCALE`, se queda igual.
+- `rotateCw` suma grados; la rotación sale normalizada a (-180, 180].
+- `reset`: toma `x`, `y`, `scale` y `rotation` de `options.base` (por defecto `IDENTITY_TRANSFORM`) y conserva `flipX`/`flipY` actuales.
+
+### `fitTransform(imageSize, viewport): Transform`
+
+- Centra la imagen en el viewport y la escala para que quepa entera (`min(W / w, H / h)`), sin rotación ni espejo. Siempre encaja, aunque la escala quede por debajo de `MIN_SCALE`. La UI la usa como `base` del `reset`.
 
 ## Almacenamiento
 
