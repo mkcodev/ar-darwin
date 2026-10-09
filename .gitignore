@@ -20,6 +20,9 @@ apps/mobile/android/
 *.key
 *.mobileprovision
 *.orig.*
+*.pem
+.kotlin/
+.metro-health-check*
 
 # Env
 .env*.local
