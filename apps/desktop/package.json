@@ -10,7 +10,10 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@ar-darwin/core": "workspace:*",
     "@ar-darwin/i18n": "workspace:*",
+    "@ar-darwin/ui": "workspace:*",
+    "motion": "^14.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },

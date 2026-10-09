@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direcciones de diseño</title>
+<meta name="description" content="Tres direcciones de concepto para el sistema de diseño de AR-Darwin, con mocks, contraste y movimiento.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Geist+Mono:wght@400;500&family=Geist:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&family=Spline+Sans+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --page-bg: #E4E3DF;
+  --page-text: #1C1C1A;
+  --page-muted: #55544F;
+  --page-line: #BDBBB4;
+  --page-pass: #1D6B3A;
+  --page-fail: #A3241B;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page-bg: #232321; --page-text: #EDEBE6; --page-muted: #B3B0A8; --page-line: #4A4944;
+    --page-pass: #7BD39A; --page-fail: #FF8F85; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page-bg: #232321; --page-text: #EDEBE6; --page-muted: #B3B0A8; --page-line: #4A4944;
+  --page-pass: #7BD39A; --page-fail: #FF8F85; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--page-bg); color: var(--page-text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  overflow-x: hidden;
+}
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+
+/* ---------- page chrome ---------- */
+.bar {
+  position: sticky; top: 0; z-index: 50; background: var(--page-bg);
+  border-bottom: 1px solid var(--page-line);
+}
+.bar-inner {
+  max-width: 1280px; margin: 0 auto; padding: 8px 16px; display: flex; gap: 8px 20px;
+  align-items: center; flex-wrap: wrap;
+}
+.bar strong { font-weight: 600; margin-right: auto; }
+.bar nav { display: flex; gap: 4px; flex-wrap: wrap; }
+.bar a {
+  color: inherit; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center;
+  padding: 0 10px; border-radius: 8px;
+}
+.bar a:hover { background: color-mix(in srgb, var(--page-text) 8%, transparent); }
+@media (max-width: 640px) {
+  .bar-inner { flex-wrap: nowrap; gap: 8px; }
+  .bar strong { display: none; }
+  .bar nav { flex-wrap: nowrap; overflow-x: auto; margin-right: auto; scrollbar-width: none; }
+  .bar a { white-space: nowrap; padding: 0 8px; font-size: 15px; }
+  .bar .switch { font-size: 13px; gap: 6px; line-height: 1.15; max-width: 92px; }
+}
+.switch { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.switch input { width: 20px; height: 20px; accent-color: var(--page-text); }
+.intro { max-width: 1280px; margin: 0 auto; padding: 48px 16px 40px; }
+.intro h1 { font-size: clamp(32px, 5vw, 56px); line-height: 1.05; margin: 0 0 16px; font-weight: 650; letter-spacing: -0.02em; max-width: 18ch; }
+.intro p { max-width: 64ch; margin: 0 0 12px; color: var(--page-muted); }
+.intro p strong { color: var(--page-text); }
+
+/* ---------- direction band ---------- */
+.dir {
+  background: var(--canvas); color: var(--text); font-family: var(--f-ui);
+  padding: 64px 16px 72px; border-top: 1px solid var(--line);
+}
+.dir-inner { max-width: 1280px; margin: 0 auto; }
+.dir-head { display: grid; gap: 16px; margin-bottom: 48px; }
+.dir-head .logo { color: var(--text); }
+.dir h2 {
+  font-family: var(--f-display); font-style: var(--display-style); font-weight: var(--display-weight);
+  font-stretch: var(--display-stretch); letter-spacing: var(--display-tracking);
+  font-size: clamp(44px, 8vw, 96px); line-height: 0.95; margin: 0;
+}
+.dir .idea { font-size: clamp(19px, 2.2vw, 24px); line-height: 1.35; max-width: 34ch; margin: 0; }
+.dir .why { max-width: 62ch; margin: 0; color: var(--muted); }
+.dir .note { max-width: 62ch; margin: 0; color: var(--muted); font-size: 15px; border-left: 2px solid var(--accent); padding-left: 12px; }
+.dir-grid { display: grid; gap: 48px; }
+@media (min-width: 1000px) {
+  .dir-grid { grid-template-columns: 400px minmax(0, 1fr); align-items: start; }
+  .dir-head { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: end; column-gap: 48px; }
+  .dir-head > .logo, .dir-head > h2 { grid-column: 1; }
+  .dir-head > p { grid-column: 2; }
+  .dir-head > .logo { grid-row: 1; }
+  .dir-head > h2 { grid-row: 2 / span 2; align-self: start; }
+}
+.col { display: grid; gap: 40px; min-width: 0; }
+.block h3 {
+  font-family: var(--f-ui); font-size: 17px; font-weight: 600; margin: 0 0 4px;
+}
+.block > p.lead { margin: 0 0 16px; color: var(--muted); font-size: 15px; max-width: 60ch; }
+.block { border-top: 1px solid var(--line); padding-top: 16px; min-width: 0; }
+
+/* controls used across the page, themed per direction */
+.ctrls { display: flex; flex-wrap: wrap; gap: 12px 16px; margin-top: 16px; align-items: center; }
+.seg {
+  display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--r-ctrl);
+  background: var(--surface); border: 1px solid var(--line);
+}
+.seg button {
+  min-height: 44px; min-width: 44px; padding: 0 12px; border: 0; background: transparent; cursor: pointer;
+  border-radius: calc(var(--r-ctrl) - 3px); color: var(--muted); font-size: 14px; font-weight: 500;
+}
+.seg button[aria-pressed="true"] { background: var(--raised); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+.seg button:focus-visible, .btn:focus-visible, .ibtn:focus-visible, .icon-cell button:focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 2px;
+}
+.ctrl-label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px; }
+.btn {
+  position: relative; overflow: hidden; min-height: 48px; padding: 0 20px; border-radius: var(--r-btn);
+  border: 1px solid var(--line); background: var(--surface); color: var(--text); cursor: pointer;
+  font-weight: 600; font-size: 15px; touch-action: manipulation; isolation: isolate;
+}
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.btn .ink {
+  position: absolute; z-index: -1; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, var(--accent-pressed) 55%, transparent 72%);
+  transform: translate(-50%, -50%) scale(0); opacity: 1;
+}
+.btn:not(.primary) .ink { background: radial-gradient(circle, var(--raised) 55%, transparent 72%); }
+
+/* ---------- palette ---------- */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.sw { display: grid; gap: 6px; font-size: 13px; min-width: 0; }
+.sw .meta { flex-wrap: wrap; overflow-wrap: anywhere; }
+.stage .logo-big svg { width: 100%; height: auto; }
+.sw .chip { height: 52px; border-radius: 6px; border: 1px solid var(--line); position: relative; overflow: hidden; }
+.sw .chip.checker { background-image: linear-gradient(45deg, #888 25%, transparent 25%, transparent 75%, #888 75%), linear-gradient(45deg, #888 25%, transparent 25%, transparent 75%, #888 75%); background-size: 12px 12px; background-position: 0 0, 6px 6px; }
+.sw .chip i { position: absolute; inset: 0; }
+.sw b { font-weight: 600; font-size: 14px; }
+.sw .val, .val { font-family: var(--f-value); font-variant-numeric: tabular-nums; }
+.sw .meta { color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+.pass { color: var(--text); }
+.fail { color: var(--danger); text-decoration: underline wavy; text-underline-offset: 3px; }
+
+/* ---------- type ---------- */
+.type-rows { display: grid; gap: 18px; }
+.trow { display: grid; gap: 2px; }
+.trow small { color: var(--muted); font-size: 13px; }
+.t-display { font-family: var(--f-display); font-style: var(--display-style); font-weight: var(--display-weight); font-stretch: var(--display-stretch); letter-spacing: var(--display-tracking); font-size: 40px; line-height: 1.05; }
+.t-title { font-family: var(--f-ui); font-size: 22px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+.t-body { font-family: var(--f-ui); font-size: 16px; line-height: 1.5; max-width: 52ch; }
+.t-label { font-family: var(--f-ui); font-size: 14px; font-weight: 500; letter-spacing: 0.01em; }
+.t-value { font-family: var(--f-value); font-variant-numeric: tabular-nums; font-size: 15px; letter-spacing: 0; }
+.tabular { display: inline-grid; grid-template-columns: auto auto; gap: 0 20px; text-align: right; }
+
+/* ---------- icons ---------- */
+.icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+.icon-cell { display: grid; justify-items: center; gap: 4px; font-size: 12px; color: var(--muted); text-align: center; }
+.icon-cell button {
+  width: 48px; height: 48px; display: grid; place-items: center; border-radius: var(--r-btn);
+  border: 1px solid transparent; background: transparent; color: var(--text); cursor: pointer;
+}
+.icon-cell button[aria-pressed="true"] { color: var(--accent); background: var(--surface); border-color: var(--line); }
+.ico { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: var(--stroke); stroke-linecap: round; stroke-linejoin: round; overflow: visible; }
+.ico .dot { fill: currentColor; stroke: none; }
+.ico .axis { stroke-dasharray: 1.5 2.5; }
+.ico.draw [pathLength] { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw var(--draw-ms, 420ms) cubic-bezier(.2,.7,.2,1) forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* ---------- phone mock ---------- */
+.phone-col { display: grid; justify-items: center; gap: 4px; }
+.phone-scale { width: 360px; zoom: var(--z, 1); }
+.phone {
+  position: relative; width: 360px; height: 780px; border-radius: 44px; overflow: hidden;
+  background: #000; box-shadow: 0 0 0 10px #0c0c0b, 0 0 0 11px #3a3a37; margin: 12px;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+.cam-bg { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.overlay { position: absolute; left: 50px; top: 260px; width: 260px; height: 260px; will-change: transform; opacity: 0.62; }
+.overlay svg { width: 100%; height: 100%; fill: none; stroke: #141413; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.guides { position: absolute; inset: 0; width: 360px; height: 780px; pointer-events: none; overflow: visible; }
+.guides .g { opacity: 0; transform: scale(0); }
+.guides .case { stroke: var(--guide-case); stroke-width: 4; stroke-linecap: round; }
+.guides .core { stroke: var(--guide); stroke-width: 1.6; stroke-linecap: round; }
+.guides .tick { stroke: var(--guide); stroke-width: 1.4; }
+.guides .tick-case { stroke: var(--guide-case); stroke-width: 3.4; stroke-linecap: round; }
+.contact {
+  position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.9); box-shadow: 0 0 0 1px rgba(0,0,0,.45); opacity: 0; left: 0; top: 0;
+  will-change: transform, opacity;
+}
+.pulse {
+  position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
+  border: 2px solid var(--guide); opacity: 0; left: 0; top: 0;
+}
+.chrome { transition: transform 280ms cubic-bezier(.2,.8,.2,1), opacity 280ms cubic-bezier(.2,.8,.2,1); }
+.phone.idle .chrome { opacity: 0; pointer-events: none; }
+.phone.idle .top { transform: translateY(-8px); }
+.phone.idle .tilebar { transform: translateY(8px); }
+.phone.idle .rail, .phone.idle .nudge { transform: translateX(var(--retreat)); }
+.phone[data-hand="right"] { --retreat: -8px; }
+.phone[data-hand="left"] { --retreat: 8px; }
+.surface-pill {
+  position: absolute; background: var(--pill); color: var(--text); border: var(--pill-edge-w) solid var(--pill-edge);
+  border-radius: var(--r-pill);
+}
+.top { top: 52px; left: 12px; right: 12px; height: 56px; display: flex; align-items: center; padding: 0 4px; gap: 4px; }
+.top .op { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 6px; min-width: 0; }
+.track { position: relative; flex: 1; height: 4px; border-radius: 2px; background: var(--line); }
+.track i { position: absolute; left: 0; top: 0; bottom: 0; width: 62%; background: var(--text); border-radius: 2px; }
+.track b { position: absolute; left: 62%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--text); box-shadow: 0 0 0 3px var(--pill-solid); }
+.top .val { font-size: 15px; min-width: 4ch; text-align: right; }
+.ibtn {
+  width: 48px; height: 48px; flex: none; display: grid; place-items: center; border: 0; background: transparent;
+  color: var(--text); border-radius: var(--r-ibtn); cursor: pointer; padding: 0;
+}
+.ibtn[aria-pressed="true"] { color: var(--accent); background: var(--active-bg); }
+.ibtn:active { background: var(--raised); }
+.rail { top: 132px; width: 56px; padding: 4px; display: grid; gap: 4px; }
+.phone[data-hand="right"] .rail, .phone[data-hand="right"] .nudge { left: 12px; }
+.phone[data-hand="left"] .rail, .phone[data-hand="left"] .nudge { right: 12px; }
+.nudge { bottom: 104px; padding: 4px; border-radius: var(--r-pad); display: grid; grid-template-columns: repeat(3, 48px); grid-template-rows: repeat(3, 48px); gap: 2px; }
+.nudge .ibtn { width: 48px; height: 48px; }
+.nudge .step { font-family: var(--f-value); font-size: 13px; font-variant-numeric: tabular-nums; }
+.tilebar { left: 12px; right: 12px; bottom: 28px; height: 64px; display: flex; align-items: center; gap: 10px; padding: 0 8px; }
+.phone[data-hand="left"] .tilebar { flex-direction: row-reverse; }
+.mini { display: grid; grid-template-columns: repeat(2, 14px); grid-template-rows: repeat(2, 14px); gap: 2px; }
+.mini i { border: 1px solid var(--muted); border-radius: 2px; }
+.mini i.on { background: var(--accent); border-color: var(--accent); }
+.tilebar .tid { font-family: var(--f-value); font-variant-numeric: tabular-nums; font-size: 15px; }
+.tilebar .grow { flex: 1; }
+.tilebar .btn { min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; }
+.status { position: absolute; top: 14px; left: 28px; right: 28px; display: flex; justify-content: space-between; font: 600 14px system-ui; color: #fff; text-shadow: 0 0 3px rgba(0,0,0,.6); }
+.phone-hint { font-size: 13px; color: var(--muted); text-align: center; max-width: 36ch; margin: 4px 0 0; }
+
+/* ---------- splitter ---------- */
+.split-frame { position: relative; width: 100%; max-width: 420px; aspect-ratio: 1; background: var(--surface); border-radius: 8px; border: 1px solid var(--line); }
+.split-img { position: absolute; inset: 40px; }
+.tile { position: absolute; overflow: hidden; will-change: transform; }
+.tile .img { position: absolute; background-size: 100% 100%; }
+.tile .ext { position: absolute; background: var(--guide-tint); opacity: 0; transition: opacity 220ms ease-out; }
+.split-frame.tinted .tile .ext { opacity: 1; }
+.tile .cut { position: absolute; border: 0 dashed var(--guide-case); }
+.tile .tag {
+  position: absolute; left: 6px; top: 6px; font-family: var(--f-value); font-variant-numeric: tabular-nums; font-size: 13px;
+  padding: 2px 6px; border-radius: 4px; background: var(--pill-solid); color: var(--text);
+}
+.split-lines { position: absolute; inset: 28px; pointer-events: none; transition: opacity 160ms; }
+.split-lines i { position: absolute; border: 0 dashed var(--guide-case); }
+
+/* ---------- signature stage ---------- */
+.stage { position: relative; height: 240px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; display: grid; place-items: center; }
+.stage .logo-big { width: min(320px, 80%); color: var(--text); }
+.reg-frame { position: relative; width: 150px; height: 150px; }
+.reg-frame .pic { position: absolute; inset: 0; background-size: cover; border-radius: 2px; opacity: .9; }
+.reg-mark { position: absolute; width: 22px; height: 22px; border-color: var(--accent); border-style: solid; border-width: 0; will-change: transform; }
+.labels { display: grid; gap: 10px; justify-items: start; }
+.slabel {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 10px; background: var(--pill-solid);
+  border: var(--pill-edge-w) solid var(--pill-edge); border-radius: var(--r-pill); font-size: 15px; font-weight: 500;
+  will-change: transform, opacity; transform-origin: 12px 50%;
+}
+.slabel .ico { color: var(--accent); }
+
+/* ---------- tables ---------- */
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 13px; }
+td.num { font-family: var(--f-value); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- closing (page chrome) ---------- */
+.close { max-width: 1280px; margin: 0 auto; padding: 64px 16px 96px; display: grid; gap: 48px; }
+.close > * { min-width: 0; }
+.close h2 { font-size: clamp(28px, 4vw, 40px); margin: 0 0 12px; letter-spacing: -0.015em; line-height: 1.1; }
+.close h3 { font-size: 18px; margin: 24px 0 8px; }
+.close p, .close li { max-width: 70ch; color: var(--page-muted); }
+.close p strong, .close li strong { color: var(--page-text); }
+.close table { --line: var(--page-line); --muted: var(--page-muted); }
+.close td.num { font-family: ui-monospace, "Cascadia Mono", monospace; }
+.close .pass { color: var(--page-pass); }
+.close .fail { color: var(--page-fail); }
+.rec { border-left: 3px solid var(--page-text); padding: 4px 0 4px 16px; }
+.rec p { color: var(--page-text); }
+
+@media (max-width: 520px) {
+  .dir { padding: 48px 16px 56px; }
+  .stage { height: 220px; }
+}
+:root.rm *, :root.rm *::before, :root.rm *::after { animation-duration: 1ms !important; transition-duration: 120ms !important; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; }
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-inner">
+    <strong>Direcciones de AR-Darwin</strong>
+    <nav aria-label="Direcciones">
+      <a href="#grafito">Grafito y luz</a>
+      <a href="#cuaderno">Cuaderno de campo</a>
+      <a href="#cianotipo">Cianotipo</a>
+      <a href="#comparar">Comparar</a>
+    </nav>
+    <label class="switch"><input type="checkbox" id="rm-toggle"> Reducir movimiento</label>
+  </div>
+</header>
+
+<section class="intro">
+  <h1>Tres maneras de mirar el papel a través del móvil</h1>
+  <p>Cada dirección trae su paleta con contraste calculado, su tipografía, iconos propios, un logotipo en boceto, la pantalla de cámara, el divisor y su movimiento de firma. Todo se calcula en esta página: si cambias un color en el código, los ratios se recalculan.</p>
+  <p><strong>Cómo juzgarlas:</strong> ábrela en el móvil, pon el brillo como lo usarías dibujando y prueba los tres fondos de folio en cada cámara (flexo de noche, luz de día, poca luz). Toca la cámara para recuperar el menú cuando se retire, y cambia la mano con la que dibujas.</p>
+</section>
+
+<main id="dirs"></main>
+
+<section class="close" id="comparar">
+  <div>
+    <h2>Comparativa</h2>
+    <p>Legibilidad sobre foto: peor ratio entre las zonas más oscuras y más claras de cada fondo, para el borde de las píldoras, el texto dentro de ellas y la guía del imán. Mínimo exigido: 3:1 para bordes, iconos y guías; 4,5:1 para texto.</p>
+    <div class="tbl-wrap"><table id="cmp"></table></div>
+  </div>
+  <div class="rec" id="rec"></div>
+  <div>
+    <h2>Dependencias que propongo</h2>
+    <p>Ninguna se instala hasta que las apruebes.</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>Dependencia</th><th>Dónde</th><th>Por qué</th></tr></thead>
+      <tbody>
+        <tr><td><strong>motion</strong></td><td>apps/desktop</td><td>Muelles en web equivalentes a los de Reanimated, animando solo transform y opacity por compositor. Lo prevé docs/ARCHITECTURE.md.</td></tr>
+        <tr><td><strong>expo-haptics</strong></td><td>apps/mobile</td><td>Hápticos semánticos: encaje del imán, candado, cambio de trozo. Sin él no hay vibración en Expo.</td></tr>
+        <tr><td><strong>Fuentes de la dirección elegida</strong></td><td>apps/desktop y apps/mobile</td><td>Recomiendo copiar los archivos (licencia OFL) al repo: cero dependencias, funcionan sin red y expo-font (ya instalado) los carga en móvil. Alternativa: <code>@fontsource/*</code> en web y <code>@expo-google-fonts/*</code> en móvil.</td></tr>
+        <tr><td><strong>vitest</strong> (5.0.3, la misma de core)</td><td>packages/ui</td><td>Tests de contraste y de tokens. No es una dependencia nueva del repo.</td></tr>
+        <tr><td><strong>Router web</strong>: ninguno</td><td>apps/desktop</td><td>/playground se elige por <code>location.pathname</code> con <code>React.lazy</code>. react-router no compensa por una ruta de desarrollo.</td></tr>
+        <tr><td><strong>Iconos en móvil</strong>: más adelante</td><td>apps/mobile</td><td>La geometría de los iconos vive en packages/ui sin dependencias. En móvil se pintará con Skia (ya previsto para la cámara en la fase 2) o con react-native-svg si lo prefieres; no hace falta ahora.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<script>
+"use strict";
+/* ================= data: one source per direction ================= */
+const DIRS = [
+  {
+    id: "grafito",
+    name: "Grafito y luz",
+    idea: "Un estuche de lápices bajo el flexo: grafito mate, papel y dos tintas que significan algo.",
+    why: "De noche, una interfaz oscura no deslumbra ni compite con el folio: el papel es lo más luminoso de la escena y los controles se retiran a los márgenes. El bermellón solo aparece donde hay que actuar; el azul no-foto, solo donde algo ha encajado.",
+    note: "Cambios respecto a docs/DESIGN.md: el texto sobre bermellón pasa a grafito (en blanco no llega a 4,5:1), la guía lleva doble trazo (núcleo azul y funda grafito) para verse sobre papel blanco y sobre sombra, y las píldoras son casi opacas con un filo de papel al 46 % para separarse también de la mesa a oscuras.",
+    colors: {
+      canvas: "#161614", surface: "#201F1C", raised: "#2C2B27", line: "#4A4842",
+      text: "#F1ECE1", muted: "#ADA799", accent: "#FF5A1F", accentPressed: "#D9430E", onAccent: "#170A03",
+      guide: "#7FD3F7", guideCase: "#0E1418", guideTint: "rgba(127, 211, 247, 0.30)",
+      danger: "#FF8A95", focus: "#F1ECE1",
+      pill: "rgba(28, 27, 24, 0.94)", pillSolid: "#1C1B18", pillEdge: "rgba(241, 236, 225, 0.46)",
+      activeBg: "rgba(255, 90, 31, 0.14)"
+    },
+    vars: {
+      "--f-display": "'Instrument Serif', Georgia, serif", "--display-style": "italic", "--display-weight": "400",
+      "--display-stretch": "100%", "--display-tracking": "-0.01em",
+      "--f-ui": "'Geist', system-ui, sans-serif", "--f-value": "'Geist Mono', ui-monospace, monospace",
+      "--r-pill": "999px", "--r-ctrl": "999px", "--r-btn": "999px", "--r-ibtn": "999px", "--r-pad": "32px", "--stroke": "1.75", "--pill-edge-w": "1px"
+    },
+    fonts: { display: "Instrument Serif cursiva", ui: "Geist", value: "Geist Mono" },
+    signature: { name: "Trazo vivo", text: "El logotipo y los iconos se dibujan como un trazo de lápiz y asientan con un muelle corto: primero el boceto gris, después la línea final.", kind: "stroke" },
+    ticks: false,
+    scores: { original: "Media-alta", darwin: "Media: el árbol del cuaderno de 1837 como logotipo" }
+  },
+  {
+    id: "cuaderno",
+    name: "Cuaderno de campo",
+    idea: "Las libretas del Beagle: papel, tinta ferrogálica, etiquetas de espécimen y anotaciones al margen.",
+    why: "La interfaz es papel sobre papel: los controles parecen etiquetas pegadas al folio y la sanguina marca la acción como un subrayado a mano. Con luz de día se funde con la mesa; de noche es la que más deslumbra, porque cada píldora es una fuente de luz junto al dibujo.",
+    note: "Los controles son claros, así que el borde de tinta de 1,5 px es lo que los separa de un folio blanco. Probé una funda de papel para la guía y fallaba bajo el flexo (1,8:1); la funda va en tinta. El azul de lápiz no llega a 3:1 sobre el fondo de la interfaz: solo puede vivir sobre la foto.",
+    colors: {
+      canvas: "#E8E9E1", surface: "#F4F4EE", raised: "#FFFFFB", line: "#AEB0A4",
+      text: "#1E2229", muted: "#545954", accent: "#B4371F", accentPressed: "#8F2915", onAccent: "#FFF9F2",
+      guide: "#2F9FDB", guideCase: "#1E2229", guideTint: "rgba(47, 159, 219, 0.24)",
+      danger: "#8A1D48", focus: "#1E2229",
+      pill: "rgba(244, 244, 238, 0.97)", pillSolid: "#F4F4EE", pillEdge: "#1E2229",
+      activeBg: "rgba(180, 55, 31, 0.10)"
+    },
+    vars: {
+      "--f-display": "'Newsreader', Georgia, serif", "--display-style": "italic", "--display-weight": "450",
+      "--display-stretch": "100%", "--display-tracking": "-0.015em",
+      "--f-ui": "'Hanken Grotesk', system-ui, sans-serif", "--f-value": "'Spline Sans Mono', ui-monospace, monospace",
+      "--r-pill": "14px", "--r-ctrl": "12px", "--r-btn": "10px", "--r-ibtn": "10px", "--r-pad": "14px", "--stroke": "1.5", "--pill-edge-w": "1.5px"
+    },
+    fonts: { display: "Newsreader cursiva", ui: "Hanken Grotesk", value: "Spline Sans Mono" },
+    signature: { name: "Etiqueta", text: "Los controles llegan como etiquetas que se clavan en el papel: un leve giro que se endereza con muelle. Al pulsar, la tinta empapa desde el dedo.", kind: "label" },
+    ticks: false,
+    scores: { original: "Media", darwin: "Alta: libreta de campo y etiquetas de espécimen" }
+  },
+  {
+    id: "cianotipo",
+    name: "Cianotipo",
+    idea: "Mesa de luz y plano técnico: azul de Prusia, marcas de registro y medidas exactas.",
+    why: "Trata el calco como un ajuste de precisión: retícula, marcas de registro y valores siempre a la vista. El azul frío separa la interfaz del papel cálido de la foto, y el ámbar de señal se lee con poca luz sin parecer un error.",
+    note: "Esquinas casi rectas y trazo de 2 px. La guía del imán lleva marcas de medida cada 20 px para leer la distancia de un vistazo.",
+    colors: {
+      canvas: "#0B1C30", surface: "#11263D", raised: "#1A334F", line: "#33557A",
+      text: "#EAF3FA", muted: "#9AB3CA", accent: "#FFB21E", accentPressed: "#E09500", onAccent: "#0B1C30",
+      guide: "#5CE1FF", guideCase: "#0B1C30", guideTint: "rgba(92, 225, 255, 0.24)",
+      danger: "#FF7B6E", focus: "#EAF3FA",
+      pill: "rgba(11, 28, 48, 0.95)", pillSolid: "#0B1C30", pillEdge: "rgba(92, 225, 255, 0.45)",
+      activeBg: "rgba(255, 178, 30, 0.14)"
+    },
+    vars: {
+      "--f-display": "'Archivo', system-ui, sans-serif", "--display-style": "normal", "--display-weight": "700",
+      "--display-stretch": "125%", "--display-tracking": "-0.02em",
+      "--f-ui": "'Archivo', system-ui, sans-serif", "--f-value": "'JetBrains Mono', ui-monospace, monospace",
+      "--r-pill": "6px", "--r-ctrl": "6px", "--r-btn": "4px", "--r-ibtn": "4px", "--r-pad": "6px", "--stroke": "2", "--pill-edge-w": "1px"
+    },
+    fonts: { display: "Archivo expandida", ui: "Archivo", value: "JetBrains Mono" },
+    signature: { name: "Registro", text: "Cuatro marcas de corte llegan desde fuera y se fijan en las esquinas de la imagen; después aparece la cruz de registro. Así se siente el imán: algo que encaja en su sitio.", kind: "register" },
+    ticks: true,
+    scores: { original: "Alta", darwin: "Baja: más ingeniería que naturalista" }
+  }
+];
+
+const ROLE_LABEL = {
+  canvas: ["Fondo", "bg.canvas"], surface: ["Superficie", "bg.surface"], raised: ["Elevada", "bg.raised"],
+  line: ["Borde", "border"], text: ["Texto", "text.primary"], muted: ["Texto secundario", "text.muted"],
+  accent: ["Acento", "accent"], accentPressed: ["Acento pulsado", "accent.pressed"], onAccent: ["Sobre acento", "text.onAccent"],
+  guide: ["Guía", "guide"], guideCase: ["Funda de guía", "guide.case"], guideTint: ["Zona extendida", "guide.tint"],
+  danger: ["Peligro", "danger"], focus: ["Foco", "focus"], pill: ["Píldora", "bg.pill"]
+};
+/* fg, bg, minimum ratio, what it is */
+const UI_CHECKS = [
+  ["text", "canvas", 4.5], ["muted", "canvas", 4.5], ["text", "surface", 4.5], ["muted", "surface", 4.5],
+  ["onAccent", "accent", 4.5], ["accent", "canvas", 3], ["accent", "pillSolid", 3], ["guide", "canvas", 3],
+  ["danger", "canvas", 3], ["focus", "canvas", 3]
+];
+
+/* ================= colour maths ================= */
+function parseColor(c) {
+  if (typeof c !== "string") return c;
+  if (c[0] === "#") {
+    const h = c.slice(1);
+    return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16), a: 1 };
+  }
+  const m = c.match(/rgba?\(([^)]+)\)/);
+  const p = m[1].split(",").map(Number);
+  return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+}
+function blend(fg, bg) {
+  const f = parseColor(fg), b = parseColor(bg);
+  const a = f.a;
+  return { r: f.r * a + b.r * (1 - a), g: f.g * a + b.g * (1 - a), b: f.b * a + b.b * (1 - a), a: 1 };
+}
+function lum(c) {
+  const ch = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  return 0.2126 * ch(c.r) + 0.7152 * ch(c.g) + 0.0722 * ch(c.b);
+}
+/** WCAG ratio; translucent foregrounds are composited over the background first. */
+function ratio(fg, bg) {
+  const b = blend(bg, { r: 0, g: 0, b: 0, a: 1 });
+  const f = blend(fg, b);
+  const l1 = lum(f), l2 = lum(b);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+const fmt = (n) => n.toFixed(1).replace(".", ",") + ":1";
+
+/* ================= icons: 24 grid, stroke only, round ends ================= */
+const P = (d, extra = "") => `<path pathLength="1" d="${d}" ${extra}/>`;
+const ICONS = {
+  lock: ["Candado", `<rect pathLength="1" x="5" y="11" width="14" height="9" rx="2"/>${P("M8 11V8a4 4 0 0 1 8 0v3")}${P("M12 15v2")}`],
+  magnet: ["Imán", `${P("M5 4h4v8a3 3 0 0 0 6 0V4h4v8a7 7 0 0 1-14 0Z")}${P("M5 8h4M15 8h4")}`],
+  opacity: ["Opacidad", `<circle pathLength="1" cx="12" cy="12" r="8"/>${P("M12 4v16")}${P("M12 8.5l4.6-3.2M12 12.5l7-4M12 16.5l7.4-3.4M12 20l4.4-2.3")}`],
+  mirrorH: ["Espejo horizontal", `<path class="axis" d="M12 3v18"/>${P("M9 7 4 17h5Z")}${P("M15 7l5 10h-5Z")}`],
+  mirrorV: ["Espejo vertical", `<path class="axis" d="M3 12h18"/>${P("M7 9 17 4v5Z")}${P("M7 15l10 5v-5Z")}`],
+  flash: ["Linterna", `${P("M8 3h8v4l-2 4v10h-4V11L8 7Z")}${P("M8 7h8")}${P("M12 14v2.5")}`],
+  up: ["Subir", P("M12 19V5M6 11l6-6 6 6")],
+  down: ["Bajar", P("M12 5v14M6 13l6 6 6-6")],
+  left: ["Izquierda", P("M19 12H5M11 6l-6 6 6 6")],
+  right: ["Derecha", P("M5 12h14M13 6l6 6-6 6")],
+  rotate: ["Rotar", `${P("M19.5 12a7.5 7.5 0 1 1-2.2-5.3")}${P("M20 4v4h-4")}`],
+  reset: ["Restablecer", `${P("M4.5 12a7.5 7.5 0 1 0 2.2-5.3")}${P("M4 4v4h4")}<circle class="dot" cx="12" cy="12" r="1.6"/>`],
+  split: ["Divisor", `<rect pathLength="1" x="5" y="5" width="14" height="14" rx="1.5"/>${P("M12 2v20M2 12h20", 'class="axis"')}`],
+  nextTile: ["Siguiente trozo", `<rect pathLength="1" x="3" y="6" width="9" height="12" rx="1.5"/>${P("M15 12h6M18 9l3 3-3 3")}`],
+  library: ["Biblioteca", `<rect pathLength="1" x="7" y="3" width="13" height="15" rx="1.5"/>${P("M4 7v12.5A1.5 1.5 0 0 0 5.5 21H16")}${P("M10 13.5c1.6-2.6 3.4 1 5.5-2.5")}`],
+  settings: ["Ajustes", `${P("M4 7h9M19 7h1M4 17h3M11 17h9")}<circle pathLength="1" cx="16" cy="7" r="2.5"/><circle pathLength="1" cx="9" cy="17" r="2.5"/>`]
+};
+const icon = (name, cls = "") => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name][1]}</svg>`;
+
+/* ================= drawings ================= */
+const FINCH = [
+  "M100 60C120 58 132 70 134 80L152 86L134 94C132 110 124 124 108 132C96 138 84 138 74 134L40 156L36 148L66 124C64 104 72 72 100 60Z",
+  "M76 100C90 96 104 104 110 118", "M80 110C92 108 100 114 104 122",
+  "M96 136L94 150", "M104 134L106 150", "M20 152C70 148 130 152 182 146", "M150 149L166 136"
+];
+const finchSVG = () => `<svg viewBox="0 0 200 200" aria-hidden="true">${FINCH.map((d) => `<path d="${d}"/>`).join("")}<circle cx="118" cy="78" r="3" fill="#141413" stroke="none"/></svg>`;
+
+const TREE = ["M10 42C12 34 16 28 22 24", "M22 24C26 18 32 13 40 9", "M22 24C28 24 34 26 40 30", "M31 15C34 17 36 20 38 22", "M37.5 6.5L42.5 11.5", "M37.5 32.5L42.5 27.5", "M35.5 24.5L40.5 19.5"];
+const TREE_ORTHO = ["M10 42V24H22", "M22 24V12H40", "M22 24H32V32H40", "M30 12V20H38", "M40 8.5V15.5", "M40 28.5V35.5", "M38 16.5V23.5"];
+
+function logoSVG(dir, big = false) {
+  const h = big ? 120 : 56;
+  if (dir.id === "grafito") {
+    return `<svg class="logo" viewBox="0 0 230 56" height="${h}" role="img" aria-label="Logotipo AR-Darwin, versión Grafito y luz">
+      <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <g class="ghost" opacity="0">${TREE.map((d) => `<path d="${d}" transform="translate(1.5 1)" stroke-opacity=".35" pathLength="1"/>`).join("")}</g>
+        <g class="final">${TREE.map((d) => `<path d="${d}" pathLength="1"/>`).join("")}</g>
+      </g>
+      <circle cx="10" cy="42" r="3" fill="${dir.colors.accent}"/>
+      <text x="58" y="40" font-family="Instrument Serif, serif" font-style="italic" font-size="40" fill="currentColor">Darwin</text>
+      <text x="184" y="22" font-family="Geist, sans-serif" font-weight="600" font-size="13" fill="currentColor" letter-spacing=".04em">AR</text>
+    </svg>`;
+  }
+  if (dir.id === "cuaderno") {
+    return `<svg class="logo" viewBox="0 0 240 56" height="${h}" role="img" aria-label="Logotipo AR-Darwin, versión Cuaderno de campo">
+      <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        ${TREE.map((d) => `<path d="${d}" pathLength="1"/>`).join("")}
+        <circle cx="10" cy="45" r="4.5" stroke="${dir.colors.accent}"/>
+        <path d="M58 47c30 3 70 2 108-2" stroke="${dir.colors.accent}" stroke-width="1.4"/>
+      </g>
+      <text x="9" y="47.5" font-family="Newsreader, serif" font-size="6.5" text-anchor="middle" fill="${dir.colors.accent}">1</text>
+      <text x="58" y="38" font-family="Newsreader, serif" font-style="italic" font-size="36" fill="currentColor">Darwin</text>
+      <g transform="translate(178 14)"><rect width="34" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="6" cy="11" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="22" y="15.5" text-anchor="middle" font-family="Hanken Grotesk, sans-serif" font-weight="600" font-size="11" fill="currentColor">AR</text></g>
+    </svg>`;
+  }
+  return `<svg class="logo" viewBox="0 0 270 56" height="${h}" role="img" aria-label="Logotipo AR-Darwin, versión Cianotipo">
+    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="10" cy="42" r="6" stroke="${dir.colors.accent}"/><path d="M10 33v18M1 42h18" stroke="${dir.colors.accent}"/>
+      ${TREE_ORTHO.map((d) => `<path d="${d}" pathLength="1"/>`).join("")}
+    </g>
+    <text x="58" y="39" font-family="Archivo, sans-serif" font-stretch="125%" font-weight="700" font-size="27" letter-spacing="-0.5" fill="currentColor">DARWIN</text>
+    <text x="232" y="22" font-family="JetBrains Mono, monospace" font-size="12" fill="${dir.colors.accent}">AR</text>
+  </svg>`;
+}
+
+/* ================= paper photo backgrounds ================= */
+const BGS = {
+  lamp: { label: "Flexo de noche", desk: "#2A1C12", paper: "#F2EAD9", tint: "#FFC98A", tintOp: 0.55, cx: "34%", cy: "30%", r: "80%", edge: "rgba(24,12,2,0.82)", grain: 0.10, pencil: "#4A4038" },
+  day: { label: "Luz de día", desk: "#7D827F", paper: "#EFF1ED", tint: "#E1E9F0", tintOp: 0.45, cx: "60%", cy: "18%", r: "120%", edge: "rgba(20,24,28,0.22)", grain: 0.06, pencil: "#5A5953" },
+  low: { label: "Poca luz", desk: "#1A1917", paper: "#C9C4BA", tint: "#7C827E", tintOp: 0.85, cx: "50%", cy: "45%", r: "95%", edge: "rgba(0,0,0,0.62)", grain: 0.24, pencil: "#3E3C38" }
+};
+function paperSVG(b) {
+  const sketch = `<g transform="translate(50 260) scale(1.3)" fill="none" stroke="${b.pencil}" stroke-width="1.25" stroke-linecap="round" opacity=".85" filter="url(#pen)">
+      <path d="${FINCH[0]}" pathLength="1" stroke-dasharray=".58 1"/><path d="${FINCH[5]}"/><circle cx="116" cy="80" r="20" opacity=".35"/>
+      <path d="M60 30L170 170M60 170L170 30" opacity=".12"/></g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="360" height="780" viewBox="0 0 360 780">
+    <defs>
+      <filter id="pen" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="1" seed="4"/><feDisplacementMap in="SourceGraphic" scale="1.6"/></filter>
+      <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="9" stitchTiles="stitch"/><feColorMatrix values="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 0 0 0 0 ${b.grain}"/></filter>
+      <filter id="mottle"><feTurbulence type="fractalNoise" baseFrequency=".012" numOctaves="3" seed="2"/><feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .07"/></filter>
+      <radialGradient id="vig" cx="${b.cx}" cy="${b.cy}" r="${b.r}"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="${b.edge}"/></radialGradient>
+    </defs>
+    <rect width="360" height="780" fill="${b.desk}"/>
+    <polygon points="-20,70 380,24 380,800 -20,800" fill="${b.paper}"/>
+    <rect width="360" height="780" filter="url(#mottle)"/>
+    ${sketch}
+    <rect width="360" height="780" fill="${b.tint}" opacity="${b.tintOp}" style="mix-blend-mode:multiply"/>
+    <rect width="360" height="780" fill="url(#vig)"/>
+    <rect width="360" height="780" filter="url(#grain)" style="mix-blend-mode:overlay"/>
+  </svg>`;
+}
+const svgUrl = (s) => "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s);
+const BG_URL = {};
+for (const k in BGS) BG_URL[k] = svgUrl(paperSVG(BGS[k]));
+
+/** Mean, darkest 5 % and brightest 5 % colours of a rendered background. */
+const SAMPLES = {};
+function sampleBg(key) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const w = 90, h = 195, cv = document.createElement("canvas");
+        cv.width = w; cv.height = h;
+        const ctx = cv.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        const d = ctx.getImageData(0, 0, w, h).data;
+        const px = [];
+        for (let i = 0; i < d.length; i += 4) px.push({ r: d[i], g: d[i + 1], b: d[i + 2], a: 1 });
+        px.forEach((p) => { p.l = lum(p); });
+        px.sort((a, b) => a.l - b.l);
+        const avg = (arr) => { const s = { r: 0, g: 0, b: 0, a: 1 }; arr.forEach((p) => { s.r += p.r; s.g += p.g; s.b += p.b; }); s.r /= arr.length; s.g /= arr.length; s.b /= arr.length; return s; };
+        const n = Math.max(1, Math.floor(px.length * 0.05));
+        resolve({ mean: avg(px), dark: avg(px.slice(0, n)), bright: avg(px.slice(-n)) });
+      } catch (e) {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = BG_URL[key];
+  });
+}
+const FALLBACK = { lamp: ["#9A7650", "#2A1A0E", "#F4D8A8"], day: ["#D4D7D2", "#7D827F", "#EDEFEA"], low: ["#5A5750", "#141312", "#8E8A82"] };
+
+/* ================= motion: tiny spring solver ================= */
+const SPRINGS = {
+  snappy: { k: 420, c: 31, m: 1 },   /* ζ ≈ 0.76, magnet and toggles */
+  gentle: { k: 170, c: 24, m: 1 },   /* ζ ≈ 0.92, layout */
+  sheet: { k: 260, c: 30, m: 1 },    /* ζ ≈ 0.93 */
+  playful: { k: 300, c: 17, m: 1 }   /* ζ ≈ 0.49, streak digits */
+};
+const reduced = () => document.documentElement.classList.contains("rm");
+function spring(from, to, cfg, onUpdate, v0 = 0) {
+  if (reduced()) { onUpdate(to); return Promise.resolve(); }
+  return new Promise((resolve) => {
+    let x = from, v = v0, last = performance.now();
+    function frame(now) {
+      let dt = Math.min(0.064, (now - last) / 1000); last = now;
+      const steps = Math.ceil(dt / (1 / 240)); const h = dt / steps;
+      for (let i = 0; i < steps; i++) { const a = (-cfg.k * (x - to) - cfg.c * v) / cfg.m; v += a * h; x += v * h; }
+      onUpdate(x);
+      if (Math.abs(v) < 0.01 && Math.abs(x - to) < 0.001) { onUpdate(to); resolve(); } else requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+}
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+function fade(el, to, ms) {
+  return el.animate([{ opacity: getComputedStyle(el).opacity }, { opacity: to }], { duration: ms, easing: "ease-out", fill: "forwards" }).finished;
+}
+
+/* ink press: primary buttons soak like ink on paper (< 200 ms) */
+function attachInk(btn) {
+  btn.addEventListener("pointerdown", (e) => {
+    const r = btn.getBoundingClientRect();
+    const z = r.width / btn.offsetWidth || 1;
+    const x = (e.clientX - r.left) / z, y = (e.clientY - r.top) / z;
+    const size = Math.hypot(btn.offsetWidth, btn.offsetHeight) * 2.1;
+    const ink = document.createElement("span");
+    ink.className = "ink";
+    Object.assign(ink.style, { left: x + "px", top: y + "px", width: size + "px", height: size + "px" });
+    btn.appendChild(ink);
+    const grow = reduced()
+      ? ink.animate([{ opacity: 0, transform: "translate(-50%,-50%) scale(1)" }, { opacity: 1, transform: "translate(-50%,-50%) scale(1)" }], { duration: 100, fill: "forwards" })
+      : ink.animate([{ transform: "translate(-50%,-50%) scale(0)" }, { transform: "translate(-50%,-50%) scale(1)" }], { duration: 180, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" });
+    const end = () => {
+      grow.finished.then(() => ink.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 160, fill: "forwards" }).finished).then(() => ink.remove());
+      btn.removeEventListener("pointerup", end); btn.removeEventListener("pointerleave", end); btn.removeEventListener("pointercancel", end);
+    };
+    btn.addEventListener("pointerup", end); btn.addEventListener("pointerleave", end); btn.addEventListener("pointercancel", end);
+  });
+}
+
+/* ================= templates ================= */
+function seg(name, options, current) {
+  return `<div class="seg" role="group" data-seg="${name}">${options.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${v === current}">${l}</button>`).join("")}</div>`;
+}
+function phoneTpl(dir) {
+  const ticks = [];
+  if (dir.ticks) {
+    for (let y = 0; y <= 780; y += 20) ticks.push(`<line class="tick-case" x1="${y % 100 === 0 ? 172 : 175}" y1="${y}" x2="180" y2="${y}"/><line class="tick" x1="${y % 100 === 0 ? 172 : 175}" y1="${y}" x2="180" y2="${y}"/>`);
+  }
+  const ticksH = [];
+  if (dir.ticks) {
+    for (let x = 0; x <= 360; x += 20) ticksH.push(`<line class="tick-case" x1="${x}" y1="390" x2="${x}" y2="${x % 100 === 0 ? 398 : 395}"/><line class="tick" x1="${x}" y1="390" x2="${x}" y2="${x % 100 === 0 ? 398 : 395}"/>`);
+  }
+  return `<div class="phone-scale"><div class="phone" data-hand="right" role="img" aria-label="Simulación de la pantalla de cámara de ${dir.name}">
+    <div class="cam-bg" style="background-image:url('${BG_URL.lamp}')"></div>
+    <div class="overlay">${finchSVG()}</div>
+    <svg class="guides" viewBox="0 0 360 780" aria-hidden="true">
+      <g class="g gv"><line class="case" x1="180" y1="0" x2="180" y2="780"/>${ticks.join("")}<line class="core" x1="180" y1="0" x2="180" y2="780"/></g>
+      <g class="g gh"><line class="case" x1="0" y1="390" x2="360" y2="390"/>${ticksH.join("")}<line class="core" x1="0" y1="390" x2="360" y2="390"/></g>
+    </svg>
+    <div class="pulse"></div><div class="contact"></div>
+    <div class="status" aria-hidden="true"><span>21:47</span><span>82 %</span></div>
+    <div class="chrome surface-pill top">
+      <button class="ibtn" type="button" aria-label="Biblioteca">${icon("library")}</button>
+      <div class="op">${icon("opacity")}<div class="track"><i></i><b></b></div><span class="val">62 %</span></div>
+      <button class="ibtn" type="button" aria-label="Linterna" aria-pressed="false" data-toggle>${icon("flash")}</button>
+    </div>
+    <div class="chrome surface-pill rail">
+      <button class="ibtn" type="button" aria-label="Imán" aria-pressed="true" data-toggle>${icon("magnet")}</button>
+      <button class="ibtn" type="button" aria-label="Candado" aria-pressed="false" data-toggle>${icon("lock")}</button>
+      <button class="ibtn" type="button" aria-label="Espejo horizontal" aria-pressed="false" data-toggle>${icon("mirrorH")}</button>
+      <button class="ibtn" type="button" aria-label="Espejo vertical" aria-pressed="false" data-toggle>${icon("mirrorV")}</button>
+    </div>
+    <div class="chrome surface-pill nudge">
+      <button class="ibtn" type="button" aria-label="Rotar 1 grado a la izquierda" data-n="rotL" style="transform:scaleX(-1)">${icon("rotate")}</button>
+      <button class="ibtn" type="button" aria-label="Subir" data-n="up">${icon("up")}</button>
+      <button class="ibtn" type="button" aria-label="Rotar 1 grado a la derecha" data-n="rotR">${icon("rotate")}</button>
+      <button class="ibtn" type="button" aria-label="Izquierda" data-n="left">${icon("left")}</button>
+      <button class="ibtn step" type="button" aria-label="Velocidad: fino" data-n="step">1 px</button>
+      <button class="ibtn" type="button" aria-label="Derecha" data-n="right">${icon("right")}</button>
+      <button class="ibtn" type="button" aria-label="Restablecer posición" data-n="reset">${icon("reset")}</button>
+      <button class="ibtn" type="button" aria-label="Bajar" data-n="down">${icon("down")}</button>
+      <span></span>
+    </div>
+    <div class="chrome surface-pill tilebar">
+      <div class="mini" aria-hidden="true"><i></i><i></i><i class="on"></i><i></i></div>
+      <span class="tid">B1</span><span class="grow"></span>
+      <button class="btn primary" type="button">${icon("nextTile")}Siguiente trozo</button>
+    </div>
+  </div></div>`;
+}
+function signatureTpl(dir) {
+  if (dir.signature.kind === "stroke") {
+    return `<div class="stage" data-stage="stroke"><div class="logo-big">${logoSVG(dir, true)}</div></div>`;
+  }
+  if (dir.signature.kind === "label") {
+    return `<div class="stage" data-stage="label"><div class="labels">
+      <span class="slabel">${icon("magnet")}Imán activado</span>
+      <span class="slabel">${icon("lock")}Posición bloqueada</span>
+      <span class="slabel">${icon("split")}Bordes extendidos, 24 px</span></div></div>`;
+  }
+  return `<div class="stage" data-stage="register"><div class="reg-frame"><div class="pic"></div>
+    <i class="reg-mark" data-c="tl" style="left:-6px;top:-6px;border-left-width:2px;border-top-width:2px"></i>
+    <i class="reg-mark" data-c="tr" style="right:-6px;top:-6px;border-right-width:2px;border-top-width:2px"></i>
+    <i class="reg-mark" data-c="bl" style="left:-6px;bottom:-6px;border-left-width:2px;border-bottom-width:2px"></i>
+    <i class="reg-mark" data-c="br" style="right:-6px;bottom:-6px;border-right-width:2px;border-bottom-width:2px"></i>
+    <svg class="cross" viewBox="0 0 40 40" style="position:absolute;left:55px;top:55px;width:40px;height:40px;opacity:0" aria-hidden="true">
+      <g fill="none" stroke="${dir.colors.accent}" stroke-width="2" stroke-linecap="round"><circle cx="20" cy="20" r="9"/><path d="M20 2v36M2 20h36"/></g></svg>
+  </div></div>`;
+}
+function dirTpl(dir) {
+  const swatchKeys = ["canvas", "surface", "raised", "line", "text", "muted", "accent", "accentPressed", "onAccent", "guide", "guideCase", "guideTint", "danger", "focus", "pill"];
+  const swatches = swatchKeys.map((k) => {
+    const v = dir.colors[k];
+    const translucent = parseColor(v).a < 1;
+    const FG = ["text", "muted", "accent", "accentPressed", "guide", "danger", "focus"];
+    const vsCanvas = FG.includes(k) ? fmt(ratio(v, dir.colors.canvas)) : "";
+    return `<div class="sw"><div class="chip ${translucent ? "checker" : ""}"><i style="background:${v}"></i></div>
+      <b>${ROLE_LABEL[k][0]}</b><span class="meta"><span class="val">${ROLE_LABEL[k][1]}</span></span>
+      <span class="meta"><span class="val">${v.startsWith("#") ? v : v.replace(/\s/g, "")}</span><span class="val" title="Contraste sobre el fondo">${vsCanvas}</span></span></div>`;
+  }).join("");
+  const iconCells = Object.keys(ICONS).map((k) => `<div class="icon-cell"><button type="button" aria-label="${ICONS[k][0]}" aria-pressed="false">${icon(k)}</button><span>${ICONS[k][0]}</span></div>`).join("");
+  return `<section class="dir" id="${dir.id}" aria-labelledby="${dir.id}-h">
+  <div class="dir-inner">
+    <div class="dir-head">
+      ${logoSVG(dir)}
+      <h2 id="${dir.id}-h">${dir.name}</h2>
+      <p class="idea">${dir.idea}</p>
+      <p class="why">${dir.why}</p>
+      <p class="note">${dir.note}</p>
+    </div>
+    <div class="dir-grid">
+      <div class="col">
+        <div class="phone-col">
+          ${phoneTpl(dir)}
+          <div class="ctrls" style="justify-content:center">
+            <div><span class="ctrl-label">Fondo de folio</span>${seg("bg", Object.entries(BGS).map(([k, b]) => [k, b.label]), "lamp")}</div>
+            <div><span class="ctrl-label">Mano que dibuja</span>${seg("hand", [["right", "Derecha"], ["left", "Izquierda"]], "right")}</div>
+            <button class="btn" type="button" data-act="magnet">Repetir imán</button>
+          </div>
+          <p class="phone-hint">El menú se retira tras 3 s sin tocar. Toca la pantalla para recuperarlo. Las flechas mueven la imagen de verdad.</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="block"><h3>Paleta</h3><p class="lead">Ratio de cada color sobre el fondo de la interfaz.</p><div class="swatches">${swatches}</div></div>
+        <div class="block"><h3>Contraste de la interfaz</h3><p class="lead">Texto 4,5:1; iconos, acento, guías y foco 3:1.</p><div class="tbl-wrap"><table data-ui-table></table></div></div>
+        <div class="block"><h3>Contraste sobre la foto del folio</h3><p class="lead">Peor caso entre las zonas más oscuras y más claras de cada fondo, más gris medio y papel blanco. Un elemento con dos tonos (píldora y borde, núcleo y funda) cuenta por el que más contrasta.</p><div class="tbl-wrap"><table data-photo-table></table></div></div>
+        <div class="block"><h3>Tipografía</h3><p class="lead">${dir.fonts.display} para titulares, ${dir.fonts.ui} para la interfaz y ${dir.fonts.value} con cifras tabulares para medidas.</p>
+          <div class="type-rows">
+            <div class="trow"><small>display</small><span class="t-display">Del boceto a la línea</span></div>
+            <div class="trow"><small>title</small><span class="t-title">Trozo B1 de 4</span></div>
+            <div class="trow"><small>body</small><span class="t-body">Apoya el móvil, baja la opacidad hasta ver a la vez tu trazo y la imagen, y bloquea la posición antes de empezar.</span></div>
+            <div class="trow"><small>label</small><span class="t-label">Bordes extendidos</span></div>
+            <div class="trow"><small>value</small><span class="t-value">A1 &nbsp; B2 &nbsp; 45° &nbsp; 12 px &nbsp; 64 % &nbsp; 1,8 mm</span>
+              <span class="t-value tabular" aria-label="Cifras tabulares alineadas"><span>111 px</span><span>11 %</span><span>808 px</span><span>88 %</span></span></div>
+          </div></div>
+        <div class="block"><h3>Iconos</h3><p class="lead">Retícula de 24, trazo de ${dir.vars["--stroke"]} px, extremos redondeados y sin rellenos. Toca uno para activarlo: se vuelve a dibujar.</p><div class="icon-grid">${iconCells}</div></div>
+      </div>
+    </div>
+    <div class="dir-grid" style="margin-top:48px">
+      <div class="col"><div class="block"><h3>Divisor 2 × 2</h3><p class="lead">Cortes discontinuos y zona extendida tintada. Los trozos se separan con 40 ms entre cada uno; el tinte llega después.</p>
+        <div class="split-frame" data-split></div>
+        <div class="ctrls">${seg("overlap", [["0", "Al ras"], ["60", "Bordes extendidos"]], "60")}<button class="btn primary" type="button" data-act="split">Juntar</button></div></div></div>
+      <div class="col"><div class="block"><h3>Movimiento de firma: ${dir.signature.name}</h3><p class="lead">${dir.signature.text}</p>
+        ${signatureTpl(dir)}
+        <div class="ctrls"><button class="btn" type="button" data-act="sig">Repetir</button></div></div></div>
+    </div>
+  </div></section>`;
+}
+
+/* ================= behaviour ================= */
+const ROWS = (dir) => {
+  const c = dir.colors;
+  return [
+    { label: "Borde de la píldora", min: 3, test: (bg) => Math.max(ratio(c.pill, bg), ratio(c.pillEdge, bg)) },
+    { label: "Texto en la píldora", min: 4.5, test: (bg) => ratio(c.text, blend(c.pill, bg)) },
+    { label: "Acento en la píldora", min: 3, test: (bg) => ratio(c.accent, blend(c.pill, bg)) },
+    { label: "Guía (núcleo y funda)", min: 3, test: (bg) => Math.max(ratio(c.guide, bg), ratio(c.guideCase, bg)) },
+    { label: "Guía sin funda", min: 3, test: (bg) => ratio(c.guide, bg), info: true }
+  ];
+};
+function fillTables(section, dir) {
+  const uiT = section.querySelector("[data-ui-table]");
+  const col = { ...dir.colors };
+  uiT.innerHTML = `<thead><tr><th>Color</th><th>Sobre</th><th>Ratio</th><th>Mínimo</th></tr></thead><tbody>${UI_CHECKS.map(([f, b, m]) => {
+    const r = ratio(col[f], col[b]);
+    const bl = b === "pillSolid" ? "Píldora" : ROLE_LABEL[b][0];
+    return `<tr><td>${ROLE_LABEL[f][0]}</td><td>${bl}</td><td class="num ${r >= m ? "pass" : "fail"}">${fmt(r)}</td><td class="num">${fmt(m)}</td></tr>`;
+  }).join("")}</tbody>`;
+  const pt = section.querySelector("[data-photo-table]");
+  const cols = [...Object.keys(BGS).map((k) => [BGS[k].label, [SAMPLES[k].dark, SAMPLES[k].bright]]), ["Gris 50 %", [parseColor("#808080")]], ["Blanco", [parseColor("#FFFFFF")]]];
+  pt.innerHTML = `<thead><tr><th>Elemento</th>${cols.map(([l]) => `<th>${l}</th>`).join("")}</tr></thead><tbody>${ROWS(dir).map((row) => `<tr><td>${row.label}${row.info ? " <small>(referencia)</small>" : ""}</td>${cols.map(([, bgs]) => {
+    const r = Math.min(...bgs.map(row.test));
+    return `<td class="num ${row.info ? "" : r >= row.min ? "pass" : "fail"}">${fmt(r)}</td>`;
+  }).join("")}</tr>`).join("")}</tbody>`;
+}
+function worstPhoto(dir, rowIndex) {
+  const row = ROWS(dir)[rowIndex];
+  let w = Infinity;
+  for (const k in BGS) for (const bg of [SAMPLES[k].dark, SAMPLES[k].bright]) w = Math.min(w, row.test(bg));
+  return w;
+}
+
+function setupPhone(section, dir) {
+  const phone = section.querySelector(".phone");
+  const overlay = phone.querySelector(".overlay");
+  const contact = phone.querySelector(".contact");
+  const pulse = phone.querySelector(".pulse");
+  const gv = phone.querySelector(".gv"), gh = phone.querySelector(".gh");
+  const st = { x: 0, y: 0, r: 0, coarse: false, busy: false, axis: 0 };
+  const paint = () => { overlay.style.transform = `translate(${st.x}px, ${st.y}px) rotate(${st.r}deg)`; };
+
+  /* auto-hide after 3 s idle; first touch brings it back */
+  let timer;
+  const wake = () => { phone.classList.remove("idle"); clearTimeout(timer); timer = setTimeout(() => phone.classList.add("idle"), 3000); };
+  phone.addEventListener("pointerdown", wake, true);
+  phone.addEventListener("focusin", wake);
+  new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) wake(); }), { threshold: 0.5 }).observe(phone);
+
+  phone.querySelectorAll("[data-toggle]").forEach((b) => b.addEventListener("click", () => {
+    const on = b.getAttribute("aria-pressed") !== "true";
+    b.setAttribute("aria-pressed", String(on));
+    if (on) redraw(b.querySelector(".ico"));
+  }));
+  /* nudge pad: 1 px / 10 px, 1° / 5°, like core's NUDGE_STEPS */
+  const doNudge = (n) => {
+    const m = st.coarse ? 10 : 1, rot = st.coarse ? 5 : 1;
+    if (n === "up") st.y -= m; if (n === "down") st.y += m; if (n === "left") st.x -= m; if (n === "right") st.x += m;
+    if (n === "rotL") st.r -= rot; if (n === "rotR") st.r += rot;
+    if (n === "reset") { const fx = st.x, fy = st.y, fr = st.r; spring(1, 0, SPRINGS.gentle, (p) => { st.x = fx * p; st.y = fy * p; st.r = fr * p; paint(); }); return; }
+    paint();
+  };
+  phone.querySelectorAll("[data-n]").forEach((b) => {
+    const n = b.dataset.n;
+    if (n === "step") {
+      b.addEventListener("click", () => { st.coarse = !st.coarse; b.textContent = st.coarse ? "10 px" : "1 px"; b.setAttribute("aria-label", st.coarse ? "Velocidad: grueso" : "Velocidad: fino"); });
+      return;
+    }
+    let rep, delay;
+    const stop = () => { clearTimeout(delay); clearInterval(rep); };
+    b.addEventListener("pointerdown", () => { doNudge(n); if (n === "reset") return; delay = setTimeout(() => { rep = setInterval(() => doNudge(n), 70); }, 380); });
+    ["pointerup", "pointerleave", "pointercancel"].forEach((ev) => b.addEventListener(ev, stop));
+    b.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); doNudge(n); } });
+  });
+
+  /* magnet demo: finger drags, image jumps onto the guide inside the 8 px threshold, guide grows from the contact */
+  async function magnet() {
+    if (st.busy) return; st.busy = true;
+    const vertical = st.axis++ % 2 === 0;
+    const g = vertical ? gv : gh;
+    const cx = vertical ? 236 : 240, cy = vertical ? 470 : 448;
+    st.r = 0; paint();
+    const start = 46;
+    const pos = (d) => {
+      if (vertical) { st.x = d; st.y = 0; contact.style.transform = `translate(${cx + d}px, ${cy}px)`; }
+      else { st.y = d; st.x = 0; contact.style.transform = `translate(${cx}px, ${cy + d}px)`; }
+      paint();
+    };
+    pos(start);
+    g.style.transformOrigin = vertical ? `180px ${cy}px` : `${cx}px 390px`;
+    g.style.transform = vertical ? "scaleY(0)" : "scaleX(0)"; g.style.opacity = "0";
+    await fade(contact, 1, 120);
+    /* drag at finger speed until inside the threshold */
+    const t0 = performance.now(), dur = reduced() ? 0 : 700;
+    await new Promise((res) => {
+      const step = (now) => {
+        const p = dur ? Math.min(1, (now - t0) / dur) : 1;
+        const d = start - (start - 7) * (1 - Math.pow(1 - p, 2));
+        pos(d);
+        if (p < 1) requestAnimationFrame(step); else res();
+      };
+      requestAnimationFrame(step);
+    });
+    /* snap: haptic pulse + guide born at the contact, slight overshoot */
+    pulse.style.transform = contact.style.transform;
+    if (!reduced()) pulse.animate([{ opacity: 0.8, transform: `${contact.style.transform} scale(.6)` }, { opacity: 0, transform: `${contact.style.transform} scale(1.5)` }], { duration: 220, easing: "ease-out" });
+    g.style.opacity = "1";
+    const snapFrom = 7;
+    const imgSnap = spring(snapFrom, 0, SPRINGS.snappy, (d) => { if (vertical) st.x = d; else st.y = d; paint(); });
+    if (reduced()) { g.style.transform = "none"; g.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120 }); }
+    else await spring(0, 1, SPRINGS.snappy, (s) => { g.style.transform = vertical ? `scaleY(${s})` : `scaleX(${s})`; });
+    await imgSnap;
+    await wait(1200);
+    /* lift: guide fades in 120 ms */
+    await Promise.all([fade(contact, 0, 120), fade(g, 0, 120)]);
+    g.getAnimations().forEach((a) => a.cancel()); g.style.opacity = "0";
+    contact.getAnimations().forEach((a) => a.cancel()); contact.style.opacity = "0";
+    st.busy = false;
+  }
+  section.querySelector('[data-act="magnet"]').addEventListener("click", magnet);
+  let ran = false;
+  new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting && !ran) { ran = true; setTimeout(magnet, 500); } }), { threshold: 0.6 }).observe(phone);
+
+  section.querySelector('[data-seg="bg"]').addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    pressSeg(b); phone.querySelector(".cam-bg").style.backgroundImage = `url('${BG_URL[b.dataset.v]}')`;
+  });
+  section.querySelector('[data-seg="hand"]').addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    pressSeg(b); phone.dataset.hand = b.dataset.v; wake();
+  });
+}
+function pressSeg(b) { b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); }
+function redraw(svg) {
+  if (!svg) return;
+  svg.classList.remove("draw"); void svg.getBoundingClientRect(); svg.classList.add("draw");
+}
+
+/* splitter: same maths as core's computeTiles / maxOverlapPx, inlined for a dependency-free page */
+function computeTiles(w, h, rows, cols, overlap) {
+  const xs = Array.from({ length: cols + 1 }, (_, i) => Math.round((i * w) / cols));
+  const ys = Array.from({ length: rows + 1 }, (_, i) => Math.round((i * h) / rows));
+  const minSpan = (a) => Math.min(...a.slice(1).map((v, i) => v - a[i]));
+  const sides = []; if (cols > 1) sides.push(minSpan(xs)); if (rows > 1) sides.push(minSpan(ys));
+  const ov = Math.min(overlap, sides.length ? Math.floor(Math.min(...sides) / 2) : 0);
+  const out = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const core = { x: xs[c], y: ys[r], width: xs[c + 1] - xs[c], height: ys[r + 1] - ys[r] };
+    const x0 = c > 0 ? xs[c] - ov : xs[c], x1 = c < cols - 1 ? xs[c + 1] + ov : xs[c + 1];
+    const y0 = r > 0 ? ys[r] - ov : ys[r], y1 = r < rows - 1 ? ys[r + 1] + ov : ys[r + 1];
+    out.push({ id: String.fromCharCode(65 + r) + (c + 1), row: r, col: c, coreRect: core, rect: { x: x0, y: y0, width: x1 - x0, height: y1 - y0 } });
+  }
+  return out;
+}
+const SPLIT_IMG = svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#F3F0E8"/><g fill="none" stroke="#1A1A18" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${FINCH.map((d) => `<path d="${d}"/>`).join("")}</g><circle cx="118" cy="78" r="3" fill="#1A1A18"/></svg>`);
+function setupSplit(section) {
+  const frame = section.querySelector("[data-split]");
+  const S = 1000, pct = (v) => (v / S) * 100 + "%";
+  let overlap = 60, apart = true;
+  function build() {
+    const tiles = computeTiles(S, S, 2, 2, overlap);
+    frame.innerHTML = `<div class="split-img">${tiles.map((t) => {
+      const r = t.rect, c = t.coreRect;
+      const exts = [];
+      if (c.x > r.x) exts.push({ l: 0, t: 0, w: c.x - r.x, h: r.height });
+      if (r.x + r.width > c.x + c.width) exts.push({ l: c.x + c.width - r.x, t: 0, w: r.x + r.width - c.x - c.width, h: r.height });
+      if (c.y > r.y) exts.push({ l: 0, t: 0, w: r.width, h: c.y - r.y });
+      if (r.y + r.height > c.y + c.height) exts.push({ l: 0, t: c.y + c.height - r.y, w: r.width, h: r.y + r.height - c.y - c.height });
+      const rel = (v, total) => (v / total) * 100 + "%";
+      const cut = `left:${rel(c.x - r.x, r.width)};top:${rel(c.y - r.y, r.height)};width:${rel(c.width, r.width)};height:${rel(c.height, r.height)};border-width:${[c.y > r.y, r.x + r.width > c.x + c.width, r.y + r.height > c.y + c.height, c.x > r.x].map((b) => (b ? "1.5px" : "0")).join(" ")}`;
+      return `<div class="tile" data-row="${t.row}" data-col="${t.col}" style="left:${pct(r.x)};top:${pct(r.y)};width:${pct(r.width)};height:${pct(r.height)};z-index:${t.row * 2 + t.col}">
+        <div class="img" style="background-image:url('${SPLIT_IMG}');left:${rel(-r.x, r.width)};top:${rel(-r.y, r.height)};width:${rel(S, r.width)};height:${rel(S, r.height)}"></div>
+        ${exts.map((e) => `<div class="ext" style="left:${rel(e.l, r.width)};top:${rel(e.t, r.height)};width:${rel(e.w, r.width)};height:${rel(e.h, r.height)}"></div>`).join("")}
+        <div class="cut" style="${cut}"></div><span class="tag">${t.id}</span></div>`;
+    }).join("")}</div>`;
+    place(true);
+  }
+  /* gap wide enough that the extended strips read as a separate band, not as overlap */
+  const offsetFor = (t) => ({ x: (Number(t.dataset.col) - 0.5) * 2 * 30, y: (Number(t.dataset.row) - 0.5) * 2 * 30 });
+  function place(instant) {
+    frame.querySelectorAll(".tile").forEach((t) => { const o = offsetFor(t); const p = apart ? 1 : 0; t.style.transform = `translate(${o.x * p}px, ${o.y * p}px)`; });
+    frame.classList.toggle("tinted", apart && overlap > 0 && instant);
+  }
+  async function toggle() {
+    apart = !apart;
+    section.querySelector('[data-act="split"]').textContent = apart ? "Juntar" : "Separar";
+    frame.classList.remove("tinted");
+    const tiles = [...frame.querySelectorAll(".tile")];
+    const runs = tiles.map((t, i) => wait(reduced() ? 0 : i * 40).then(() => {
+      const o = offsetFor(t);
+      return spring(apart ? 0 : 1, apart ? 1 : 0, SPRINGS.gentle, (p) => { t.style.transform = `translate(${o.x * p}px, ${o.y * p}px)`; });
+    }));
+    await Promise.all(runs);
+    if (apart && overlap > 0) { await wait(reduced() ? 0 : 60); frame.classList.add("tinted"); }
+  }
+  section.querySelector('[data-act="split"]').addEventListener("click", toggle);
+  section.querySelector('[data-seg="overlap"]').addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    pressSeg(b); overlap = Number(b.dataset.v); build();
+  });
+  build();
+}
+
+function setupSignature(section, dir) {
+  const stage = section.querySelector(".stage");
+  async function play() {
+    if (dir.signature.kind === "stroke") {
+      const svg = stage.querySelector("svg");
+      const finals = svg.querySelectorAll(".final path"), ghost = svg.querySelector(".ghost");
+      const words = svg.querySelectorAll("text"), dot = svg.querySelector("circle");
+      if (reduced()) { [ghost, ...finals, ...words, dot].forEach((el) => el.animate([{ opacity: 0 }, { opacity: el === ghost ? 0 : 1 }], { duration: 120, fill: "forwards" })); return; }
+      words.forEach((w) => w.animate([{ opacity: 0 }, { opacity: 0 }], { duration: 1, fill: "forwards" }));
+      /* sketch: grey ghost strokes draw fast */
+      ghost.animate([{ opacity: 1 }, { opacity: 1 }], { duration: 1, fill: "forwards" });
+      const gp = ghost.querySelectorAll("path");
+      gp.forEach((p, i) => p.animate([{ strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDasharray: 1, strokeDashoffset: 0 }], { duration: 320, delay: i * 50, easing: "cubic-bezier(.3,.6,.3,1)", fill: "forwards" }));
+      finals.forEach((p) => p.animate([{ strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDasharray: 1, strokeDashoffset: 1 }], { duration: 1, fill: "forwards" }));
+      await wait(420);
+      /* final line: draws over the sketch, then the sketch fades and the mark settles */
+      finals.forEach((p, i) => p.animate([{ strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDasharray: 1, strokeDashoffset: 0 }], { duration: 420, delay: i * 70, easing: "cubic-bezier(.2,.7,.2,1)", fill: "forwards" }));
+      await wait(420 + finals.length * 70);
+      ghost.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: "forwards" });
+      words.forEach((w, i) => w.animate([{ opacity: 0, transform: "translateY(4px)" }, { opacity: 1, transform: "none" }], { duration: 220, delay: i * 60, easing: "ease-out", fill: "forwards" }));
+      svg.style.transformOrigin = "20% 70%";
+      spring(1.035, 1, SPRINGS.snappy, (s) => { svg.style.transform = `scale(${s})`; });
+      return;
+    }
+    if (dir.signature.kind === "label") {
+      const labels = [...stage.querySelectorAll(".slabel")];
+      labels.forEach((l) => { l.style.opacity = "0"; });
+      for (const [i, l] of labels.entries()) {
+        await wait(reduced() ? 0 : 90);
+        if (reduced()) { l.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120, fill: "forwards" }); l.style.opacity = "1"; continue; }
+        l.style.opacity = "1";
+        const start = i % 2 ? 6 : -6;
+        spring(1, 0, SPRINGS.playful, (p) => { l.style.transform = `translateY(${-10 * p}px) rotate(${start * p}deg)`; });
+        l.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120, fill: "forwards" });
+        redraw(l.querySelector(".ico"));
+      }
+      return;
+    }
+    const marks = stage.querySelectorAll(".reg-mark"), cross = stage.querySelector(".cross");
+    const dirs = { tl: [-1, -1], tr: [1, -1], bl: [-1, 1], br: [1, 1] };
+    cross.style.opacity = "0";
+    if (reduced()) { cross.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 120, fill: "forwards" }); return; }
+    marks.forEach((m) => { const d = dirs[m.dataset.c]; m.style.transform = `translate(${d[0] * 48}px, ${d[1] * 48}px)`; m.style.opacity = "0"; });
+    await wait(200);
+    await Promise.all([...marks].map((m, i) => wait(i * 40).then(() => {
+      const d = dirs[m.dataset.c]; m.style.opacity = "1";
+      return spring(1, 0, SPRINGS.snappy, (p) => { m.style.transform = `translate(${d[0] * 48 * p}px, ${d[1] * 48 * p}px)`; });
+    })));
+    cross.style.opacity = "1";
+    await spring(0, 1, SPRINGS.snappy, (s) => { cross.style.transform = `scale(${s})`; });
+  }
+  if (dir.signature.kind === "register") stage.querySelector(".pic").style.backgroundImage = `url('${SPLIT_IMG}')`;
+  section.querySelector('[data-act="sig"]').addEventListener("click", play);
+  let ran = false;
+  new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting && !ran) { ran = true; play(); } }), { threshold: 0.7 }).observe(stage);
+}
+
+function fillComparison() {
+  const t = document.getElementById("cmp");
+  const uiWorst = (dir) => Math.min(...UI_CHECKS.map(([f, b, m]) => ratio(dir.colors[f], dir.colors[b]) / m));
+  const cell = (v, min) => `<td class="num ${v >= min ? "pass" : "fail"}">${fmt(v)}</td>`;
+  t.innerHTML = `<thead><tr><th>Dirección</th><th>Borde de píldora</th><th>Texto en píldora</th><th>Guía</th><th>Interfaz (AA)</th><th>Originalidad</th><th>Encaje con «Darwin»</th></tr></thead><tbody>${DIRS.map((d) => `<tr>
+    <td><strong>${d.name}</strong></td>${cell(worstPhoto(d, 0), 3)}${cell(worstPhoto(d, 1), 4.5)}${cell(worstPhoto(d, 3), 3)}
+    <td class="${uiWorst(d) >= 1 ? "pass" : "fail"}">${uiWorst(d) >= 1 ? "Todo cumple" : "Hay fallos"}</td><td>${d.scores.original}</td><td>${d.scores.darwin}</td></tr>`).join("")}</tbody>`;
+  const g = DIRS[0];
+  document.getElementById("rec").innerHTML = `<h2>Recomendación: Grafito y luz, con dos préstamos</h2>
+    <p><strong>Por qué Grafito y luz.</strong> El caso de uso principal es de noche, con un flexo y el móvil a un palmo del folio: una interfaz oscura es la única que no ilumina el papel ni compite con el trazo. En los tres fondos su peor caso es ${fmt(worstPhoto(g, 0))} en el borde de las píldoras, ${fmt(worstPhoto(g, 1))} en el texto y ${fmt(worstPhoto(g, 3))} en la guía. Es además la dirección ya pactada en docs/DESIGN.md, refinada en lo que fallaba (texto sobre bermellón y guías sobre blanco).</p>
+    <p><strong>Qué tomaría de Cianotipo:</strong> las marcas de medida en la guía del imán. Dan lectura de distancia sin añadir texto y refuerzan la sensación de instrumento de precisión.</p>
+    <p><strong>Qué tomaría de Cuaderno de campo:</strong> el árbol del cuaderno de 1837 numerado desde «1» como logotipo, y la etiqueta que se endereza al aparecer para los avisos de estado (imán activado, posición bloqueada).</p>
+    <p><strong>Qué descarto:</strong> Cuaderno de campo como interfaz completa, porque de noche cada píldora clara es un foco junto al dibujo; y Cianotipo como identidad, porque su frialdad técnica se aleja de dibujar por placer.</p>`;
+}
+
+/* ================= boot ================= */
+const root = document.documentElement;
+const rmToggle = document.getElementById("rm-toggle");
+if (matchMedia("(prefers-reduced-motion: reduce)").matches) { root.classList.add("rm"); rmToggle.checked = true; }
+rmToggle.addEventListener("change", () => root.classList.toggle("rm", rmToggle.checked));
+
+const main = document.getElementById("dirs");
+main.innerHTML = DIRS.map(dirTpl).join("");
+const kebab = (s) => s.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+DIRS.forEach((dir) => {
+  const section = document.getElementById(dir.id);
+  for (const [k, v] of Object.entries(dir.colors)) section.style.setProperty("--" + kebab(k), v);
+  for (const [k, v] of Object.entries(dir.vars)) section.style.setProperty(k, v);
+  section.querySelectorAll(".btn").forEach(attachInk);
+  section.querySelectorAll(".icon-cell button").forEach((b) => b.addEventListener("click", () => {
+    const on = b.getAttribute("aria-pressed") !== "true"; b.setAttribute("aria-pressed", String(on)); if (on) redraw(b.querySelector(".ico"));
+  }));
+  setupPhone(section, dir);
+  setupSplit(section);
+  setupSignature(section, dir);
+});
+
+/* fit the 360 px phone into narrow columns without horizontal scroll */
+function fitPhones() {
+  document.querySelectorAll(".phone-col").forEach((col) => {
+    const avail = col.clientWidth;
+    col.querySelector(".phone-scale").style.setProperty("--z", String(Math.min(1, avail / 384)));
+  });
+}
+addEventListener("resize", fitPhones); fitPhones();
+
+Promise.all(Object.keys(BGS).map((k) => sampleBg(k).then((s) => {
+  const f = FALLBACK[k].map(parseColor);
+  SAMPLES[k] = s || { mean: f[0], dark: f[1], bright: f[2] };
+}))).then(() => {
+  DIRS.forEach((dir) => fillTables(document.getElementById(dir.id), dir));
+  fillComparison();
+});
+</script>
+</body>
+</html>

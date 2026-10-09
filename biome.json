@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/assets", "!**/public"]
+    "includes": ["**", "!**/assets", "!**/public", "!docs/design"]
   },
   "formatter": {
     "enabled": true,
