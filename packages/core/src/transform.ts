@@ -2,7 +2,8 @@ import { IDENTITY_TRANSFORM, MIN_SCALE, type Size, type Transform } from "./mode
 
 // Every function here starts with the "worklet" directive so Reanimated can run it on the
 // UI thread. They must stay plain math on plain objects: no Zod, no throws, no closures over
-// anything that is not serializable.
+// anything that is not serializable, and no outer constants in default parameter values (the
+// worklets plugin does not capture them; resolve defaults in the body instead).
 
 export type SnapGuide = "left" | "centerX" | "right" | "top" | "centerY" | "bottom";
 
@@ -306,11 +307,11 @@ export const ROTATION_DEAD_ZONE_DEGREES = 4;
  * Callers accumulate the gesture's raw per-frame change themselves and diff two calls to this
  * function to get the incremental amount to apply that frame (see `applyGesture`'s call sites).
  */
-export function rotationDeadZone(
-  accumulatedDegrees: number,
-  zone: number = ROTATION_DEAD_ZONE_DEGREES,
-): number {
+export function rotationDeadZone(accumulatedDegrees: number, zoneDegrees?: number): number {
   "worklet";
+  // Default resolved in the body, not the signature: the worklets plugin only captures outer
+  // variables the body uses, so a default parameter value is undefined on the UI thread.
+  const zone = zoneDegrees ?? ROTATION_DEAD_ZONE_DEGREES;
   if (Math.abs(accumulatedDegrees) <= zone) return 0;
   return accumulatedDegrees - Math.sign(accumulatedDegrees) * zone;
 }

@@ -193,7 +193,9 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 - Nunca baja de `MIN_SCALE` (mismo límite que `nudge`/`fitTransform`); los espejos pasan intactos.
 - Imán (fase 3, pendiente): se mostrará `snapTransform` sobre el resultado mientras el gesto está activo, y solo se guardará el resultado sin imantar como base del siguiente fotograma — mismo contrato que `snapTransform` hoy.
 
-### `rotationDeadZone(accumulatedDegrees, zone = 4): number`
+### `rotationDeadZone(accumulatedDegrees, zoneDegrees?): number`
+
+- `zoneDegrees` por defecto `ROTATION_DEAD_ZONE_DEGREES` (4). El valor por defecto se resuelve dentro del cuerpo, no en la firma: el plugin de worklets no captura constantes externas usadas en valores por defecto de parámetros, y en el hilo de UI serían `undefined`.
 
 - Convierte la rotación bruta acumulada del gesto (dos dedos, desde que empieza) en la que realmente se aplica: 0 dentro de la zona, continua en el borde (sin salto al cruzarla). Evita que un pellizco que no sale perfectamente recto tuerza la imagen.
 - Quien llama acumula el `rotationChange` bruto de cada fotograma por su cuenta y resta dos llamadas consecutivas (`rotationDeadZone(acumulado)`) para obtener el incremento ya amortiguado que le pasa a `applyGesture`.
