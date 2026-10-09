@@ -216,6 +216,17 @@ export const es = {
     camera: "Entrada a la cámara",
     closeCamera: "Salir de la cámara",
   },
+  cameraSpike: {
+    open: "Cámara (spike)",
+    title: "Spike de cámara",
+    permissionTitle: "Permiso de cámara",
+    permissionBody: "AR-Darwin necesita la cámara para este spike.",
+    grant: "Dar permiso",
+    openSettings: "Abrir ajustes",
+    noDevice: "No se encuentra la cámara trasera",
+    showCalibration: "Cuadrícula",
+    showSketch: "Boceto Darwin",
+  },
   gallery: {
     buttons: "Botones",
     secondary: "Secundario",
