@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { IDENTITY_TRANSFORM, type Transform } from "./models";
+import { IDENTITY_TRANSFORM, MIN_SCALE, type Transform } from "./models";
 import {
   fitTransform,
-  MIN_SCALE,
   NUDGE_STEPS,
   type NudgeAction,
   type NudgeStep,
@@ -57,13 +56,21 @@ describe("snapTransform · move", () => {
 
   it("picks the closest feature on an axis", () => {
     // Width 396: left edge 5 px from 0, center 3 px from 200, right edge 1 px from 400.
-    const result = snapTransform(transform({ x: 203, y: 300 }), { width: 396, height: 50 }, VIEWPORT);
+    const result = snapTransform(
+      transform({ x: 203, y: 300 }),
+      { width: 396, height: 50 },
+      VIEWPORT,
+    );
     expect(result.transform.x).toBe(202);
     expect(result.activeGuides).toEqual(["right"]);
   });
 
   it("reports every guide that lines up after snapping", () => {
-    const result = snapTransform(transform({ x: 203, y: 300 }), { width: 400, height: 50 }, VIEWPORT);
+    const result = snapTransform(
+      transform({ x: 203, y: 300 }),
+      { width: 400, height: 50 },
+      VIEWPORT,
+    );
     expect(result.transform.x).toBe(200);
     expect(result.activeGuides).toEqual(["left", "centerX", "right"]);
   });
@@ -76,10 +83,10 @@ describe("snapTransform · move", () => {
   });
 
   it("scales the bounding box with the transform", () => {
-    // Scale 2: half width 100.
+    // Scale 2: half width 100 → left edge on 0 and, with it, right edge on 200.
     const result = snapTransform(transform({ x: 104, y: 300, scale: 2 }), IMAGE, VIEWPORT);
     expect(result.transform.x).toBe(100);
-    expect(result.activeGuides).toEqual(["left"]);
+    expect(result.activeGuides).toEqual(["left", "centerX"]);
   });
 
   it("is disabled with threshold 0, even when already aligned", () => {
