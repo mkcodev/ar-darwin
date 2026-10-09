@@ -68,8 +68,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     eas: {
-      // Set by `eas init`.
-      projectId: config.extra?.eas?.projectId,
+      // From `eas init`: https://expo.dev/accounts/mkcodev/projects/ar-darwin
+      projectId: "ebd09f80-abcc-4262-98a0-1f78b853323f",
     },
   },
 });
