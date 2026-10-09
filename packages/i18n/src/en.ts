@@ -5,6 +5,10 @@ export const en = {
   app: {
     name: "AR-Darwin",
   },
+  permissions: {
+    camera: "AR-Darwin needs the camera to overlay your image so you can trace it.",
+    photos: "AR-Darwin needs your photo library to import the images you want to trace.",
+  },
   common: {
     replay: "Replay",
     done: "Done",

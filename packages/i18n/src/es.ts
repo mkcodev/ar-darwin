@@ -5,6 +5,10 @@ export const es = {
   app: {
     name: "AR-Darwin",
   },
+  permissions: {
+    camera: "AR-Darwin necesita la cámara para superponer tu imagen y calcarla.",
+    photos: "AR-Darwin necesita la galería para importar las imágenes que vas a calcar.",
+  },
   common: {
     replay: "Repetir",
     done: "Listo",
