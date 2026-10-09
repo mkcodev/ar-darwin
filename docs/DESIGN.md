@@ -62,6 +62,11 @@ Con poca luz, la píldora clara sería lo más brillante de la pantalla y aparta
 
 - **Entrada a la cámara en tema claro:** fundido a grafito (`cameraBackdropColor`) con el muelle `screen` (sin rebote) antes de que aparezca la imagen en vivo; nunca un salto de papel a negro. Con «reducir movimiento», fundido corto de 120 ms.
 - **Barra de estado:** contenido claro dentro de la cámara en los dos temas (`theme.statusBar.camera`); fuera de ella sigue al tema.
+- **Hápticos en iOS:** según la documentación de expo-haptics (SDK 57), el Taptic Engine no vibra mientras la cámara del sistema está activa. El encaje del imán no puede depender solo de la vibración: la guía con rebote y el pulso visual son la señal principal. Comprobarlo en el spike de cámara (fase 2).
+
+## Playground
+
+`pnpm dev:desktop:lan` sirve la web en la red local; `/playground` muestra los tokens, los componentes base y cada movimiento de firma con su versión de «reducir movimiento», usando `packages/core` de verdad (imán, ajuste fino, divisor). En el móvil, `/dev/design` (solo en desarrollo) comprueba fuentes, muelles de Reanimated, hápticos y la entrada a la cámara.
 
 ## Tipografía
 

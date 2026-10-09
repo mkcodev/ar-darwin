@@ -15,6 +15,7 @@ Prompts por fase: docs/PROMPTS.md. Flujo de git (issue, rama, PR, squash): docs/
 ## Comandos
 - pnpm install
 - pnpm dev:mobile  /  pnpm dev:desktop
+- pnpm dev:desktop:lan  (web en la red local; /playground para verlo en el móvil)
 - pnpm test        (Vitest)
 - pnpm typecheck
 - pnpm lint        (Biome)
