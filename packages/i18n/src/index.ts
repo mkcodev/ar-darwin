@@ -1,4 +1,6 @@
-export type { MessageKey, Messages } from "./es";
+export { en } from "./en.ts";
+export type { MessageKey, Messages } from "./es.ts";
+export { es } from "./es.ts";
 export {
   createTranslator,
   createTranslatorFrom,
@@ -6,5 +8,5 @@ export {
   LOCALES,
   type Locale,
   resolveLocale,
-} from "./translator";
-export type { Params, Translator } from "./types";
+} from "./translator.ts";
+export type { Params, Translator } from "./types.ts";

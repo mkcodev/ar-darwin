@@ -1,6 +1,6 @@
-import { en } from "./en";
-import { es, type Messages } from "./es";
-import type { Dictionary, Shape, Translator } from "./types";
+import { en } from "./en.ts";
+import { es, type Messages } from "./es.ts";
+import type { Dictionary, Shape, Translator } from "./types.ts";
 
 export const LOCALES = ["es", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
