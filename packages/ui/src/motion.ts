@@ -74,6 +74,8 @@ export const signature = {
   labelHoldMs: 1600,
   /** Wheel or pinch counts as finished (guides fade, transform is stored) after this pause. */
   gestureSettleMs: 280,
+  /** Long press on the lock button that toggles touch lock. */
+  lockHoldMs: 1000,
 } as const;
 
 export function dampingRatio(s: Pick<SpringToken, "stiffness" | "damping" | "mass">): number {
