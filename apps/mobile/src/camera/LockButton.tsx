@@ -1,6 +1,6 @@
 import { cameraColors, lockButton, radius, signature } from "@ar-darwin/ui";
 import { Canvas, Group, Path, Skia } from "@shopify/react-native-skia";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   type SharedValue,
@@ -28,6 +28,15 @@ const RING_RECT = Skia.XYWHRect(
   lockButton.size - lockButton.ringWidth,
   lockButton.size - lockButton.ringWidth,
 );
+
+/** Static background disc (fill + edge), built once with Skia 2.6's immutable path factories. */
+const DISC = Skia.Path.Circle(
+  lockButton.size / 2,
+  lockButton.size / 2,
+  (lockButton.size - lockButton.edgeWidth) / 2,
+);
+
+const ICON_SIZE = lockButton.size / 2;
 
 /**
  * Touch-lock button (#19): ignores every touch except a 1 s long press (`signature.lockHoldMs`),
@@ -58,11 +67,11 @@ export function LockButton({ locked, isLocked, onLockedChange }: LockButtonProps
       else progress.value = withTiming(0, { duration: 0 });
     });
 
-  const ringPath = useDerivedValue(() => {
-    const path = Skia.Path.Make();
-    path.addArc(RING_RECT, -90, 360 * progress.value);
-    return path;
-  });
+  const ringPath = useDerivedValue(() =>
+    Skia.PathBuilder.Make()
+      .addArc(RING_RECT, -90, 360 * progress.value)
+      .detach(),
+  );
 
   return (
     <GestureDetector gesture={longPress}>
@@ -80,20 +89,9 @@ export function LockButton({ locked, isLocked, onLockedChange }: LockButtonProps
       >
         <Canvas style={StyleSheet.absoluteFill}>
           <Group>
+            <Path path={DISC} color={cameraColors.pillSolid} />
             <Path
-              path={Skia.Path.Make().addCircle(
-                lockButton.size / 2,
-                lockButton.size / 2,
-                (lockButton.size - lockButton.edgeWidth) / 2,
-              )}
-              color={cameraColors.pillSolid}
-            />
-            <Path
-              path={Skia.Path.Make().addCircle(
-                lockButton.size / 2,
-                lockButton.size / 2,
-                (lockButton.size - lockButton.edgeWidth) / 2,
-              )}
+              path={DISC}
               style="stroke"
               strokeWidth={lockButton.edgeWidth}
               color={cameraColors.pillEdge}
@@ -105,15 +103,15 @@ export function LockButton({ locked, isLocked, onLockedChange }: LockButtonProps
               strokeCap="round"
               color={cameraColors.accent}
             />
+            <CameraIcon
+              name="lock"
+              size={ICON_SIZE}
+              x={(lockButton.size - ICON_SIZE) / 2}
+              y={(lockButton.size - ICON_SIZE) / 2}
+              color={isLocked ? cameraColors.accent : cameraColors.text}
+            />
           </Group>
         </Canvas>
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          <CameraIcon
-            name="lock"
-            size={lockButton.size * 0.5}
-            color={isLocked ? cameraColors.accent : cameraColors.text}
-          />
-        </View>
       </Animated.View>
     </GestureDetector>
   );
