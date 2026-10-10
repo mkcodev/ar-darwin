@@ -100,16 +100,19 @@ export function projectRowParams(row: ProjectRow): SqlValue[] {
   ];
 }
 
-/** What the project camera saves (UPDATE_PROJECT_CAMERA). */
+/**
+ * What the project camera saves (UPDATE_PROJECT_CAMERA). `transformViewport` is absent until the
+ * image has been placed once (status and time can be saved before): the project stays unplaced.
+ */
 export type CameraState = Pick<Project, "transform" | "opacity" | "status" | "timeSpentMs"> & {
-  transformViewport: Size;
+  transformViewport?: Size;
 };
 
 /** Positional parameters for UPDATE_PROJECT_CAMERA; `now` becomes `updated_at`. */
 export function cameraStateParams(id: string, state: CameraState, now: Date): SqlValue[] {
   return [
     JSON.stringify(state.transform),
-    JSON.stringify(state.transformViewport),
+    json(state.transformViewport),
     state.opacity,
     state.status,
     state.timeSpentMs,

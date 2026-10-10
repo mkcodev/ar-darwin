@@ -323,6 +323,27 @@ describe("project repository SQL", () => {
     });
   });
 
+  it("saves status and time before the first placement, leaving the project unplaced", () => {
+    const db = openMigrated();
+    const project = newProject("p", "2026-10-10T10:00:00.000Z");
+    save(db, project);
+    db.prepare(UPDATE_PROJECT_CAMERA).run(
+      ...cameraStateParams(
+        project.id,
+        {
+          transform: project.transform,
+          opacity: project.opacity,
+          status: "in_progress",
+          timeSpentMs: 1500,
+        },
+        new Date("2026-10-10T12:00:00.000Z"),
+      ),
+    );
+    const after = load(db, project.id);
+    expect(after).toMatchObject({ status: "in_progress", timeSpentMs: 1500 });
+    expect(after?.transformViewport).toBeUndefined();
+  });
+
   it("rejects an invalid camera state through the CHECK constraints", () => {
     const db = openMigrated();
     const project = newProject("p", "2026-10-10T10:00:00.000Z");
