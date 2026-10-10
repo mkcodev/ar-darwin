@@ -93,11 +93,11 @@ export const icons = {
   ],
   person: [{ type: "circle", cx: 12, cy: 8, r: 3.5 }, path("M5 20.5c0-3.9 3.1-7 7-7s7 3.1 7 7")],
   landscape: [path("M3 19l6-8.5 4.5 6 2.5-3L21 19Z"), { type: "circle", cx: 16.5, cy: 6.5, r: 2 }],
+  // A manga page: panels split by slanted gutters. Not an eye, which reads as show/hide.
   manga: [
-    path("M3.5 12c4.5-5 12.5-5 17 0"),
-    path("M17.5 8.3l1.5-2M20.5 12l1.5-1.2"),
-    { type: "circle", cx: 12, cy: 13.5, r: 4 },
-    { type: "circle", cx: 13.5, cy: 12, r: 1.2, filled: true },
+    { type: "rect", x: 3.5, y: 3, width: 17, height: 18, rx: 1.5 },
+    path("M3.5 11h9.5l2-8"),
+    path("M13 11l-2.5 10"),
   ],
   object: [
     path("M5 8h11v8a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4Z"),
