@@ -48,8 +48,11 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - `app.config.ts` sustituye a `app.json`: variantes por `APP_VARIANT` (lo fija `eas.json`). `development` →
   `com.mkcodev.ardarwin.dev`, nombre «AR-Darwin Dev», icono adaptativo bermellón. Cualquier otro valor
   (producción) → `com.mkcodev.ardarwin`, «AR-Darwin», icono normal.
-- `eas.json`: perfil `development` (`developmentClient`, `distribution: internal`, APK). Perfiles
-  `preview`/`production` se añaden en la fase 4.
+- `eas.json`: perfil `development` (`developmentClient`, `distribution: internal`, APK) y perfil
+  `preview` (release, `distribution: internal`, APK; issue #20): `APP_VARIANT=preview` da el
+  paquete, nombre e icono de producción, y `EXPO_PUBLIC_SPIKES=1` deja accesible el spike de cámara
+  (`apps/mobile/src/spikes.ts`: `__DEV__ ||` esa variable, que Metro inlinea al empaquetar). Sirve
+  para medir rendimiento en código release. `production` se añade en la fase 4.
 - Permisos de cámara y galería (`NSCameraUsageDescription`, `expo-image-picker`) desde
   `packages/i18n` (`permissions.camera`/`permissions.photos`, es/en), nunca a mano en el config.
 - `packages/i18n` expone `es`/`en` como valores (no solo tipos) para que `app.config.ts` los lea en
@@ -69,8 +72,14 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   sin `constraints`, la preview negocia solo por `ResolutionBiasConstraint` y prefiere cualquier
   formato «al menos tan grande como la pantalla», ignorando aspecto — ya suele quedar lejos de la
   resolución máxima del sensor. Fijar `fps: 30` acota además el formato a uno que la soporte.
-  Pendiente de medir en la puerta de la fase 2 (issue #20): fps real, consumo y si compensa acotar
-  también la resolución explícitamente.
+  Se mide en la puerta de la fase 2 (issue #20): protocolo y resultados en docs/spikes/camera.md.
+- **Contador de fps (issue #20):** `FpsMeter`, activable con la píldora «fps». UI: `useFrameCallback`
+  de Reanimated pasa cada intervalo de vsync a `addFrame` (`packages/core/src/frameStats.ts`,
+  worklets) en el hilo de UI. JS: bucle de `requestAnimationFrame` con el mismo acumulador. Una vez
+  por segundo un `setInterval` resume y reinicia las dos ventanas con un solo `setState` (nunca por
+  frame). Tirón = intervalo > 1,5 × el presupuesto de la pantalla, que `frameBudgetMs` deduce del
+  intervalo más corto visto, redondeado a 60/90/120/144 Hz (React Native no expone la frecuencia).
+  Solo se monta visible: `useFrameCallback` pide un frame en cada vsync y añade carga.
 - El `<Canvas>` de Skia va encima de `<Camera>` sin ser `opaque`, así que en Android usa
   `TextureView` (el valor por defecto): compone como una vista normal de React Native, respetando
   el orden de apilado con la cámara, a costa de una copia de textura extra. Alternativa a probar en
@@ -170,7 +179,7 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 - Límite del solape, por eje con cortes: ancho mínimo de los `coreRect` si `cols > 1`, alto mínimo si `rows > 1`; devuelve `floor(menor / 2)`. Con 1×1, 0.
 - Misma validación que `computeTiles`. La UI lo usa como máximo del slider del borde extendido.
 
-Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone`, `radiansToDegrees`, `normalizeRotation` y los helpers internos) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones, y sin constantes externas en valores por defecto de parámetros (el plugin de worklets no las captura). `transform.worklet.test.ts` lo comprueba en CI, porque Vitest ejecuta JS normal y esos fallos solo aparecen en el móvil.
+Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone`, `radiansToDegrees`, `normalizeRotation` y los helpers internos) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones, y sin constantes externas en valores por defecto de parámetros (el plugin de worklets no las captura). `worklet.test.ts` lo comprueba en CI (también para `frameStats.ts`), porque Vitest ejecuta JS normal y esos fallos solo aparecen en el móvil.
 
 ### `snapTransform(transform, imageSize, viewport, options?): { transform, activeGuides }`
 

@@ -21,6 +21,8 @@ import { Camera, useCameraDevice } from "react-native-vision-camera";
 import { t } from "../i18n";
 import { CameraIssueNotice } from "./CameraIssueNotice";
 import { CameraPermissionGate } from "./CameraPermissionGate";
+import { FpsMeter } from "./FpsMeter";
+import { FpsToggle } from "./FpsToggle";
 import { LockButton } from "./LockButton";
 import { LockedToast } from "./LockedToast";
 import { OpacitySlider } from "./OpacitySlider";
@@ -37,7 +39,8 @@ const TEST_IMAGES = {
  * to reset, opacity slider — all in `TestImageCanvas`/`useOverlayGestures`) and #19 (touch lock,
  * `useKeepAwake`, the error notice below). `constraints={[{fps: 30}]}` biases the preview towards
  * the screen's own resolution instead of the sensor's maximum (see docs/ARCHITECTURE.md) — to be
- * measured for real in #20.
+ * measured for real in #20, with `FpsMeter` (UI and JS fps, toggled by `FpsToggle`) in the
+ * `preview` release build (see docs/spikes/camera.md).
  *
  * Camera errors (#19): vision-camera's `onError` only ever fires for CameraX's CRITICAL errors
  * (disabled by policy, removed, fatal) — `classifyCameraIssue` (core) reads its plain-text
@@ -56,6 +59,7 @@ export function CameraSpikeScreen() {
   const [issue, setIssue] = useState<CameraIssueKind | null>(null);
   const [cameraKey, setCameraKey] = useState(0);
   const [unlockToastTrigger, setUnlockToastTrigger] = useState(0);
+  const [showFps, setShowFps] = useState(false);
 
   useKeepAwake();
 
@@ -101,7 +105,7 @@ export function CameraSpikeScreen() {
                 locked={locked}
               />
               {/* The slider stays usable while locked (opacity is tuned while drawing); the
-                  image toggle hides but keeps its space so the slider doesn't jump. */}
+                  image and fps toggles hide but keep their space so the slider doesn't jump. */}
               <View style={styles.controls} pointerEvents="box-none">
                 <OpacitySlider value={imageOpacity} />
                 <View
@@ -114,6 +118,7 @@ export function CameraSpikeScreen() {
                     showingSketch={showingSketch}
                     onToggle={() => setShowingSketch((s) => !s)}
                   />
+                  <FpsToggle showing={showFps} onToggle={() => setShowFps((s) => !s)} />
                 </View>
               </View>
             </>
@@ -133,6 +138,10 @@ export function CameraSpikeScreen() {
       >
         <LockButton locked={locked} isLocked={isLocked} onLockedChange={setIsLocked} />
       </View>
+      {/* Stays visible while locked: the 10-minute test reads it while drawing. */}
+      {showFps && (
+        <FpsMeter top={insets.top + space[5]} side={lockSide === "left" ? "right" : "left"} />
+      )}
       <LockedToast trigger={unlockToastTrigger} top={insets.top + space[5]} />
     </View>
   );
@@ -154,7 +163,7 @@ const styles = StyleSheet.create({
     bottom: space[10],
     gap: space[4],
   },
-  toggleRow: { alignItems: "center" },
+  toggleRow: { flexDirection: "row", justifyContent: "center", gap: space[3] },
   hidden: { opacity: 0 },
   lockWrap: { position: "absolute" },
 });

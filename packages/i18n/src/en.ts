@@ -232,6 +232,15 @@ export const en = {
     locked: "Locked",
     unlockToExit: "Unlock to leave",
     retry: "Retry",
+    fps: {
+      toggle: "fps",
+      show: "Show fps counter",
+      hide: "Hide fps counter",
+      now: "UI {ui} · JS {js}",
+      measuring: "Measuring…",
+      min: "min UI {ui} · JS {js}",
+      hitches: "worst {worst} ms · hitches {long}",
+    },
     issue: {
       disabled: {
         title: "Camera disabled",

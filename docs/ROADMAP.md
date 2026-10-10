@@ -40,9 +40,10 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 - [x] Cámara trasera a pantalla completa (vision-camera) con imagen de prueba en Canvas de Skia (issue #17)
 - [x] Gestos simultáneos (arrastrar, pellizcar, rotar) y slider de opacidad en el hilo de UI (issue #18)
 - [x] Bloqueo de toques (pulsación larga de 1 s en el candado) y pantalla siempre encendida (issue #19)
-- [ ] Prueba real de 10 min dibujando: medir fps (también en un Android modesto) y anotar resultados
+- [x] Prueba real de 10 min dibujando: medir fps (también en un Android modesto) y anotar resultados (issue #20, docs/spikes/camera.md)
 
 **Puerta:** fluido en móvil real (también en un Android modesto) y la imagen no se mueve al bloquear.
+Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 
 ## 3 · MVP móvil
 
