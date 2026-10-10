@@ -82,8 +82,10 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   público). Ver `SOURCES.md` en esa carpeta.
 - **Bloqueo de toques y errores de cámara (issue #19):** `locked` es un `SharedValue<boolean>`
   compartido entre `LockButton` (lo escribe tras 1 s de pulsación larga) y `useOverlayGestures`
-  (cada `onChange`/`reset` sale si `locked.value`, en el hilo de UI: una pulsación sale ya en curso
-  al bloquear no se completa). `onError` de `<Camera>` solo salta con los errores CRITICAL de
+  (cada `onChange`/`reset` sale si `locked.value`, en el hilo de UI: un arrastre que ya estaba en
+  curso al bloquear se para en seco). El slider de opacidad sigue activo con el candado. Salir hacia atrás
+  se bloquea con `usePreventRemove` (expo-router/react-navigation), no con `BackHandler`: un
+  listener de `BackHandler` no paraba el gesto atrás de Android. `onError` de `<Camera>` solo salta con los errores CRITICAL de
   CameraX (desactivada por política, retirada, fatal); una cámara ya abierta por otra app es
   RECOVERABLE y CameraX la reporta como `onInterruptionStarted`/`onInterruptionEnded`, no como
   error — por eso `CameraSpikeScreen` escucha las dos cosas. `classifyCameraIssue` (packages/core)

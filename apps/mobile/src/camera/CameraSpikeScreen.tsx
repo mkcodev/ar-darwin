@@ -11,9 +11,10 @@ import {
 } from "@ar-darwin/ui";
 import { useKeepAwake } from "expo-keep-awake";
 import { Stack, useIsFocused } from "expo-router";
+import { usePreventRemove } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
-import { BackHandler, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, useCameraDevice } from "react-native-vision-camera";
@@ -58,17 +59,14 @@ export function CameraSpikeScreen() {
 
   useKeepAwake();
 
-  // While locked, the hardware back button/gesture must not leave the camera (#19): swallow it
-  // and nudge the person towards the lock instead. The iOS swipe-back equivalent is the
-  // `gestureEnabled` below.
-  useEffect(() => {
-    if (!isLocked) return;
-    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      setUnlockToastTrigger((n) => n + 1);
-      return true;
-    });
-    return () => subscription.remove();
-  }, [isLocked]);
+  // While locked, going back must not leave the camera (#19): block the screen's removal and
+  // nudge the person towards the lock instead. A raw `BackHandler` listener wasn't enough — the
+  // Android back gesture still left the screen — so this works at the navigation level, where
+  // every way of leaving (button, gesture, `router.back()`) ends up. The iOS swipe-back, which
+  // native-stack can't intercept this way, is disabled with `gestureEnabled` below.
+  usePreventRemove(isLocked, () => {
+    setUnlockToastTrigger((n) => n + 1);
+  });
 
   const retry = () => {
     setIssue(null);
@@ -102,17 +100,22 @@ export function CameraSpikeScreen() {
                 opacity={imageOpacity}
                 locked={locked}
               />
-              {!isLocked && (
-                <View style={styles.controls} pointerEvents="box-none">
-                  <OpacitySlider value={imageOpacity} />
-                  <View style={styles.toggleRow}>
-                    <TestImageToggle
-                      showingSketch={showingSketch}
-                      onToggle={() => setShowingSketch((s) => !s)}
-                    />
-                  </View>
+              {/* The slider stays usable while locked (opacity is tuned while drawing); the
+                  image toggle hides but keeps its space so the slider doesn't jump. */}
+              <View style={styles.controls} pointerEvents="box-none">
+                <OpacitySlider value={imageOpacity} />
+                <View
+                  style={[styles.toggleRow, isLocked && styles.hidden]}
+                  pointerEvents={isLocked ? "none" : "box-none"}
+                  accessibilityElementsHidden={isLocked}
+                  importantForAccessibility={isLocked ? "no-hide-descendants" : "auto"}
+                >
+                  <TestImageToggle
+                    showingSketch={showingSketch}
+                    onToggle={() => setShowingSketch((s) => !s)}
+                  />
                 </View>
-              )}
+              </View>
             </>
           )
         ) : (
@@ -130,7 +133,7 @@ export function CameraSpikeScreen() {
       >
         <LockButton locked={locked} isLocked={isLocked} onLockedChange={setIsLocked} />
       </View>
-      <LockedToast trigger={unlockToastTrigger} />
+      <LockedToast trigger={unlockToastTrigger} top={insets.top + space[5]} />
     </View>
   );
 }
@@ -152,5 +155,6 @@ const styles = StyleSheet.create({
     gap: space[4],
   },
   toggleRow: { alignItems: "center" },
+  hidden: { opacity: 0 },
   lockWrap: { position: "absolute" },
 });

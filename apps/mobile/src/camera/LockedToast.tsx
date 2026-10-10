@@ -15,10 +15,12 @@ type LockedToastProps = {
   /** Bumped by `CameraSpikeScreen` every time the blocked hardware back press needs re-showing
    *  this toast (a plain counter so the same message can fade in again while already visible). */
   trigger: number;
+  /** Distance from the top of the screen (safe area included): the slider owns the bottom. */
+  top: number;
 };
 
 /** "Unlock to leave" (#19): shown when the back button/gesture is blocked while locked. */
-export function LockedToast({ trigger }: LockedToastProps) {
+export function LockedToast({ trigger, top }: LockedToastProps) {
   const reduce = useReducedMotion();
   const opacity = useSharedValue(0);
 
@@ -34,7 +36,7 @@ export function LockedToast({ trigger }: LockedToastProps) {
   const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   return (
-    <Animated.View style={[styles.pill, style]} pointerEvents="none">
+    <Animated.View style={[styles.pill, { top }, style]} pointerEvents="none">
       <Text style={[styles.label, { color: cameraColors.text }]}>
         {t("cameraSpike.unlockToExit")}
       </Text>
@@ -46,7 +48,6 @@ const styles = StyleSheet.create({
   pill: {
     position: "absolute",
     alignSelf: "center",
-    bottom: space[10],
     paddingHorizontal: space[5],
     paddingVertical: space[3],
     borderRadius: radius.pill,

@@ -89,7 +89,9 @@ Para colocar la imagen con precisión sin pellizcar.
 
 ### Bloqueo de pantalla
 
-- Ignora todos los toques salvo una pulsación larga de 1 s sobre el candado.
+- Ignora todos los toques salvo una pulsación larga de 1 s sobre el candado y el slider de
+  opacidad (se ajusta mientras se dibuja).
+- Mientras está bloqueado, el botón o gesto atrás no sale de la cámara: avisa «Desbloquea para salir».
 - La pantalla no se apaga mientras la cámara está abierta.
 
 ### Menú
