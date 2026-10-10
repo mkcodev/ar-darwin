@@ -6,6 +6,7 @@ import { locale, t } from "../i18n";
 import { loadFonts } from "../theme/loadFonts";
 import { useThemePreference } from "../theme/useThemePreference";
 import { CameraDemo } from "./camera/CameraDemo";
+import { CategoryIconSheet } from "./gallery/CategoryIconSheet";
 import { ComponentsGallery } from "./gallery/ComponentsGallery";
 import { IconGallery } from "./gallery/IconGallery";
 import "./playground.css";
@@ -99,6 +100,9 @@ export function Playground() {
           <ComponentsGallery />
           <h3 className="token-title">{t("playground.sections.icons")}</h3>
           <IconGallery />
+          <h3 className="token-title">{t("playground.sections.categoryIcons")}</h3>
+          <p className="pg-note">{t("playground.sections.categoryIconsLead")}</p>
+          <CategoryIconSheet />
         </Section>
 
         <Section

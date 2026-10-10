@@ -46,6 +46,28 @@ Medidos sobre tres fotos de folio (flexo de noche, luz de día, poca luz; extrem
 - **Guía en claro.** El azul de lápiz de «Cuaderno» daba 2,4:1 sobre papel; #1F7FB8 da ≥ 3:1.
 - El bermellón nunca va directamente sobre la foto (1,3:1 sobre gris medio): siempre sobre una píldora o superficie.
 
+### Categorías (issue #38)
+
+Paleta propia de 8 tintas (`categoryInk` en primitivas, `theme.color.category[clave]` en los temas). La categoría guarda la **clave** (`"ochre"`), nunca un hex: el color sigue al tema activo. Las 6 de serie usan 6; `pine` y `lichen` quedan para las categorías propias.
+
+| Clave | Oscuro | Claro | Categoría de serie |
+| --- | --- | --- | --- |
+| ochre | #D5B276 | #7A5B01 | Animales |
+| plum | #DFABD2 | #883679 | Personas |
+| moss | #6E9D6F | #1C5C23 | Paisajes |
+| indigo | #9499D3 | #4642A2 | Manga y anime |
+| sepia | #B2856E | #623A1D | Objetos |
+| slate | #737D93 | #3A4567 | Letras |
+| pine | #81C1A8 | #197E61 | — |
+| lichen | #B6DBA0 | #718109 | — |
+
+- **El color de categoría nunca va solo; siempre con icono o nombre.** Hay personas que no distinguen ciertos pares de tintas, y el color no debe ser la única pista.
+- **Pigmento, no neón.** Sobre grafito el croma (OKLCH) no pasa de 0,09 (`MAX_CATEGORY_CHROMA_DARK`): se lee como tiza o pigmento, igual de terroso que en papel. El bermellón es el único color cálido y vivo de la interfaz; el ocre tira a amarillo apagado.
+- Se usa como trazo de icono o punto, no como fondo de texto: ≥ 3:1 sobre lienzo, superficie y elevado en los dos temas (el peor da 3,4:1, `slate` en oscuro).
+- **Distinción perceptiva:** ΔE en OKLab ≥ 0,10 entre cada par de claves y frente a guía y peligro, ≥ 0,15 frente al acento y ≥ 0,12 frente a `text.primary` (que ningún color parezca un icono neutro) y ≥ 0,08 frente a `text.muted` (que ningún icono parezca desactivado), en los dos temas (`MIN_CATEGORY_DELTA_E`, `MIN_CATEGORY_ACCENT_DELTA_E`, `MIN_CATEGORY_TEXT_DELTA_E`, `MIN_CATEGORY_MUTED_DELTA_E`). El más cercano es lichen en oscuro (0,123), y por eso es más verde y algo más oscuro que un liquen claro. Con la misma luminosidad, 8 tintas quedaban a 0,04: por eso la luminosidad varía por clave.
+- Tonos lejos del bermellón (acción), del azul no-foto (guías) y del rosa de peligro, para que una categoría nunca parezca un estado.
+- El icono de manga son viñetas con cortes en diagonal, no un ojo (se confundiría con mostrar/ocultar).
+
 ### La cámara es siempre oscura
 
 En los dos temas, la cámara usa las mismas píldoras grafito (`cameraColors`); el tema claro se aplica a biblioteca, divisor, ajustes y hojas.
@@ -153,7 +175,7 @@ Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:
 
 ## Iconos
 
-Set propio en `packages/ui/src/icons.ts` (22 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
+Set propio en `packages/ui/src/icons.ts` (28 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
 
 Todo respeta la opción del sistema de reducir movimiento (sustituir por fundidos cortos o nada).
 

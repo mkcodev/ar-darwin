@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_CATEGORY_IDS, IDENTITY_TRANSFORM, type Project } from "../models";
 import { createProject, createProjectId } from "../project";
 import {
+  DEFAULT_CATEGORY_STYLES,
   LATEST_SCHEMA_VERSION,
   MIGRATIONS,
   pendingMigrations,
@@ -29,17 +30,22 @@ import {
 } from "./rows";
 
 /** The same steps as apps/mobile/src/storage/database.ts, on Node's built-in SQLite. */
-function openMigrated(): DatabaseSync {
-  const db = new DatabaseSync(":memory:");
-  db.exec("PRAGMA foreign_keys = ON");
+function migrate(db: DatabaseSync, upTo = LATEST_SCHEMA_VERSION): DatabaseSync {
   const version = Number(db.prepare(SELECT_SCHEMA_VERSION).get()?.user_version);
   for (const migration of pendingMigrations(version)) {
+    if (migration.version > upTo) break;
     db.exec("BEGIN");
     db.exec(migration.sql);
     db.exec(setSchemaVersionSql(migration.version));
     db.exec("COMMIT");
   }
   return db;
+}
+
+function openMigrated(upTo = LATEST_SCHEMA_VERSION): DatabaseSync {
+  const db = new DatabaseSync(":memory:");
+  db.exec("PRAGMA foreign_keys = ON");
+  return migrate(db, upTo);
 }
 
 function save(db: DatabaseSync, project: Project): void {
@@ -97,7 +103,7 @@ describe("migrations on SQLite", () => {
   });
 
   it("seeds the built-in categories with i18n keys, in order", () => {
-    const categories = openMigrated().prepare(SELECT_CATEGORIES).all().map(categoryFromRow);
+    const categories = openMigrated(1).prepare(SELECT_CATEGORIES).all().map(categoryFromRow);
     expect(categories.map((c) => c.id)).toEqual([...DEFAULT_CATEGORY_IDS]);
     expect(categories[0]).toEqual({
       id: "animals",
@@ -105,6 +111,59 @@ describe("migrations on SQLite", () => {
       isDefault: true,
       order: 0,
     });
+  });
+
+  it("v2 gives every built-in category its colour key and icon", () => {
+    const categories = openMigrated().prepare(SELECT_CATEGORIES).all().map(categoryFromRow);
+    for (const category of categories) {
+      const id = DEFAULT_CATEGORY_IDS.find((d) => d === category.id);
+      expect(id).toBeDefined();
+      if (id === undefined) continue;
+      expect(category.color).toBe(DEFAULT_CATEGORY_STYLES[id].color);
+      expect(category.icon).toBe(DEFAULT_CATEGORY_STYLES[id].icon);
+    }
+    expect(categories[0]).toEqual({
+      id: "animals",
+      key: "categories.animals",
+      isDefault: true,
+      color: "ochre",
+      icon: "animal",
+      order: 0,
+    });
+  });
+
+  it("v2 never overwrites a colour or icon already set", () => {
+    const db = openMigrated(1);
+    db.exec("UPDATE categories SET color = 'pine' WHERE id = 'animals'");
+    db.exec("UPDATE categories SET icon = 'image' WHERE id = 'people'");
+    migrate(db);
+    const byId = new Map(
+      db
+        .prepare(SELECT_CATEGORIES)
+        .all()
+        .map(categoryFromRow)
+        .map((c) => [c.id, c]),
+    );
+    expect(byId.get("animals")).toMatchObject({ color: "pine", icon: "animal" });
+    expect(byId.get("people")).toMatchObject({ color: "plum", icon: "image" });
+  });
+
+  it("v2 only touches built-in categories", () => {
+    const db = openMigrated(1);
+    db.exec("INSERT INTO categories (id, name, sort_order) VALUES ('birds', 'Pájaros', 6)");
+    migrate(db);
+    const birds = db.prepare(SELECT_CATEGORIES).all().map(categoryFromRow).at(-1);
+    expect(birds).toEqual({ id: "birds", name: "Pájaros", isDefault: false, order: 6 });
+  });
+
+  it("a v1 database with projects migrates to the latest without losing them", () => {
+    const db = openMigrated(1);
+    const project = newProject("p", "2026-10-10T10:00:00.000Z", { categoryIds: ["animals"] });
+    save(db, project);
+    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2]);
+    migrate(db);
+    expect(db.prepare(SELECT_SCHEMA_VERSION).get()?.user_version).toBe(LATEST_SCHEMA_VERSION);
+    expect(load(db, project.id)).toEqual(project);
   });
 
   it("enforces the CHECK constraints", () => {

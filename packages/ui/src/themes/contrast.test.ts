@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { CAMERA_BACKDROPS, REFERENCE_SURFACES } from "../cameraBackdrops";
-import { blendOver, contrastRatio, MIN_CONTRAST, type Rgba } from "../contrast";
+import {
+  CATEGORY_COLOR_KEYS,
+  type CategoryColorKey,
+  MAX_CATEGORY_CHROMA_DARK,
+  MIN_CATEGORY_ACCENT_DELTA_E,
+  MIN_CATEGORY_DELTA_E,
+  MIN_CATEGORY_MUTED_DELTA_E,
+  MIN_CATEGORY_TEXT_DELTA_E,
+} from "../categoryColors";
+import { blendOver, contrastRatio, deltaEOk, MIN_CONTRAST, type Rgba, toOklab } from "../contrast";
 import { themes } from "./index";
 import type { ColorTokens } from "./types";
 
@@ -93,6 +102,48 @@ describe.each(Object.values(themes))("$name theme", (theme) => {
       );
       expect(guide).toBeGreaterThanOrEqual(nonText);
     });
+  });
+});
+
+describe.each(Object.values(themes))("$name theme: category palette", (theme) => {
+  const c = theme.color;
+  const semantic = { guide: c.guide.default, danger: c.danger };
+
+  describe.each(CATEGORY_COLOR_KEYS)("%s", (key) => {
+    it.each(["canvas", "surface", "raised"] as const)("≥ 3 on bg.%s (icon stroke)", (bg) => {
+      expect(contrastRatio(c.category[key], c.bg[bg])).toBeGreaterThanOrEqual(nonText);
+    });
+    it.each(Object.entries(semantic))("is told apart from %s (OKLab ΔE)", (_name, color) => {
+      expect(deltaEOk(c.category[key], color)).toBeGreaterThanOrEqual(MIN_CATEGORY_DELTA_E);
+    });
+    it("stays well apart from the accent (OKLab ΔE)", () => {
+      expect(deltaEOk(c.category[key], c.accent.default)).toBeGreaterThanOrEqual(
+        MIN_CATEGORY_ACCENT_DELTA_E,
+      );
+    });
+    it("does not pass for a neutral icon (OKLab ΔE from text.primary)", () => {
+      expect(deltaEOk(c.category[key], c.text.primary)).toBeGreaterThanOrEqual(
+        MIN_CATEGORY_TEXT_DELTA_E,
+      );
+    });
+    it("does not look disabled (OKLab ΔE from text.muted)", () => {
+      expect(deltaEOk(c.category[key], c.text.muted)).toBeGreaterThanOrEqual(
+        MIN_CATEGORY_MUTED_DELTA_E,
+      );
+    });
+    if (theme.name === "dark") {
+      it("reads as pigment on graphite, not neon (OKLCH chroma)", () => {
+        const [, a, b] = toOklab(c.category[key]);
+        expect(Math.hypot(a, b)).toBeLessThanOrEqual(MAX_CATEGORY_CHROMA_DARK);
+      });
+    }
+  });
+
+  const pairs = CATEGORY_COLOR_KEYS.flatMap((a, i) =>
+    CATEGORY_COLOR_KEYS.slice(i + 1).map((b): [CategoryColorKey, CategoryColorKey] => [a, b]),
+  );
+  it.each(pairs)("%s and %s are told apart (OKLab ΔE)", (a, b) => {
+    expect(deltaEOk(c.category[a], c.category[b])).toBeGreaterThanOrEqual(MIN_CATEGORY_DELTA_E);
   });
 });
 

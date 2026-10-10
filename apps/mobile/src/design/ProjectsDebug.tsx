@@ -5,8 +5,10 @@ import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Button } from "../components/Button";
+import { Icon } from "../components/Icon";
 import { t } from "../i18n";
 import { categoryLabel } from "../storage/categoryLabel";
+import { categoryStyle } from "../storage/categoryStyle";
 import { storedFileExists, writeProjectFile } from "../storage/files";
 import {
   deleteProject,
@@ -98,6 +100,19 @@ export function ProjectsDebug() {
   return (
     <View style={styles.block}>
       <Text style={[text("body"), { color: c.text.muted }]}>{t("devDesign.projects.hint")}</Text>
+      <View style={styles.categories}>
+        {categories.map((category) => {
+          const style = categoryStyle(category, theme);
+          return (
+            <View key={category.id} style={styles.category}>
+              <Icon name={style.icon} color={style.color} />
+              <Text style={[text("label"), { color: c.text.primary }]}>
+                {categoryLabel(category)}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
       <Button variant="primary" icon="plus" disabled={image === null} onPress={create}>
         {t("devDesign.projects.create")}
       </Button>
@@ -133,4 +148,6 @@ export function ProjectsDebug() {
 const styles = StyleSheet.create({
   block: { gap: space[3] },
   row: { gap: space[1] },
+  categories: { flexDirection: "row", flexWrap: "wrap", gap: space[3] },
+  category: { flexDirection: "row", alignItems: "center", gap: space[2] },
 });

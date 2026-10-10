@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { isCategoryColorKey } from "./categoryColors";
 import { haptics } from "./haptics";
-import { icons } from "./icons";
+import { icons, isIconName } from "./icons";
 import { controlsSide, radius, space, touchTarget } from "./layout";
 import {
   dampingRatio,
@@ -136,8 +137,17 @@ describe("spring sampling", () => {
 });
 
 describe("haptics, icons and handedness", () => {
-  it("has the 22 icons of the set", () => {
-    expect(Object.keys(icons)).toHaveLength(22);
+  it("has the 28 icons of the set", () => {
+    expect(Object.keys(icons)).toHaveLength(28);
+  });
+  it("narrows stored icon names", () => {
+    expect(isIconName("animal")).toBe(true);
+    expect(isIconName("toString")).toBe(false);
+    expect(isIconName("")).toBe(false);
+  });
+  it("narrows stored category colour keys", () => {
+    expect(isCategoryColorKey("ochre")).toBe(true);
+    expect(isCategoryColorKey("#FEB43A")).toBe(false);
   });
   it("map every semantic event to an expo-haptics family", () => {
     for (const h of Object.values(haptics))

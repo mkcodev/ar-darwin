@@ -1,6 +1,7 @@
 import { type IconName, icon } from "@ar-darwin/ui";
 import { Canvas } from "@shopify/react-native-skia";
 import { View } from "react-native";
+import { useReduceMotion } from "../theme/ReduceMotionProvider";
 import { useTheme } from "../theme/ThemeProvider";
 import { SkiaIcon } from "./SkiaIcon";
 
@@ -20,6 +21,7 @@ type IconProps = {
 /** A standalone icon: its own `<Canvas>` with a `SkiaIcon` inside. */
 export function Icon({ name, size = icon.size, color, label, drawKey = 0, flip }: IconProps) {
   const { theme } = useTheme();
+  const { reduce } = useReduceMotion();
   return (
     <View
       accessible={label !== undefined}
@@ -35,6 +37,7 @@ export function Icon({ name, size = icon.size, color, label, drawKey = 0, flip }
           size={size}
           color={color ?? theme.color.text.primary}
           drawKey={drawKey}
+          reduce={reduce}
         />
       </Canvas>
     </View>
