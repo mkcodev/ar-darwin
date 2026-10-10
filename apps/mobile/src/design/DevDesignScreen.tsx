@@ -1,12 +1,9 @@
 import {
-  DEFAULT_THEME_PREFERENCE,
   type HapticEvent,
   haptics,
   radius,
-  resolveTheme,
   space,
   spring,
-  type ThemePreference,
   type TypeRoleName,
   toNativeTextStyle,
   touchTarget,
@@ -14,13 +11,13 @@ import {
 } from "@ar-darwin/ui";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, useColorScheme, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { t } from "../i18n";
+import { playHaptic } from "../theme/playHaptic";
+import { useTheme } from "../theme/ThemeProvider";
 import { CameraEntry } from "./CameraEntry";
-import { playHaptic } from "./playHaptic";
 import { SpringRow } from "./SpringRow";
 import { ThemeSelector } from "./ThemeSelector";
-import { useAppFonts } from "./useAppFonts";
 
 const roles = Object.keys(typography) as TypeRoleName[];
 const hapticEvents = Object.keys(haptics) as HapticEvent[];
@@ -30,13 +27,10 @@ const hapticEvents = Object.keys(haptics) as HapticEvent[];
  * Reanimated springs, expo-haptics and the camera's dark entry with its light status bar.
  */
 export function DevDesignScreen() {
-  const system = useColorScheme();
-  const [preference, setPreference] = useState<ThemePreference>(DEFAULT_THEME_PREFERENCE);
+  const { theme, preference, setPreference } = useTheme();
   const [cameraOpen, setCameraOpen] = useState(false);
-  const fontsReady = useAppFonts();
-  const theme = resolveTheme(preference, system === "light" || system === "dark" ? system : null);
   const c = theme.color;
-  const text = (role: TypeRoleName) => (fontsReady ? toNativeTextStyle(typography[role]) : {});
+  const text = (role: TypeRoleName) => toNativeTextStyle(typography[role]);
 
   const swatches: [string, string][] = [
     ["bg.canvas", c.bg.canvas],

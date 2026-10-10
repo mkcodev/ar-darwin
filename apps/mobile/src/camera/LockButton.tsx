@@ -9,8 +9,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { playHaptic } from "../design/playHaptic";
 import { t } from "../i18n";
+import { playHaptic } from "../theme/playHaptic";
 import { CameraIcon } from "./CameraIcon";
 
 type LockButtonProps = {
