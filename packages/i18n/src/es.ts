@@ -91,6 +91,11 @@ export const es = {
       time: "21:47",
       battery: "82 %",
     },
+    imageMissing: {
+      title: "No se encuentra la imagen",
+      body: "No se encuentra la imagen de este proyecto. Puede que se haya borrado o dañado.",
+      back: "Volver",
+    },
   },
   library: {
     title: "Biblioteca",
@@ -112,7 +117,7 @@ export const es = {
     importError: "No se ha podido importar la imagen. Inténtalo de nuevo.",
     cameraDenied: "Sin permiso de cámara. Actívalo en los ajustes del sistema para hacer fotos.",
     projectLabel: "{name}, {status}",
-    projectHint: "Abre las acciones del proyecto",
+    projectHint: "Abre la cámara. Mantén pulsado para ver las acciones",
     actions: {
       delete: "Eliminar",
       confirmTitle: "¿Eliminar «{name}»?",

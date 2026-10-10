@@ -303,6 +303,37 @@ export function fitTransform(imageSize: Size, viewport: Size): Transform {
   };
 }
 
+/**
+ * A transform saved for `savedViewport`, moved onto `viewport` (split screen, a foldable opened,
+ * a rotated canvas): the image's center keeps its relative position and the scale follows the
+ * short side, so the image covers the same share of the canvas. Rotation and flips are kept.
+ * The same viewport, or an empty one on either side, returns the transform untouched.
+ */
+export function restoreTransform(
+  transform: Transform,
+  savedViewport: Size,
+  viewport: Size,
+): Transform {
+  "worklet";
+  if (
+    savedViewport.width <= 0 ||
+    savedViewport.height <= 0 ||
+    viewport.width <= 0 ||
+    viewport.height <= 0 ||
+    (savedViewport.width === viewport.width && savedViewport.height === viewport.height)
+  ) {
+    return transform;
+  }
+  const shortRatio =
+    Math.min(viewport.width, viewport.height) / Math.min(savedViewport.width, savedViewport.height);
+  return {
+    ...transform,
+    x: (transform.x * viewport.width) / savedViewport.width,
+    y: (transform.y * viewport.height) / savedViewport.height,
+    scale: transform.scale * shortRatio,
+  };
+}
+
 /** Rotation ignored below this many accumulated degrees, so a pinch that is not quite straight
  *  does not tilt the image. */
 export const ROTATION_DEAD_ZONE_DEGREES = 4;

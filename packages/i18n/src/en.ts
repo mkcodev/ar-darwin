@@ -91,6 +91,11 @@ export const en = {
       time: "21:47",
       battery: "82%",
     },
+    imageMissing: {
+      title: "Image not found",
+      body: "This project's image can't be found. It may have been deleted or damaged.",
+      back: "Go back",
+    },
   },
   library: {
     title: "Library",
@@ -112,7 +117,7 @@ export const en = {
     importError: "The image could not be imported. Please try again.",
     cameraDenied: "No camera permission. Turn it on in the system settings to take photos.",
     projectLabel: "{name}, {status}",
-    projectHint: "Opens the project's actions",
+    projectHint: "Opens the camera. Long press for the project's actions",
     actions: {
       delete: "Delete",
       confirmTitle: "Delete “{name}”?",

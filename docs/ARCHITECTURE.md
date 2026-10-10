@@ -97,8 +97,41 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   listener de `BackHandler` no paraba el gesto atrás de Android. `onError` de `<Camera>` solo salta con los errores CRITICAL de
   CameraX (desactivada por política, retirada, fatal); una cámara ya abierta por otra app es
   RECOVERABLE y CameraX la reporta como `onInterruptionStarted`/`onInterruptionEnded`, no como
-  error — por eso `CameraSpikeScreen` escucha las dos cosas. `classifyCameraIssue` (packages/core)
+  error — por eso `CameraOverlayScreen` escucha las dos cosas. `classifyCameraIssue` (packages/core)
   traduce el `message` en texto plano de `onError` a `"disabled" | "inUse" | "unknown"`.
+
+## Cámara del proyecto (issue #40)
+
+- Código de producto en `apps/mobile/src/camera/`; el spike (`/dev/camera`) usa los mismos
+  componentes con las imágenes de prueba (`CameraSpikeScreen` es solo un envoltorio con los toggles
+  de imagen y fps).
+  - `CameraOverlayScreen`: cámara, `OverlayCanvas`, slider de opacidad, candado, `LockedToast`,
+    `useKeepAwake`, `usePreventRemove` + `gestureEnabled` y avisos de cámara. Huecos
+    `extraControls` (se ocultan con el candado) y `overlay`.
+  - `OverlayCanvas` + `useOverlayGestures`: la imagen no se dibuja (opacidad 0, flag `placed`) hasta
+    tener tamaño de lienzo **y** dimensiones reales de la imagen. Entonces restaura la colocación
+    guardada con `restoreTransform` o encaja con `fitTransform`. Un cambio posterior de lienzo mueve
+    la transformada actual con `restoreTransform`; una imagen nueva (spike) vuelve a encajar. Los
+    volteos se conservan y la matriz Skia los aplica. `onSettle` avisa en el hilo JS (vía
+    `scheduleOnRN`) tras colocar, al cambiar el lienzo, al terminar cada gesto y tras el reset; nunca
+    por fotograma.
+  - `CameraNotice`: aviso a pantalla completa sobre el fondo de cámara (lo usan los errores de cámara
+    y la imagen que no se encuentra).
+- Ruta `app/project/[id]/camera.tsx` (sin header; deja sitio a una futura ficha `project/[id]`):
+  carga el proyecto con `getProject`; si no existe o no se lee, `router.canGoBack() ? back() :
+  replace("/")`. La Biblioteca la abre con un toque en la tarjeta; la pulsación larga sigue abriendo
+  la hoja de acciones.
+- `useProjectImage` decodifica la imagen guardada con `Skia.Data.fromURI` en lugar de `useImage`: con
+  un archivo inexistente, el cargador de `useImage` rechaza sin llamar a `onError` y la cámara se
+  quedaría esperando. Archivo inexistente o que no decodifica → aviso «No se encuentra la imagen de
+  este proyecto» con botón para volver.
+- `useProjectCameraSession` (solo con la imagen cargada): `statusOnOpen` pasa `pending → in_progress`
+  y se guarda al momento; el reloj (`startClock`/`stopClock`/`drainClock` de
+  `packages/core/src/cameraSession.ts`) corre solo con la pantalla enfocada y la app en primer plano;
+  transform y opacidad se guardan 1 s después del último cambio, y al perder el foco, pasar a segundo
+  plano o desmontar se guarda en el acto. Todas las escrituras pasan por `enqueueCameraSave`
+  (`storage/cameraStateQueue.ts`): cola a nivel de módulo, así un guardado lanzado al desmontar
+  termina aunque la pantalla ya no exista y nunca se escriben fuera de orden.
 
 ## Componentes base del móvil (issue #30)
 
@@ -135,8 +168,8 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - `AppStack` también monta `SQLiteProvider` sobre una vista con `bg.canvas`, la barra de estado del
   tema y el `ThemeProvider` de React Navigation con los colores de `packages/ui`: ningún fotograma en
   blanco entre la splash, las migraciones y la primera pantalla.
-- Rutas hoy: `/` Biblioteca, `/settings` Ajustes, `/dev/design` y `/dev/camera` (solo desarrollo o
-  `spikesEnabled`). Cada tarea añade la suya (ficha del proyecto, cámara, divisor, onboarding).
+- Rutas hoy: `/` Biblioteca, `/project/[id]/camera` cámara del proyecto, `/settings` Ajustes,
+  `/dev/design` y `/dev/camera` (solo desarrollo o `spikesEnabled`). Cada tarea añade la suya (ficha del proyecto, cámara, divisor, onboarding).
   Typed routes activas (`experiments.typedRoutes`): `router.push` y `href` comprueban la ruta.
 - Cabeceras:
   - Principales (Biblioteca; Retos más adelante): `headerShown: false`, `LargeTitle` (titular en
@@ -205,6 +238,7 @@ type Project = {
   name: string;
   sourceUri: string;       // ruta guardada: relativa a documentos o asset (ver «Rutas de archivo»)
   transform: Transform;    // último ajuste de cámara
+  transformViewport?: { width: number; height: number }; // lienzo de `transform`; sin él, nunca colocado
   opacity: number;         // 0..1
   split?: SplitConfig;
   currentTileId?: string;
@@ -278,6 +312,21 @@ Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`,
 ### `fitTransform(imageSize, viewport): Transform`
 
 - Centra la imagen en el viewport y la escala para que quepa entera (`min(W / w, H / h)`), sin rotación ni espejo. Siempre encaja, aunque la escala quede por debajo de `MIN_SCALE`. La UI la usa como `base` del `reset`.
+
+### `restoreTransform(transform, savedViewport, viewport): Transform`
+
+- Lleva una transformada guardada para `savedViewport` a `viewport` (pantalla dividida, plegable,
+  lienzo girado): el centro conserva su posición relativa (`x · W'/W`, `y · H'/H`) y la escala sigue
+  al lado corto (`· min(W',H') / min(W,H)`). Rotación y volteos intactos.
+- Mismo viewport, o uno vacío en cualquiera de los dos lados → la devuelve sin tocar.
+
+### Sesión de cámara (`cameraSession.ts`)
+
+- `startClock`, `stopClock`, `drainClock` sobre `SessionClock = { runningSince }` (ms epoch): `drain`
+  devuelve el tiempo desde el último arranque o vaciado y sigue corriendo, para guardados
+  intermedios sin contar dos veces. Delta negativo (reloj del sistema atrasado) → 0; enteros.
+- `addTimeSpent(timeSpentMs, elapsedMs)` (nunca resta) y `statusOnOpen(status)` (`pending →
+  in_progress`; el resto igual).
 
 ### `applyGesture(transform, step): Transform`
 
@@ -353,6 +402,14 @@ Core no importa packages/ui; `apps/mobile/src/storage/categoryStyle.ts` comprueb
 que cada clave e icono existen en packages/ui (falla `pnpm typecheck` si no) y `categoryStyle(category,
 theme)` resuelve la clave al color del tema activo (`isCategoryColorKey`, `isIconName`), con
 `text.muted` e `image` si el valor guardado no se reconoce.
+
+La v3 (issue #40) añade `transform_viewport` (JSON `{width, height}` en TEXT): el lienzo para el que
+se guardó `transform`, cuyas `x`/`y` son px de ese lienzo. NULL = nunca colocado (los proyectos
+existentes quedan así y se encajan con `fitTransform` la primera vez). `UPDATE_PROJECT_CAMERA`
+(`cameraStateParams(id, state, now)`) guarda en un solo UPDATE lo de la cámara: `transform` y
+`transform_viewport` siempre juntos, opacidad, estado, `time_spent_ms` y `updated_at`, sin tocar
+categorías ni el resto. Antes de la primera colocación puede guardar estado y tiempo con
+`transform_viewport` a NULL.
 
 ### Rutas de archivo
 

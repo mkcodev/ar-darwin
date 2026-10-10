@@ -57,7 +57,8 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 - [x] Categorías: diseñar en `packages/ui` la paleta `categoryColors` (contraste AA en claro y
       oscuro) y los 6 iconos de las categorías de serie (animales, personas, paisajes, manga/anime,
       objetos, letras); rellenar `color`/`icon` con una migración (issue #38)
-- [ ] Cámara del proyecto: abrir, restaurar y guardar el último ajuste
+- [x] Cámara del proyecto: abrir, restaurar y guardar el último ajuste; tiempo dedicado y estado
+      «en curso»; migración v3 `transform_viewport` (issue #40)
 - [ ] Espejo H/V, linterna y ajustes de imagen (contraste, brillo, invertir) con Skia
 - [ ] Modo imán con guías y vibración (`snapTransform`)
 - [ ] Ajuste fino: dos velocidades, pulsación larga, reset y candado (`nudge`)

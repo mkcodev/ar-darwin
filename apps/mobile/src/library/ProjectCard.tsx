@@ -22,21 +22,23 @@ const status = toNativeTextStyle(typography.value);
 
 type ProjectCardProps = {
   project: Project;
-  /** Tap, long press and the screen reader's actions all open the project's actions for now. */
+  /** Tap (and the screen reader's «activate»): the project's camera. */
+  onOpen: (project: Project) => void;
+  /** Long press (and the screen reader's «long press»): the project's actions. */
   onActions: (project: Project) => void;
   /** The screen reader's «Delete» action, straight to the confirmation. */
   onDelete: (project: Project) => void;
 };
 
 /** A project in the library: its thumbnail (never the full image), name and status. */
-export function ProjectCard({ project, onActions, onDelete }: ProjectCardProps) {
+export function ProjectCard({ project, onOpen, onActions, onDelete }: ProjectCardProps) {
   const { theme } = useTheme();
   const c = theme.color;
   const statusText = t(`projectStatus.${project.status}`);
 
   return (
     <Pressable
-      onPress={() => onActions(project)}
+      onPress={() => onOpen(project)}
       onLongPress={() => onActions(project)}
       accessibilityRole="button"
       accessibilityLabel={t("library.projectLabel", { name: project.name, status: statusText })}
@@ -47,8 +49,10 @@ export function ProjectCard({ project, onActions, onDelete }: ProjectCardProps) 
         { name: "delete", label: t("library.actions.delete") },
       ]}
       onAccessibilityAction={(event) => {
-        if (event.nativeEvent.actionName === "delete") onDelete(project);
-        else onActions(project);
+        const action = event.nativeEvent.actionName;
+        if (action === "delete") onDelete(project);
+        else if (action === "longpress") onActions(project);
+        else onOpen(project);
       }}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >

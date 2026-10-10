@@ -19,9 +19,11 @@ import {
   SELECT_PROJECT_CATEGORIES,
   SELECT_PROJECTS,
   SELECT_SCHEMA_VERSION,
+  UPDATE_PROJECT_CAMERA,
   UPSERT_PROJECT,
 } from "./queries";
 import {
+  cameraStateParams,
   categoryFromRow,
   groupCategoryIds,
   projectFromRow,
@@ -51,6 +53,28 @@ function openMigrated(upTo = LATEST_SCHEMA_VERSION): DatabaseSync {
 function save(db: DatabaseSync, project: Project): void {
   db.prepare(UPSERT_PROJECT).run(...projectRowParams(projectToRow(project)));
   db.prepare(DELETE_CATEGORIES_OF_PROJECT).run(project.id);
+  for (const categoryId of project.categoryIds) {
+    db.prepare(INSERT_PROJECT_CATEGORY).run(project.id, categoryId);
+  }
+}
+
+/** Inserts a project the way the v1/v2 schema could hold it (no transform_viewport column). */
+function saveLegacy(db: DatabaseSync, project: Project): void {
+  const row = projectToRow(project);
+  db.prepare(
+    `INSERT INTO projects (id, name, source_uri, transform, opacity, status, time_spent_ms,
+       created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    row.id,
+    row.name,
+    row.source_uri,
+    row.transform,
+    row.opacity,
+    row.status,
+    row.time_spent_ms,
+    row.created_at,
+    row.updated_at,
+  );
   for (const categoryId of project.categoryIds) {
     db.prepare(INSERT_PROJECT_CATEGORY).run(project.id, categoryId);
   }
@@ -159,11 +183,30 @@ describe("migrations on SQLite", () => {
   it("a v1 database with projects migrates to the latest without losing them", () => {
     const db = openMigrated(1);
     const project = newProject("p", "2026-10-10T10:00:00.000Z", { categoryIds: ["animals"] });
-    save(db, project);
-    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2]);
+    saveLegacy(db, project);
+    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2, 3]);
     migrate(db);
     expect(db.prepare(SELECT_SCHEMA_VERSION).get()?.user_version).toBe(LATEST_SCHEMA_VERSION);
     expect(load(db, project.id)).toEqual(project);
+  });
+
+  it("v2 → v3 keeps every project, never placed (no transformViewport)", () => {
+    const db = openMigrated(2);
+    const placed = newProject("placed", "2026-10-10T10:00:00.000Z", {
+      transform: { ...IDENTITY_TRANSFORM, x: 120, y: 300, scale: 0.4, rotation: 15, flipY: true },
+      opacity: 0.4,
+      status: "in_progress",
+      timeSpentMs: 60000,
+      categoryIds: ["manga"],
+    });
+    const fresh = newProject("fresh", "2026-10-09T10:00:00.000Z");
+    saveLegacy(db, placed);
+    saveLegacy(db, fresh);
+    migrate(db);
+    const after = load(db, placed.id);
+    expect(after).toEqual(placed);
+    expect(after?.transformViewport).toBeUndefined();
+    expect(load(db, fresh.id)).toEqual(fresh);
   });
 
   it("enforces the CHECK constraints", () => {
@@ -188,6 +231,7 @@ describe("project repository SQL", () => {
     const db = openMigrated();
     const project = newProject("full", "2026-10-10T10:00:00.000Z", {
       transform: { ...IDENTITY_TRANSFORM, x: 120.5, scale: 0.4, rotation: -30, flipX: true },
+      transformViewport: { width: 411.4, height: 890 },
       split: { rows: 2, cols: 3, overlapPx: 12, showOverlapTint: false },
       currentTileId: "A2",
       status: "done",
@@ -253,6 +297,69 @@ describe("project repository SQL", () => {
     expect(load(db, project.id)).toBeNull();
     expect(db.prepare(SELECT_PROJECT_CATEGORIES).all()).toEqual([]);
     expect(db.prepare(SELECT_CATEGORIES).all()).toHaveLength(DEFAULT_CATEGORY_IDS.length);
+  });
+
+  it("saves the camera state in one update, without touching anything else", () => {
+    const db = openMigrated();
+    const project = newProject("p", "2026-10-10T10:00:00.000Z", {
+      categoryIds: ["animals"],
+      notes: "keep",
+    });
+    save(db, project);
+    const state = {
+      transform: { ...IDENTITY_TRANSFORM, x: 200, y: 400, scale: 0.25, rotation: 90, flipX: true },
+      transformViewport: { width: 400, height: 800 },
+      opacity: 0.3,
+      status: "in_progress" as const,
+      timeSpentMs: 12345,
+    };
+    db.prepare(UPDATE_PROJECT_CAMERA).run(
+      ...cameraStateParams(project.id, state, new Date("2026-10-10T12:00:00.000Z")),
+    );
+    expect(load(db, project.id)).toEqual({
+      ...project,
+      ...state,
+      updatedAt: "2026-10-10T12:00:00.000Z",
+    });
+  });
+
+  it("saves status and time before the first placement, leaving the project unplaced", () => {
+    const db = openMigrated();
+    const project = newProject("p", "2026-10-10T10:00:00.000Z");
+    save(db, project);
+    db.prepare(UPDATE_PROJECT_CAMERA).run(
+      ...cameraStateParams(
+        project.id,
+        {
+          transform: project.transform,
+          opacity: project.opacity,
+          status: "in_progress",
+          timeSpentMs: 1500,
+        },
+        new Date("2026-10-10T12:00:00.000Z"),
+      ),
+    );
+    const after = load(db, project.id);
+    expect(after).toMatchObject({ status: "in_progress", timeSpentMs: 1500 });
+    expect(after?.transformViewport).toBeUndefined();
+  });
+
+  it("rejects an invalid camera state through the CHECK constraints", () => {
+    const db = openMigrated();
+    const project = newProject("p", "2026-10-10T10:00:00.000Z");
+    save(db, project);
+    const params = cameraStateParams(
+      project.id,
+      {
+        transform: IDENTITY_TRANSFORM,
+        transformViewport: { width: 400, height: 800 },
+        opacity: 2,
+        status: "in_progress",
+        timeSpentMs: 0,
+      },
+      new Date("2026-10-10T12:00:00.000Z"),
+    );
+    expect(() => db.prepare(UPDATE_PROJECT_CAMERA).run(...params)).toThrow();
   });
 
   it("rejects a link to a category that does not exist", () => {

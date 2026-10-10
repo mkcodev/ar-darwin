@@ -1,5 +1,5 @@
 import * as z from "zod";
-import { type Category, CategorySchema, type Project, ProjectSchema } from "../models";
+import { type Category, CategorySchema, type Project, ProjectSchema, type Size } from "../models";
 
 /** A `projects` row as SQLite returns it: snake_case, JSON in TEXT columns, NULL for missing. */
 const ProjectRowSchema = z.object({
@@ -7,6 +7,7 @@ const ProjectRowSchema = z.object({
   name: z.string(),
   source_uri: z.string(),
   transform: z.string(),
+  transform_viewport: z.string().nullable(),
   opacity: z.number(),
   split: z.string().nullable(),
   current_tile_id: z.string().nullable(),
@@ -60,6 +61,7 @@ export function projectToRow(project: Project): ProjectRow {
     name: project.name,
     source_uri: project.sourceUri,
     transform: JSON.stringify(project.transform),
+    transform_viewport: json(project.transformViewport),
     opacity: project.opacity,
     split: json(project.split),
     current_tile_id: project.currentTileId ?? null,
@@ -82,6 +84,7 @@ export function projectRowParams(row: ProjectRow): SqlValue[] {
     row.name,
     row.source_uri,
     row.transform,
+    row.transform_viewport,
     row.opacity,
     row.split,
     row.current_tile_id,
@@ -97,6 +100,27 @@ export function projectRowParams(row: ProjectRow): SqlValue[] {
   ];
 }
 
+/**
+ * What the project camera saves (UPDATE_PROJECT_CAMERA). `transformViewport` is absent until the
+ * image has been placed once (status and time can be saved before): the project stays unplaced.
+ */
+export type CameraState = Pick<Project, "transform" | "opacity" | "status" | "timeSpentMs"> & {
+  transformViewport?: Size;
+};
+
+/** Positional parameters for UPDATE_PROJECT_CAMERA; `now` becomes `updated_at`. */
+export function cameraStateParams(id: string, state: CameraState, now: Date): SqlValue[] {
+  return [
+    JSON.stringify(state.transform),
+    json(state.transformViewport),
+    state.opacity,
+    state.status,
+    state.timeSpentMs,
+    now.toISOString(),
+    id,
+  ];
+}
+
 /** Validates a row read from SQLite. Throws an `Error` starting with `projectFromRow:` if corrupt. */
 export function projectFromRow(row: unknown, categoryIds: readonly string[]): Project {
   const shape = ProjectRowSchema.safeParse(row);
@@ -109,6 +133,7 @@ export function projectFromRow(row: unknown, categoryIds: readonly string[]): Pr
     name: r.name,
     sourceUri: r.source_uri,
     transform: parseJson(r.transform, "transform"),
+    transformViewport: parseJson(r.transform_viewport, "transform_viewport"),
     opacity: r.opacity,
     split: parseJson(r.split, "split"),
     currentTileId: orUndefined(r.current_tile_id),

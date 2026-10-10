@@ -18,6 +18,12 @@ export type ImageSize = z.infer<typeof ImageSizeSchema>;
 /** Width and height in px. Unlike ImageSize, not limited to integers (e.g. a viewport). */
 export type Size = { width: number; height: number };
 
+/** A laid-out viewport (e.g. the camera canvas), in px: both sides > 0, not necessarily integers. */
+export const ViewportSchema = z.object({
+  width: z.number().positive(),
+  height: z.number().positive(),
+});
+
 /** Smallest scale a transform can reach (5 % of the image's natural size). */
 export const MIN_SCALE = 0.05;
 
@@ -80,6 +86,11 @@ export const ProjectSchema = z.object({
   sourceUri: StoredUriSchema,
   /** Last camera adjustment, restored when the project opens. */
   transform: TransformSchema,
+  /**
+   * Canvas `transform` was saved for (its x/y are px of that canvas). Absent = never placed:
+   * the camera fits the image on open. Saved together with `transform`, always.
+   */
+  transformViewport: ViewportSchema.optional(),
   /** Overlay image opacity, 0..1. */
   opacity: z.number().min(0).max(1),
   split: SplitConfigSchema.optional(),
