@@ -100,6 +100,31 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   error — por eso `CameraSpikeScreen` escucha las dos cosas. `classifyCameraIssue` (packages/core)
   traduce el `message` en texto plano de `onError` a `"disabled" | "inUse" | "unknown"`.
 
+## Componentes base del móvil (issue #30)
+
+- `apps/mobile/src/components/`: Button, IconButton, FloatingPill, BottomSheet, Slider, Toggle,
+  SegmentedControl, Stepper, Icon/SkiaIcon y LockButton, con los mismos nombres, variantes y
+  estados que `apps/desktop/src/components/`. Diferencias: el `Slider` recibe un `SharedValue`
+  (el valor vive en el hilo de UI y `format` es un worklet, p. ej. `percentFormat` de
+  `src/format.ts`); el `SegmentedControl` usa segmentos de igual ancho para que el indicador solo
+  se desplace; `Button` recibe `icon` como `IconName`.
+- `apps/mobile/src/theme/`: `ThemeProvider`, `HandednessProvider` y `ReduceMotionProvider` se montan
+  en `app/_layout.tsx`. Aceptan `initial` y `onChange` para que la tarea de Ajustes cargue y guarde
+  la preferencia sin tocarlos. `ReduceMotionProvider` sigue el ajuste del sistema en vivo
+  (`AccessibilityInfo`) y admite una anulación (la usa `/dev/design`).
+- Fuentes: `useAppFonts` en el layout raíz; el splash nativo (`SplashScreen` de expo-router) sigue
+  visible hasta que cargan o fallan, así nunca se pinta un frame con las fuentes del sistema.
+- Movimiento: `theme/motion.ts` resuelve los tokens de `packages/ui` en planes (`full`/`fade`/`none`,
+  el mismo contrato que `transitions.ts` en web) y los worklets `animateMove`/`animateFade` los
+  ejecutan. Son el único helper del hilo de UI fuera de `packages/core`, porque envuelven Reanimated;
+  pasan `ReduceMotion.Never` porque el plan ya aplicó la preferencia (con el valor por defecto,
+  `System`, Reanimated saltaría el muelle aunque `/dev/design` pida movimiento completo).
+- La matemática que corre en el hilo de UI (pista del slider, límites del stepper, soltar la hoja,
+  opacidad del velo, tamaño de la tinta, retirada de la píldora, trazos escalonados) está en
+  `packages/core/src/controls.ts`, con tests y en `worklet.test.ts`.
+- Iconos: `SkiaIcon` es un elemento Skia (va dentro de un `<Canvas>`), un `Path` por trazo para
+  recortar cada uno con `end` en el «trazo vivo»; `Icon` lo envuelve en su propio `<Canvas>`.
+
 ## Estructura del repo
 
 ```

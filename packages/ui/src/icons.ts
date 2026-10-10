@@ -15,6 +15,8 @@ export const icon = {
   stroke: 1.75,
   /** Dash pattern of axis lines (mirror, splitter cut). */
   dash: [1.5, 2.5],
+  /** «Trazo vivo»: each stroke starts drawing this long after the previous one. */
+  drawStaggerMs: 60,
 } as const;
 
 const path = (d: string, dashed = false): IconShape =>

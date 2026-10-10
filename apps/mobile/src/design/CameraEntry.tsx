@@ -1,28 +1,21 @@
 import {
   cameraBackdropColor,
   radius,
-  resolveMotion,
   space,
   spring,
-  type Theme,
   toNativeTextStyle,
-  toReanimatedSpring,
   touchTarget,
   typography,
 } from "@ar-darwin/ui";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import { t } from "../i18n";
+import { animateFade, animateMove, springPlan } from "../theme/motion";
+import { useReduceMotion } from "../theme/ReduceMotionProvider";
+import { useTheme } from "../theme/ThemeProvider";
 
 type CameraEntryProps = {
-  theme: Theme;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -32,8 +25,9 @@ type CameraEntryProps = {
  * `screen` spring (no bounce) before the live image would appear. Reduced motion: 120 ms fade.
  * The parent switches the status bar to `theme.statusBar.camera` while it is open.
  */
-export function CameraEntry({ theme, open, onOpenChange }: CameraEntryProps) {
-  const reduce = useReducedMotion();
+export function CameraEntry({ open, onOpenChange }: CameraEntryProps) {
+  const { theme } = useTheme();
+  const { reduce } = useReduceMotion();
   const cover = useSharedValue(open ? 1 : 0);
   const c = theme.color;
 
@@ -41,19 +35,14 @@ export function CameraEntry({ theme, open, onOpenChange }: CameraEntryProps) {
 
   const toggle = () => {
     const next = !open;
-    const plan = resolveMotion(spring.screen, reduce);
+    const plan = springPlan(spring.screen, reduce);
     const done = (finished?: boolean) => {
       "worklet";
       if (finished) scheduleOnRN(onOpenChange, next);
     };
-    if (plan.kind === "full")
-      cover.value = withSpring(next ? 1 : 0, toReanimatedSpring(plan.token), done);
-    else if (plan.kind === "fade")
-      cover.value = withTiming(next ? 1 : 0, { duration: plan.duration }, done);
-    else {
-      cover.value = next ? 1 : 0;
-      onOpenChange(next);
-    }
+    // The cover is an opacity: the spring drives it with full motion, the reduced fade otherwise.
+    if (plan.mode === "full") cover.value = animateMove(next ? 1 : 0, plan, done);
+    else cover.value = animateFade(next ? 1 : 0, plan, 0, done);
   };
 
   return (

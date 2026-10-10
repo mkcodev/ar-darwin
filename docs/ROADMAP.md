@@ -47,7 +47,7 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 
 ## 3 · MVP móvil
 
-- [ ] Componentes base nativos desde `packages/ui` (botón, píldora, hoja, slider, toggle) e iconos en Skia
+- [x] Componentes base nativos desde `packages/ui` (botón, píldora, hoja, slider, toggle) e iconos en Skia (issue #30)
 - [ ] Modelo `Project` y guardado local con expo-sqlite
 - [ ] Navegación y estructura de pantallas (Expo Router)
 - [ ] Biblioteca: importar desde galería, cámara o archivos; reducir a 4096 px; lista de proyectos

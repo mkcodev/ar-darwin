@@ -48,7 +48,7 @@ export function Icon({ name, size = icon.size, label, drawKey = 0, className }: 
     >
       {icons[name].map((shape, i) => {
         const key = `${name}-${i}`;
-        const delay = i * 0.06;
+        const delay = (i * icon.drawStaggerMs) / 1000;
         if (shape.type === "path") {
           if (shape.dashed) {
             return <path key={key} d={shape.d} strokeDasharray={icon.dash.join(" ")} />;
