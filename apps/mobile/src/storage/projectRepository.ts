@@ -1,5 +1,7 @@
 import {
+  type CameraState,
   type Category,
+  cameraStateParams,
   categoryFromRow,
   DELETE_CATEGORIES_OF_PROJECT,
   DELETE_PROJECT,
@@ -14,6 +16,7 @@ import {
   SELECT_PROJECT,
   SELECT_PROJECT_CATEGORIES,
   SELECT_PROJECTS,
+  UPDATE_PROJECT_CAMERA,
   UPSERT_PROJECT,
 } from "@ar-darwin/core";
 import type { SQLiteDatabase } from "expo-sqlite";
@@ -84,6 +87,20 @@ export async function deleteProject(db: SQLiteDatabase, id: string): Promise<voi
       console.warn(`deleteProject: could not delete ${what} of project ${id}`, error);
     }
   }
+}
+
+/**
+ * What the project camera saves: transform with its canvas, opacity, status and time spent, in
+ * one UPDATE that stamps `updatedAt` (categories and the rest are untouched). Through
+ * `enqueueCameraSave`, never directly, so saves land in order.
+ */
+export async function saveCameraState(
+  db: SQLiteDatabase,
+  id: string,
+  state: CameraState,
+  now: Date = new Date(),
+): Promise<void> {
+  await db.runAsync(UPDATE_PROJECT_CAMERA, cameraStateParams(id, state, now));
 }
 
 export async function listCategories(db: SQLiteDatabase): Promise<Category[]> {
