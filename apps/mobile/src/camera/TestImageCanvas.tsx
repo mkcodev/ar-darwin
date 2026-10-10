@@ -35,12 +35,10 @@ const ZERO_SIZE: Size = { width: 0, height: 0 };
  * (`useOverlayGestures`, #18), fit to the canvas with `fitTransform` on first layout and on
  * every new test image, double tap to reset. Opacity comes from the slider next to it.
  *
- * Sized with Skia's `onSize`, not a plain `onLayout`: Skia's Canvas doesn't support `onLayout`
- * on the New Architecture (see https://shopify.github.io/react-native-skia/docs/canvas/overview/#getting-the-canvas-size).
- * `onSize` calls Reanimated's `measure()` internally, which can warn about an undefined
- * `LayoutMetrics` on the first frames before the view has a layout yet — the warning's own text
- * says "may not be a bug", and there's no supported way around it (see issue #25): it settles on
- * its own once the first layout lands.
+ * Sized with `onLayout` on the wrapping View (same box as the Canvas: both fill the screen), not
+ * Skia's `onSize`: the Canvas itself doesn't support `onLayout` on the New Architecture, and
+ * `onSize` calls Reanimated's `measure()` on every frame, which floods Metro with "undefined
+ * `LayoutMetrics`" warnings before the first layout lands (issue #25).
  */
 export function TestImageCanvas({ source, opacity, locked }: TestImageCanvasProps) {
   const image = useImage(source);
@@ -65,8 +63,14 @@ export function TestImageCanvas({ source, opacity, locked }: TestImageCanvasProp
 
   return (
     <GestureDetector gesture={gesture}>
-      <View style={StyleSheet.absoluteFill}>
-        <Canvas style={StyleSheet.absoluteFill} onSize={canvasSize}>
+      <View
+        style={StyleSheet.absoluteFill}
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          canvasSize.value = { width, height };
+        }}
+      >
+        <Canvas style={StyleSheet.absoluteFill}>
           {image && <ImageLayer image={image} matrix={matrix} opacity={opacity} />}
         </Canvas>
       </View>
