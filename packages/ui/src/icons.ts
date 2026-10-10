@@ -84,9 +84,35 @@ export const icons = {
     path("M6 7l1 13h10l1-13"),
     path("M10 11v5M14 11v5"),
   ],
+  // Built-in categories (the migration stores these names in `categories.icon`).
+  animal: [
+    path("M5 12.5V6l4 3.5h6l4-3.5v6.5a7 7 0 0 1-14 0Z"),
+    { type: "circle", cx: 9.5, cy: 14, r: 1, filled: true },
+    { type: "circle", cx: 14.5, cy: 14, r: 1, filled: true },
+    path("M11 16.5l1 1 1-1"),
+  ],
+  person: [{ type: "circle", cx: 12, cy: 8, r: 3.5 }, path("M5 20.5c0-3.9 3.1-7 7-7s7 3.1 7 7")],
+  landscape: [path("M3 19l6-8.5 4.5 6 2.5-3L21 19Z"), { type: "circle", cx: 16.5, cy: 6.5, r: 2 }],
+  manga: [
+    path("M3.5 12c4.5-5 12.5-5 17 0"),
+    path("M17.5 8.3l1.5-2M20.5 12l1.5-1.2"),
+    { type: "circle", cx: 12, cy: 13.5, r: 4 },
+    { type: "circle", cx: 13.5, cy: 12, r: 1.2, filled: true },
+  ],
+  object: [
+    path("M5 8h11v8a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4Z"),
+    path("M16 10h1.5a2.5 2.5 0 0 1 0 5H16"),
+    path("M9 3.5c-.8 1 .8 1.5 0 2.5M12.5 3.5c-.8 1 .8 1.5 0 2.5"),
+  ],
+  lettering: [path("M4 19c2 0 3-1 4-3.5L12 5l4.5 11.5c.6 1.5 1.5 2.5 3.5 2.5"), path("M8.6 13h7")],
 } as const satisfies Record<string, readonly IconShape[]>;
 
 export type IconName = keyof typeof icons;
+
+/** Narrows a stored value (a category's `icon`) to an icon of the set. */
+export function isIconName(value: string): value is IconName {
+  return Object.hasOwn(icons, value);
+}
 
 /**
  * Logo: Darwin's 1837 "I think" tree, drawn from the origin marked «1». On a 48 grid; the origin

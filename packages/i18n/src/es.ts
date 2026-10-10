@@ -43,6 +43,12 @@ export const es = {
     minus: "Menos",
     image: "Imagen",
     trash: "Eliminar",
+    animal: "Animal",
+    person: "Persona",
+    landscape: "Paisaje",
+    manga: "Manga",
+    object: "Objeto",
+    lettering: "Letras",
   },
   camera: {
     surface: "Cámara simulada: arrastra la imagen, pellizca o usa la rueda para escalarla",
@@ -339,6 +345,9 @@ export const es = {
       camera: "Color de la cámara (igual en los dos temas)",
       cameraNote:
         "Medidos sobre los tres fondos de folio, gris medio y papel blanco (ver packages/ui/src/themes/contrast.test.ts).",
+      category: "Color de las categorías",
+      categoryNote:
+        "Contraste: el peor de lienzo, superficie y elevado. Nunca va solo: siempre con el icono o el nombre de la categoría.",
       fail: "no llega",
     },
     type: {

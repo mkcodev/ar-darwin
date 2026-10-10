@@ -43,6 +43,12 @@ export const en = {
     minus: "Minus",
     image: "Image",
     trash: "Delete",
+    animal: "Animal",
+    person: "Person",
+    landscape: "Landscape",
+    manga: "Manga",
+    object: "Object",
+    lettering: "Lettering",
   },
   camera: {
     surface: "Simulated camera: drag the image, pinch or scroll to scale it",
@@ -338,6 +344,9 @@ export const en = {
       camera: "Camera colour (the same in both themes)",
       cameraNote:
         "Measured on the three paper backdrops, mid grey and white paper (see packages/ui/src/themes/contrast.test.ts).",
+      category: "Category colour",
+      categoryNote:
+        "Contrast: the worst of canvas, surface and raised. Never on its own: always with the category's icon or name.",
       fail: "fails",
     },
     type: {
