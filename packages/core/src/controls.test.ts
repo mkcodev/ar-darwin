@@ -3,6 +3,8 @@ import {
   clamp,
   fractionOfRange,
   inkDiameter,
+  largeTitleCollapse,
+  largeTitleOverscrollScale,
   retreatOffset,
   sheetRelease,
   sheetScrimOpacity,
@@ -138,5 +140,41 @@ describe("staggeredProgress", () => {
     expect(staggeredTotalMs(3, 60, 300)).toBe(420);
     expect(staggeredTotalMs(1, 60, 300)).toBe(300);
     expect(staggeredTotalMs(0, 60, 300)).toBe(300);
+  });
+});
+
+describe("largeTitleCollapse", () => {
+  it("collapses linearly over the distance", () => {
+    expect(largeTitleCollapse(0, 44)).toBe(0);
+    expect(largeTitleCollapse(22, 44)).toBe(0.5);
+    expect(largeTitleCollapse(44, 44)).toBe(1);
+    expect(largeTitleCollapse(300, 44)).toBe(1);
+  });
+
+  it("treats overscroll as expanded", () => {
+    expect(largeTitleCollapse(-40, 44)).toBe(0);
+  });
+
+  it("snaps when the distance is not positive", () => {
+    expect(largeTitleCollapse(1, 0)).toBe(1);
+    expect(largeTitleCollapse(0, 0)).toBe(0);
+    expect(largeTitleCollapse(-1, -5)).toBe(0);
+  });
+});
+
+describe("largeTitleOverscrollScale", () => {
+  it("stays at 1 unless pulled past the top", () => {
+    expect(largeTitleOverscrollScale(0, 120, 1.05)).toBe(1);
+    expect(largeTitleOverscrollScale(80, 120, 1.05)).toBe(1);
+  });
+
+  it("grows with the pull up to the maximum", () => {
+    expect(largeTitleOverscrollScale(-60, 120, 1.05)).toBeCloseTo(1.025);
+    expect(largeTitleOverscrollScale(-120, 120, 1.05)).toBeCloseTo(1.05);
+    expect(largeTitleOverscrollScale(-500, 120, 1.05)).toBeCloseTo(1.05);
+  });
+
+  it("does nothing without a pull distance", () => {
+    expect(largeTitleOverscrollScale(-60, 0, 1.05)).toBe(1);
   });
 });
