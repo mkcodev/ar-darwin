@@ -1,5 +1,6 @@
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import * as controls from "./controls";
 import * as frameStats from "./frameStats";
 import * as transform from "./transform";
 
@@ -32,6 +33,21 @@ const modules = [
     file: "frameStats.ts",
     exports: frameStats as Record<string, unknown>,
     mustExport: ["emptyFrameWindow", "addFrame", "summarizeFrameWindow", "frameBudgetMs"],
+  },
+  {
+    file: "controls.ts",
+    exports: controls as Record<string, unknown>,
+    mustExport: [
+      "clamp",
+      "valueFromTrack",
+      "fractionOfRange",
+      "stepValue",
+      "sheetRelease",
+      "sheetScrimOpacity",
+      "inkDiameter",
+      "retreatOffset",
+      "staggeredProgress",
+    ],
   },
 ];
 
