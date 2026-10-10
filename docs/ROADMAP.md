@@ -54,9 +54,9 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
       en Biblioteca y header nativo tematizado en Ajustes (issue #34)
 - [x] Biblioteca: importar desde galería o cámara; reducir a 4096 px con miniatura; lista de
       proyectos y borrado (issue #36). «Archivos», en el bloque de rebuild de abajo
-- [ ] Categorías: diseñar en `packages/ui` la paleta `categoryColors` (contraste AA en claro y
+- [x] Categorías: diseñar en `packages/ui` la paleta `categoryColors` (contraste AA en claro y
       oscuro) y los 6 iconos de las categorías de serie (animales, personas, paisajes, manga/anime,
-      objetos, letras); rellenar `color`/`icon` con una migración
+      objetos, letras); rellenar `color`/`icon` con una migración (issue #38)
 - [ ] Cámara del proyecto: abrir, restaurar y guardar el último ajuste
 - [ ] Espejo H/V, linterna y ajustes de imagen (contraste, brillo, invertir) con Skia
 - [ ] Modo imán con guías y vibración (`snapTransform`)

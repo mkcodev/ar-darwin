@@ -1,6 +1,13 @@
-import { contrastRatio, MIN_CONTRAST, parseColor, type Theme } from "@ar-darwin/ui";
+import {
+  CATEGORY_COLOR_KEYS,
+  contrastRatio,
+  MIN_CONTRAST,
+  parseColor,
+  type Theme,
+} from "@ar-darwin/ui";
 import { formatNumber } from "../../format";
 import { t } from "../../i18n";
+import { CategoryPreview } from "./CategoryPreview";
 
 type ColorSwatchesProps = { theme: Theme };
 
@@ -74,6 +81,15 @@ export function ColorSwatches({ theme }: ColorSwatchesProps) {
     value: v,
   }));
 
+  const category: Swatch[] = CATEGORY_COLOR_KEYS.map((key) => ({
+    name: `category.${key}`,
+    value: c.category[key],
+    ratio: Math.min(
+      ...[c.bg.canvas, c.bg.surface, c.bg.raised].map((bg) => contrastRatio(c.category[key], bg)),
+    ),
+    min: MIN_CONTRAST.nonText,
+  }));
+
   const render = (s: Swatch) => {
     const translucent = parseColor(s.value).a < 1;
     const pass = s.ratio !== undefined && s.min !== undefined ? s.ratio >= s.min : undefined;
@@ -103,6 +119,10 @@ export function ColorSwatches({ theme }: ColorSwatchesProps) {
       <h3 className="token-title">{t("tokens.color.camera")}</h3>
       <p className="pg-note">{t("tokens.color.cameraNote")}</p>
       <ul className="swatches swatches-camera">{camera.map(render)}</ul>
+      <h3 className="token-title">{t("tokens.color.category")}</h3>
+      <p className="pg-note">{t("tokens.color.categoryNote")}</p>
+      <CategoryPreview theme={theme} />
+      <ul className="swatches">{category.map(render)}</ul>
     </div>
   );
 }
