@@ -114,6 +114,16 @@ Momentos de firma:
 - Etiquetas de estado que llegan torcidas 6° y se enderezan.
 - Menú de la cámara que se retira 8 px y se desvanece tras 3 s sin tocar; sigue siendo alcanzable con teclado (el foco lo despierta).
 
+## Cabeceras
+
+- Pantallas principales (Biblioteca; Retos más adelante): titular grande en Instrument Serif que
+  se desliza bajo una barra fija; al pasar, aparece el título compacto (Geist) y una línea fina.
+  Con movimiento completo el titular encoge un poco al irse (0,96) y, si se tira más allá del
+  borde superior, crece hasta 1,05 desde la izquierda (solo iOS: Android estira en vez de
+  desplazar). Con «reducir movimiento», solo el fundido cruzado.
+- Pantallas secundarias (Ajustes, ficha, divisor): header nativo sobre el lienzo, sin sombra.
+- Cámara: sin cabecera.
+
 ## Hápticos
 
 Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:

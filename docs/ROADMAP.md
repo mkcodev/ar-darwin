@@ -50,7 +50,8 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 - [x] Componentes base nativos desde `packages/ui` (botón, píldora, hoja, slider, toggle) e iconos en Skia (issue #30)
 - [x] Modelo `Project` y guardado local con expo-sqlite: migraciones, categorías N:M, rutas
       relativas (issue #32)
-- [ ] Navegación y estructura de pantallas (Expo Router)
+- [x] Navegación y estructura de pantallas (Expo Router): solo Stack, cabecera de titular grande
+      en Biblioteca y header nativo tematizado en Ajustes (issue #34)
 - [ ] Biblioteca: importar desde galería, cámara o archivos; reducir a 4096 px; lista de proyectos
 - [ ] Categorías: diseñar en `packages/ui` la paleta `categoryColors` (contraste AA en claro y
       oscuro) y los 6 iconos de las categorías de serie (animales, personas, paisajes, manga/anime,

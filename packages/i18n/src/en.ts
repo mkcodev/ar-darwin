@@ -90,6 +90,10 @@ export const en = {
     projectDetail: "2 × 2 · B1",
     openCamera: "Open camera",
     hint: "The camera is dark in every theme: on the way in, the screen fades to graphite.",
+    empty: "No projects yet",
+  },
+  settings: {
+    title: "Settings",
   },
   projectStatus: {
     pending: "To do",

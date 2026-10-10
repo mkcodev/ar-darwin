@@ -109,6 +109,30 @@ export function staggeredProgress(
   return clamp((elapsedMs - index * staggerMs) / durationMs, 0, 1);
 }
 
+/**
+ * Large title header: how far the big title has collapsed into the compact bar (0–1, linear)
+ * after scrolling `scrollY` px, collapsing fully over `distance` px. Overscroll counts as 0.
+ */
+export function largeTitleCollapse(scrollY: number, distance: number): number {
+  "worklet";
+  if (!(distance > 0)) return scrollY > 0 ? 1 : 0;
+  return clamp(scrollY / distance, 0, 1);
+}
+
+/**
+ * Large title header: scale of the big title while pulled past the top (`scrollY` < 0). It grows
+ * linearly to `maxScale` over `pullPx` px of overscroll and stays there; 1 otherwise.
+ */
+export function largeTitleOverscrollScale(
+  scrollY: number,
+  pullPx: number,
+  maxScale: number,
+): number {
+  "worklet";
+  if (!(scrollY < 0) || !(pullPx > 0)) return 1;
+  return 1 + clamp(-scrollY / pullPx, 0, 1) * (maxScale - 1);
+}
+
 /** Total length of a staggered sequence of `count` items. */
 export function staggeredTotalMs(count: number, staggerMs: number, durationMs: number): number {
   "worklet";

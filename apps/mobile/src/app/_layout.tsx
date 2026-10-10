@@ -1,8 +1,7 @@
-import { SplashScreen, Stack } from "expo-router";
-import { SQLiteProvider } from "expo-sqlite";
+import { SplashScreen } from "expo-router";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { DATABASE_NAME, migrateDbIfNeeded } from "../storage/database";
+import { AppStack } from "../navigation/AppStack";
 import { HandednessProvider } from "../theme/HandednessProvider";
 import { ReduceMotionProvider } from "../theme/ReduceMotionProvider";
 import { ThemeProvider } from "../theme/ThemeProvider";
@@ -28,10 +27,7 @@ export default function RootLayout() {
       <ThemeProvider>
         <HandednessProvider>
           <ReduceMotionProvider>
-            {/* Renders nothing until the migrations ran; the splash is already gone by then. */}
-            <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDbIfNeeded}>
-              <Stack />
-            </SQLiteProvider>
+            <AppStack />
           </ReduceMotionProvider>
         </HandednessProvider>
       </ThemeProvider>

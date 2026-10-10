@@ -76,6 +76,12 @@ export const signature = {
   gestureSettleMs: 280,
   /** Long press on the lock button that toggles touch lock. */
   lockHoldMs: 1000,
+  /** Large title header: the big title shrinks to this scale as it collapses into the bar. */
+  largeTitleCollapsedScale: 0.96,
+  /** Large title header: pulled past the top, the big title grows up to this scale… */
+  largeTitleOverscrollScale: 1.05,
+  /** …reached after this many px of overscroll. */
+  largeTitleOverscrollPx: 120,
 } as const;
 
 export function dampingRatio(s: Pick<SpringToken, "stiffness" | "damping" | "mass">): number {
