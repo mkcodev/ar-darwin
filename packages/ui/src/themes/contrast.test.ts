@@ -3,9 +3,11 @@ import { CAMERA_BACKDROPS, REFERENCE_SURFACES } from "../cameraBackdrops";
 import {
   CATEGORY_COLOR_KEYS,
   type CategoryColorKey,
+  MAX_CATEGORY_CHROMA_DARK,
+  MIN_CATEGORY_ACCENT_DELTA_E,
   MIN_CATEGORY_DELTA_E,
 } from "../categoryColors";
-import { blendOver, contrastRatio, deltaEOk, MIN_CONTRAST, type Rgba } from "../contrast";
+import { blendOver, contrastRatio, deltaEOk, MIN_CONTRAST, type Rgba, toOklab } from "../contrast";
 import { themes } from "./index";
 import type { ColorTokens } from "./types";
 
@@ -103,7 +105,7 @@ describe.each(Object.values(themes))("$name theme", (theme) => {
 
 describe.each(Object.values(themes))("$name theme: category palette", (theme) => {
   const c = theme.color;
-  const semantic = { accent: c.accent.default, guide: c.guide.default, danger: c.danger };
+  const semantic = { guide: c.guide.default, danger: c.danger };
 
   describe.each(CATEGORY_COLOR_KEYS)("%s", (key) => {
     it.each(["canvas", "surface", "raised"] as const)("≥ 3 on bg.%s (icon stroke)", (bg) => {
@@ -112,6 +114,17 @@ describe.each(Object.values(themes))("$name theme: category palette", (theme) =>
     it.each(Object.entries(semantic))("is told apart from %s (OKLab ΔE)", (_name, color) => {
       expect(deltaEOk(c.category[key], color)).toBeGreaterThanOrEqual(MIN_CATEGORY_DELTA_E);
     });
+    it("stays well apart from the accent (OKLab ΔE)", () => {
+      expect(deltaEOk(c.category[key], c.accent.default)).toBeGreaterThanOrEqual(
+        MIN_CATEGORY_ACCENT_DELTA_E,
+      );
+    });
+    if (theme.name === "dark") {
+      it("reads as pigment on graphite, not neon (OKLCH chroma)", () => {
+        const [, a, b] = toOklab(c.category[key]);
+        expect(Math.hypot(a, b)).toBeLessThanOrEqual(MAX_CATEGORY_CHROMA_DARK);
+      });
+    }
   });
 
   const pairs = CATEGORY_COLOR_KEYS.flatMap((a, i) =>

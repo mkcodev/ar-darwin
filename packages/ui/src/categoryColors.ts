@@ -21,5 +21,11 @@ export function isCategoryColorKey(value: string): value is CategoryColorKey {
   return (CATEGORY_COLOR_KEYS as readonly string[]).includes(value);
 }
 
-/** Minimum OKLab ΔE between two category colours, and between one and accent/guide/danger. */
+/** Minimum OKLab ΔE between two category colours, and between one and guide/danger. */
 export const MIN_CATEGORY_DELTA_E = 0.1;
+
+/** Wider gap against the accent: vermilion must stay the only warm, vivid colour of the UI. */
+export const MIN_CATEGORY_ACCENT_DELTA_E = 0.15;
+
+/** Most chroma (OKLCH C) a category colour may carry on the dark theme: pigment, not neon. */
+export const MAX_CATEGORY_CHROMA_DARK = 0.09;

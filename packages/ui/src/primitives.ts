@@ -49,17 +49,19 @@ export const nonPhotoBlue = {
 /**
  * Category inks: one pair per key, `onDark` for the graphite theme and `onLight` for paper.
  * Hues keep clear of vermilion (action), non-photo blue (guides) and the danger pink; lightness
- * varies per key so neighbouring hues still separate (OKLab ΔE ≥ 0.10, tested).
+ * varies per key so neighbouring hues still separate (OKLab ΔE ≥ 0.10, tested). On graphite the
+ * chroma stays low (OKLCH C ≤ 0.09): pigment or chalk, never neon, so vermilion remains the only
+ * warm, vivid colour of the interface. Ochre leans to a muted yellow, away from the accent.
  */
 export const categoryInk = {
-  ochre: { onDark: "#FEB43A", onLight: "#865901" },
-  lichen: { onDark: "#D1ED74", onLight: "#6E8210" },
-  moss: { onDark: "#6CB26F", onLight: "#1C5C23" },
-  pine: { onDark: "#71D4AD", onLight: "#1E7E5E" },
-  indigo: { onDark: "#9EA4FF", onLight: "#4642A2" },
-  plum: { onDark: "#F39FEC", onLight: "#84377F" },
-  sepia: { onDark: "#C19375", onLight: "#623A1D" },
-  slate: { onDark: "#8692AB", onLight: "#343D50" },
+  ochre: { onDark: "#D8BA7C", onLight: "#7A5B01" },
+  lichen: { onDark: "#DCEAA9", onLight: "#718109" },
+  moss: { onDark: "#6E9D6F", onLight: "#1C5C23" },
+  pine: { onDark: "#81C1A8", onLight: "#197E61" },
+  indigo: { onDark: "#9499D3", onLight: "#4642A2" },
+  plum: { onDark: "#DFABD2", onLight: "#883679" },
+  sepia: { onDark: "#B4947E", onLight: "#623A1D" },
+  slate: { onDark: "#737D93", onLight: "#343D50" },
 } as const;
 
 export const signal = {

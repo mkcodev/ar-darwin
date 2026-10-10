@@ -52,19 +52,21 @@ Paleta propia de 8 tintas (`categoryInk` en primitivas, `theme.color.category[cl
 
 | Clave | Oscuro | Claro | Categoría de serie |
 | --- | --- | --- | --- |
-| ochre | #FEB43A | #865901 | Animales |
-| plum | #F39FEC | #84377F | Personas |
-| moss | #6CB26F | #1C5C23 | Paisajes |
-| indigo | #9EA4FF | #4642A2 | Manga y anime |
-| sepia | #C19375 | #623A1D | Objetos |
-| slate | #8692AB | #343D50 | Letras |
-| pine | #71D4AD | #1E7E5E | — |
-| lichen | #D1ED74 | #6E8210 | — |
+| ochre | #D8BA7C | #7A5B01 | Animales |
+| plum | #DFABD2 | #883679 | Personas |
+| moss | #6E9D6F | #1C5C23 | Paisajes |
+| indigo | #9499D3 | #4642A2 | Manga y anime |
+| sepia | #B4947E | #623A1D | Objetos |
+| slate | #737D93 | #343D50 | Letras |
+| pine | #81C1A8 | #197E61 | — |
+| lichen | #DCEAA9 | #718109 | — |
 
 - **El color de categoría nunca va solo; siempre con icono o nombre.** Hay personas que no distinguen ciertos pares de tintas, y el color no debe ser la única pista.
-- Se usa como trazo de icono o punto, no como fondo de texto: ≥ 3:1 sobre lienzo, superficie y elevado en los dos temas (el peor da 3,5:1, `lichen` en claro).
-- **Distinción perceptiva:** ΔE en OKLab ≥ 0,10 entre cada par de claves y frente a acento, guía y peligro, en los dos temas (`MIN_CATEGORY_DELTA_E`). Con la misma luminosidad, 8 tintas quedaban a 0,04: por eso la luminosidad varía por clave.
+- **Pigmento, no neón.** Sobre grafito el croma (OKLCH) no pasa de 0,09 (`MAX_CATEGORY_CHROMA_DARK`): se lee como tiza o pigmento, igual de terroso que en papel. El bermellón es el único color cálido y vivo de la interfaz; el ocre tira a amarillo apagado.
+- Se usa como trazo de icono o punto, no como fondo de texto: ≥ 3:1 sobre lienzo, superficie y elevado en los dos temas (el peor da 3,4:1, `slate` en oscuro).
+- **Distinción perceptiva:** ΔE en OKLab ≥ 0,10 entre cada par de claves y frente a guía y peligro, y ≥ 0,15 frente al acento, en los dos temas (`MIN_CATEGORY_DELTA_E`, `MIN_CATEGORY_ACCENT_DELTA_E`). Con la misma luminosidad, 8 tintas quedaban a 0,04: por eso la luminosidad varía por clave.
 - Tonos lejos del bermellón (acción), del azul no-foto (guías) y del rosa de peligro, para que una categoría nunca parezca un estado.
+- El icono de manga son viñetas con cortes en diagonal, no un ojo (se confundiría con mostrar/ocultar).
 
 ### La cámara es siempre oscura
 
