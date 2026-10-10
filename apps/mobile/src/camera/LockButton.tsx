@@ -9,9 +9,9 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
+import { SkiaIcon } from "../components/SkiaIcon";
 import { t } from "../i18n";
 import { playHaptic } from "../theme/playHaptic";
-import { CameraIcon } from "./CameraIcon";
 
 type LockButtonProps = {
   /** Shared with `useOverlayGestures`, read on the UI thread: never animated, only flipped. */
@@ -103,7 +103,7 @@ export function LockButton({ locked, isLocked, onLockedChange }: LockButtonProps
               strokeCap="round"
               color={cameraColors.accent}
             />
-            <CameraIcon
+            <SkiaIcon
               name="lock"
               size={ICON_SIZE}
               x={(lockButton.size - ICON_SIZE) / 2}
