@@ -232,6 +232,15 @@ export const es = {
     locked: "Bloqueado",
     unlockToExit: "Desbloquea para salir",
     retry: "Reintentar",
+    fps: {
+      toggle: "fps",
+      show: "Mostrar contador de fps",
+      hide: "Ocultar contador de fps",
+      now: "UI {ui} · JS {js}",
+      measuring: "Midiendo…",
+      min: "mín UI {ui} · JS {js}",
+      hitches: "peor {worst} ms · tirones {long}",
+    },
     issue: {
       disabled: {
         title: "Cámara desactivada",
