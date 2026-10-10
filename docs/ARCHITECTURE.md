@@ -225,8 +225,8 @@ type Category = {
   key?: string;            // clave i18n ("categories.animals"): solo las de serie
   name?: string;           // nombre escrito por la persona: solo las suyas (exactamente uno de key/name)
   isDefault: boolean;
-  color?: string;          // clave de token de packages/ui, nunca hex (paleta pendiente, ver roadmap)
-  icon?: string;           // nombre de icono de packages/ui (iconos pendientes)
+  color?: string;          // clave de la paleta de packages/ui ("ochre"), nunca hex
+  icon?: string;           // nombre de icono de packages/ui ("animal")
   order: number;           // posición, entero ≥ 0
 };
 ```
@@ -345,6 +345,14 @@ al final, nunca editar una publicada, y ampliar `storage.test.ts`. La v1 crea la
 siembra las 6 categorías de serie con su clave i18n (`categories.<id>`); `categoryLabel`
 (apps/mobile) traduce con `t(defaultCategoryKey(id))`, que no compila si falta alguna clave en
 packages/i18n.
+
+La v2 (issue #38) rellena `color` e `icon` de las 6 de serie con `DEFAULT_CATEGORY_STYLES`
+(claves de la paleta y nombres de icono, literales congelados con la migración), solo donde la
+columna sigue a NULL y con `is_default = 1`: nunca pisa un valor ya puesto ni toca las propias.
+Core no importa packages/ui; `apps/mobile/src/storage/categoryStyle.ts` comprueba con `satisfies`
+que cada clave e icono existen en packages/ui (falla `pnpm typecheck` si no) y `categoryStyle(category,
+theme)` resuelve la clave al color del tema activo (`isCategoryColorKey`, `isIconName`), con
+`text.muted` e `image` si el valor guardado no se reconoce.
 
 ### Rutas de archivo
 
