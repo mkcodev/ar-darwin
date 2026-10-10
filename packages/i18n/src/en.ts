@@ -226,6 +226,26 @@ export const en = {
     noDevice: "No back camera found",
     showCalibration: "Grid",
     showSketch: "Darwin sketch",
+    lock: "Lock",
+    unlock: "Unlock",
+    lockHint: "Hold for 1 s",
+    locked: "Locked",
+    unlockToExit: "Unlock to leave",
+    retry: "Retry",
+    issue: {
+      disabled: {
+        title: "Camera disabled",
+        body: "It may be off for privacy or by a device policy. Turn it on in Quick Settings or Settings.",
+      },
+      inUse: {
+        title: "Camera busy",
+        body: "Another app is using the camera. Close that app and try again.",
+      },
+      unknown: {
+        title: "Can't open the camera",
+        body: "Something unexpected went wrong. Please try again.",
+      },
+    },
   },
   gallery: {
     buttons: "Buttons",
