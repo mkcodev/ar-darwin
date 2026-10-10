@@ -12,7 +12,7 @@ import Animated, {
 import { t } from "../i18n";
 
 type LockedToastProps = {
-  /** Bumped by `CameraSpikeScreen` every time the blocked hardware back press needs re-showing
+  /** Bumped by `CameraOverlayScreen` every time the blocked hardware back press needs re-showing
    *  this toast (a plain counter so the same message can fade in again while already visible). */
   trigger: number;
   /** Distance from the top of the screen (safe area included): the slider owns the bottom. */
