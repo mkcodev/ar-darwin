@@ -93,4 +93,9 @@ Si falla en el Android modesto, plan B (en este orden, midiendo tras cada cambio
 
 ## Decisión
 
-_Pendiente de los resultados._
+**2026-10-10 · Puerta pasada.** Prueba hecha con la build `preview` en el móvil principal y en un
+Android modesto. Resultado cualitativo: fluido en los dos, sin tirones notados al calcar, y la
+imagen no se mueve con el candado. Sin cifras registradas: no se anotaron los valores del contador,
+modelos, temperatura ni batería, así que la tabla de arriba queda como plantilla para repetir la
+medición si aparece algún problema de rendimiento (p. ej. al añadir el divisor en trozos o la
+importación de fotos grandes en la fase 3). Plan B no necesario por ahora.
