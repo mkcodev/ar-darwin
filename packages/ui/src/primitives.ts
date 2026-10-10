@@ -60,8 +60,8 @@ export const categoryInk = {
   pine: { onDark: "#81C1A8", onLight: "#197E61" },
   indigo: { onDark: "#9499D3", onLight: "#4642A2" },
   plum: { onDark: "#DFABD2", onLight: "#883679" },
-  sepia: { onDark: "#B4947E", onLight: "#623A1D" },
-  slate: { onDark: "#737D93", onLight: "#3D4A66" },
+  sepia: { onDark: "#B2856E", onLight: "#623A1D" },
+  slate: { onDark: "#737D93", onLight: "#3A4567" },
 } as const;
 
 export const signal = {

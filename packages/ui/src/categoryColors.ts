@@ -30,5 +30,8 @@ export const MIN_CATEGORY_ACCENT_DELTA_E = 0.15;
 /** Gap from text.primary, so no category colour passes for a neutral icon. */
 export const MIN_CATEGORY_TEXT_DELTA_E = 0.12;
 
+/** Gap from text.muted, so no category icon looks disabled. */
+export const MIN_CATEGORY_MUTED_DELTA_E = 0.08;
+
 /** Most chroma (OKLCH C) a category colour may carry on the dark theme: pigment, not neon. */
 export const MAX_CATEGORY_CHROMA_DARK = 0.09;
