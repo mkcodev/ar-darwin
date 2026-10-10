@@ -85,6 +85,12 @@ ${seedCategories}
     version: 2,
     sql: fillCategoryStyles,
   },
+  {
+    // Canvas each project's transform was saved for (JSON {width, height}); NULL = never placed,
+    // so existing projects get fitted the first time their camera opens.
+    version: 3,
+    sql: "ALTER TABLE projects ADD COLUMN transform_viewport TEXT;",
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;
