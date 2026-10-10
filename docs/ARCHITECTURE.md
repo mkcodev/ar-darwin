@@ -80,6 +80,14 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   cuadrícula generada sin dependencias (`apps/mobile/scripts/generate-calibration.mjs`) a 4096 px,
   el máximo que la app aceptará al importar una foto, y el boceto «I think» de Darwin (dominio
   público). Ver `SOURCES.md` en esa carpeta.
+- **Bloqueo de toques y errores de cámara (issue #19):** `locked` es un `SharedValue<boolean>`
+  compartido entre `LockButton` (lo escribe tras 1 s de pulsación larga) y `useOverlayGestures`
+  (cada `onChange`/`reset` sale si `locked.value`, en el hilo de UI: una pulsación sale ya en curso
+  al bloquear no se completa). `onError` de `<Camera>` solo salta con los errores CRITICAL de
+  CameraX (desactivada por política, retirada, fatal); una cámara ya abierta por otra app es
+  RECOVERABLE y CameraX la reporta como `onInterruptionStarted`/`onInterruptionEnded`, no como
+  error — por eso `CameraSpikeScreen` escucha las dos cosas. `classifyCameraIssue` (packages/core)
+  traduce el `message` en texto plano de `onError` a `"disabled" | "inUse" | "unknown"`.
 
 ## Estructura del repo
 

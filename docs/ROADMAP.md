@@ -39,7 +39,7 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 - [x] Development build de Android en el móvil (EAS) con las nativas del spike y del MVP (issue #16)
 - [x] Cámara trasera a pantalla completa (vision-camera) con imagen de prueba en Canvas de Skia (issue #17)
 - [x] Gestos simultáneos (arrastrar, pellizcar, rotar) y slider de opacidad en el hilo de UI (issue #18)
-- [ ] Bloqueo de toques (pulsación larga de 1 s en el candado) y pantalla siempre encendida
+- [x] Bloqueo de toques (pulsación larga de 1 s en el candado) y pantalla siempre encendida (issue #19)
 - [ ] Prueba real de 10 min dibujando: medir fps (también en un Android modesto) y anotar resultados
 
 **Puerta:** fluido en móvil real (también en un Android modesto) y la imagen no se mueve al bloquear.
@@ -55,6 +55,8 @@ La regla: publicar el MVP móvil antes de abrir la fase 2. Cada **puerta** es un
 - [ ] Modo imán con guías y vibración (`snapTransform`)
 - [ ] Ajuste fino: dos velocidades, pulsación larga, reset y candado (`nudge`)
 - [ ] Menú flotante en píldora que se oculta solo
+- [ ] Modo inmersivo al bloquear: ocultar la barra de navegación de Android (`expo-navigation-bar`,
+      requiere nuevo development build)
 - [ ] Pantalla del divisor con vista previa en vivo (Prompt 6)
 - [ ] Minimapa y botón Siguiente trozo en la cámara
 - [ ] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja, reducir movimiento, idioma
