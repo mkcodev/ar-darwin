@@ -46,6 +46,22 @@ export const nonPhotoBlue = {
   600: "#1F7FB8",
 } as const;
 
+/**
+ * Category inks: one pair per key, `onDark` for the graphite theme and `onLight` for paper.
+ * Hues keep clear of vermilion (action), non-photo blue (guides) and the danger pink; lightness
+ * varies per key so neighbouring hues still separate (OKLab ΔE ≥ 0.10, tested).
+ */
+export const categoryInk = {
+  ochre: { onDark: "#FEB43A", onLight: "#865901" },
+  lichen: { onDark: "#D1ED74", onLight: "#6E8210" },
+  moss: { onDark: "#6CB26F", onLight: "#1C5C23" },
+  pine: { onDark: "#71D4AD", onLight: "#1E7E5E" },
+  indigo: { onDark: "#9EA4FF", onLight: "#4642A2" },
+  plum: { onDark: "#F39FEC", onLight: "#84377F" },
+  sepia: { onDark: "#C19375", onLight: "#623A1D" },
+  slate: { onDark: "#8692AB", onLight: "#343D50" },
+} as const;
+
 export const signal = {
   dangerOnDark: "#FF8A95",
   dangerOnLight: "#A3243A",

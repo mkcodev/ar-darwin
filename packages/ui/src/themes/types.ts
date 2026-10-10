@@ -1,3 +1,5 @@
+import type { CategoryColorKey } from "../categoryColors";
+
 /**
  * Semantic colour tokens. Both themes must provide every key: a missing token is a type error.
  * Values are hex (#RRGGBB) or rgba(r, g, b, a) strings so they work in React Native and CSS.
@@ -30,6 +32,8 @@ export type ColorTokens = {
     default: string;
     tint: string;
   };
+  /** Category palette, by key. Icon strokes and dots only, always next to an icon or a name. */
+  category: Record<CategoryColorKey, string>;
   danger: string;
   focus: string;
   /** Controls floating over the live camera image, measured against photographed paper. */

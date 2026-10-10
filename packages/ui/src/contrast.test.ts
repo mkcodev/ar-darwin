@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { blendOver, contrastRatio, parseColor, relativeLuminance } from "./contrast";
+import {
+  blendOver,
+  contrastRatio,
+  deltaEOk,
+  parseColor,
+  relativeLuminance,
+  toOklab,
+} from "./contrast";
 
 describe("parseColor", () => {
   it("reads hex and rgba", () => {
@@ -29,6 +36,21 @@ describe("contrastRatio", () => {
   });
   it("composites translucent foregrounds over the background", () => {
     expect(contrastRatio("rgba(0, 0, 0, 0)", "#FFFFFF")).toBeCloseTo(1, 5);
+  });
+});
+
+describe("OKLab", () => {
+  it("matches the reference white and black", () => {
+    const [l, a, b] = toOklab("#FFFFFF");
+    expect(l).toBeCloseTo(1, 3);
+    expect(a).toBeCloseTo(0, 3);
+    expect(b).toBeCloseTo(0, 3);
+    expect(toOklab("#000000")[0]).toBeCloseTo(0, 5);
+  });
+  it("ΔE is 0 for the same colour, symmetric and 1 from black to white", () => {
+    expect(deltaEOk("#FF5A1F", "#FF5A1F")).toBe(0);
+    expect(deltaEOk("#FF5A1F", "#7FD3F7")).toBeCloseTo(deltaEOk("#7FD3F7", "#FF5A1F"), 10);
+    expect(deltaEOk("#000000", "#FFFFFF")).toBeCloseTo(1, 3);
   });
 });
 

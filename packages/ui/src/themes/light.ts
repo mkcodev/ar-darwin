@@ -1,5 +1,6 @@
 import { ink, nonPhotoBlue, paper, signal, vermilion } from "../primitives";
 import { cameraColors } from "./camera";
+import { categoryPalette } from "./category";
 import type { Theme } from "./types";
 
 /** Paper version of «Grafito y luz»: ledger paper, iron-gall ink, the same vermilion at a darker value. */
@@ -31,6 +32,7 @@ export const lightTheme: Theme = {
       default: nonPhotoBlue[600],
       tint: "rgba(31, 127, 184, 0.20)",
     },
+    category: categoryPalette("onLight"),
     danger: signal.dangerOnLight,
     focus: ink[900],
     // Always dark: a paper pill would glare next to the drawing (see camera.ts).

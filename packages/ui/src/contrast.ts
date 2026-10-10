@@ -60,6 +60,33 @@ export function contrastRatio(fg: string | Rgba, bg: string | Rgba): number {
   return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 
+/** OKLab coordinates [L, a, b] of an opaque colour (Björn Ottosson's matrices). */
+export function toOklab(color: string | Rgba): [number, number, number] {
+  const c = toRgba(color);
+  const linear = (v: number) => {
+    const s = v / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  const r = linear(c.r);
+  const g = linear(c.g);
+  const b = linear(c.b);
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
+  ];
+}
+
+/** Perceptual distance: Euclidean ΔE in OKLab (0 = identical, ~0.02 = just noticeable). */
+export function deltaEOk(a: string | Rgba, b: string | Rgba): number {
+  const [l1, a1, b1] = toOklab(a);
+  const [l2, a2, b2] = toOklab(b);
+  return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
+}
+
 /** WCAG thresholds used across the design system. */
 export const MIN_CONTRAST = {
   /** Body text and labels. */

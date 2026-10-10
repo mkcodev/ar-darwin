@@ -1,5 +1,6 @@
 import { graphite, nonPhotoBlue, paper, signal, vermilion } from "../primitives";
 import { cameraColors } from "./camera";
+import { categoryPalette } from "./category";
 import type { Theme } from "./types";
 
 /** «Grafito y luz»: default theme. Graphite surfaces, paper text, vermilion action, non-photo guides. */
@@ -30,6 +31,7 @@ export const darkTheme: Theme = {
       default: nonPhotoBlue[300],
       tint: "rgba(127, 211, 247, 0.30)",
     },
+    category: categoryPalette("onDark"),
     danger: signal.dangerOnDark,
     focus: paper.text,
     camera: cameraColors,

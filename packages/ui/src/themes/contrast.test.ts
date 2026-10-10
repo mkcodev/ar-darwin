@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { CAMERA_BACKDROPS, REFERENCE_SURFACES } from "../cameraBackdrops";
-import { blendOver, contrastRatio, MIN_CONTRAST, type Rgba } from "../contrast";
+import {
+  CATEGORY_COLOR_KEYS,
+  type CategoryColorKey,
+  MIN_CATEGORY_DELTA_E,
+} from "../categoryColors";
+import { blendOver, contrastRatio, deltaEOk, MIN_CONTRAST, type Rgba } from "../contrast";
 import { themes } from "./index";
 import type { ColorTokens } from "./types";
 
@@ -93,6 +98,27 @@ describe.each(Object.values(themes))("$name theme", (theme) => {
       );
       expect(guide).toBeGreaterThanOrEqual(nonText);
     });
+  });
+});
+
+describe.each(Object.values(themes))("$name theme: category palette", (theme) => {
+  const c = theme.color;
+  const semantic = { accent: c.accent.default, guide: c.guide.default, danger: c.danger };
+
+  describe.each(CATEGORY_COLOR_KEYS)("%s", (key) => {
+    it.each(["canvas", "surface", "raised"] as const)("≥ 3 on bg.%s (icon stroke)", (bg) => {
+      expect(contrastRatio(c.category[key], c.bg[bg])).toBeGreaterThanOrEqual(nonText);
+    });
+    it.each(Object.entries(semantic))("is told apart from %s (OKLab ΔE)", (_name, color) => {
+      expect(deltaEOk(c.category[key], color)).toBeGreaterThanOrEqual(MIN_CATEGORY_DELTA_E);
+    });
+  });
+
+  const pairs = CATEGORY_COLOR_KEYS.flatMap((a, i) =>
+    CATEGORY_COLOR_KEYS.slice(i + 1).map((b): [CategoryColorKey, CategoryColorKey] => [a, b]),
+  );
+  it.each(pairs)("%s and %s are told apart (OKLab ΔE)", (a, b) => {
+    expect(deltaEOk(c.category[a], c.category[b])).toBeGreaterThanOrEqual(MIN_CATEGORY_DELTA_E);
   });
 });
 

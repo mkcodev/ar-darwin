@@ -46,6 +46,26 @@ Medidos sobre tres fotos de folio (flexo de noche, luz de día, poca luz; extrem
 - **Guía en claro.** El azul de lápiz de «Cuaderno» daba 2,4:1 sobre papel; #1F7FB8 da ≥ 3:1.
 - El bermellón nunca va directamente sobre la foto (1,3:1 sobre gris medio): siempre sobre una píldora o superficie.
 
+### Categorías (issue #38)
+
+Paleta propia de 8 tintas (`categoryInk` en primitivas, `theme.color.category[clave]` en los temas). La categoría guarda la **clave** (`"ochre"`), nunca un hex: el color sigue al tema activo. Las 6 de serie usan 6; `pine` y `lichen` quedan para las categorías propias.
+
+| Clave | Oscuro | Claro | Categoría de serie |
+| --- | --- | --- | --- |
+| ochre | #FEB43A | #865901 | Animales |
+| plum | #F39FEC | #84377F | Personas |
+| moss | #6CB26F | #1C5C23 | Paisajes |
+| indigo | #9EA4FF | #4642A2 | Manga y anime |
+| sepia | #C19375 | #623A1D | Objetos |
+| slate | #8692AB | #343D50 | Letras |
+| pine | #71D4AD | #1E7E5E | — |
+| lichen | #D1ED74 | #6E8210 | — |
+
+- **El color de categoría nunca va solo; siempre con icono o nombre.** Hay personas que no distinguen ciertos pares de tintas, y el color no debe ser la única pista.
+- Se usa como trazo de icono o punto, no como fondo de texto: ≥ 3:1 sobre lienzo, superficie y elevado en los dos temas (el peor da 3,5:1, `lichen` en claro).
+- **Distinción perceptiva:** ΔE en OKLab ≥ 0,10 entre cada par de claves y frente a acento, guía y peligro, en los dos temas (`MIN_CATEGORY_DELTA_E`). Con la misma luminosidad, 8 tintas quedaban a 0,04: por eso la luminosidad varía por clave.
+- Tonos lejos del bermellón (acción), del azul no-foto (guías) y del rosa de peligro, para que una categoría nunca parezca un estado.
+
 ### La cámara es siempre oscura
 
 En los dos temas, la cámara usa las mismas píldoras grafito (`cameraColors`); el tema claro se aplica a biblioteca, divisor, ajustes y hojas.
@@ -153,7 +173,7 @@ Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:
 
 ## Iconos
 
-Set propio en `packages/ui/src/icons.ts` (22 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
+Set propio en `packages/ui/src/icons.ts` (28 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
 
 Todo respeta la opción del sistema de reducir movimiento (sustituir por fundidos cortos o nada).
 

@@ -1,4 +1,5 @@
 export * from "./cameraBackdrops";
+export * from "./categoryColors";
 export * from "./components";
 export * from "./contrast";
 export * from "./haptics";
