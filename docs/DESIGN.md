@@ -66,7 +66,7 @@ Con poca luz, la píldora clara sería lo más brillante de la pantalla y aparta
 
 ## Playground
 
-`pnpm dev:desktop:lan` sirve la web en la red local; `/playground` muestra los tokens, los componentes base y cada movimiento de firma con su versión de «reducir movimiento», usando `packages/core` de verdad (imán, ajuste fino, divisor). En el móvil, `/dev/design` (solo en desarrollo) comprueba fuentes, muelles de Reanimated, hápticos y la entrada a la cámara.
+`pnpm dev:desktop:lan` sirve la web en la red local; `/playground` muestra los tokens, los componentes base y cada movimiento de firma con su versión de «reducir movimiento», usando `packages/core` de verdad (imán, ajuste fino, divisor). En el móvil, `/dev/design` (solo en desarrollo) cambia tema, mano que dibuja y «reducir movimiento» para toda la app, y muestra los componentes base en todos sus estados, los controles de cámara sobre grafito, la hoja inferior, los iconos Skia con su trazo vivo, fuentes, muelles de Reanimated, hápticos y la entrada a la cámara.
 
 ## Tipografía
 
@@ -128,7 +128,7 @@ Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:
 
 ## Iconos
 
-Set propio en `packages/ui/src/icons.ts` (20 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos). Web los pinta en SVG; móvil los pintará con Skia en la fase 2 (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo.
+Set propio en `packages/ui/src/icons.ts` (20 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
 
 Todo respeta la opción del sistema de reducir movimiento (sustituir por fundidos cortos o nada).
 
