@@ -1,11 +1,5 @@
 import * as z from "zod";
-import {
-  type Category,
-  CategorySchema,
-  type Project,
-  ProjectSchema,
-  type Size,
-} from "../models";
+import { type Category, CategorySchema, type Project, ProjectSchema, type Size } from "../models";
 
 /** A `projects` row as SQLite returns it: snake_case, JSON in TEXT columns, NULL for missing. */
 const ProjectRowSchema = z.object({

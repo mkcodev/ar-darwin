@@ -325,8 +325,7 @@ export function restoreTransform(
     return transform;
   }
   const shortRatio =
-    Math.min(viewport.width, viewport.height) /
-    Math.min(savedViewport.width, savedViewport.height);
+    Math.min(viewport.width, viewport.height) / Math.min(savedViewport.width, savedViewport.height);
   return {
     ...transform,
     x: (transform.x * viewport.width) / savedViewport.width,

@@ -41,7 +41,7 @@ UPDATE projects SET
   updated_at = ?
 WHERE id = ?`;
 
-export const SELECT_PROJECTS ="SELECT * FROM projects ORDER BY updated_at DESC, id";
+export const SELECT_PROJECTS = "SELECT * FROM projects ORDER BY updated_at DESC, id";
 
 /** Params: [id]. */
 export const SELECT_PROJECT = "SELECT * FROM projects WHERE id = ?";
