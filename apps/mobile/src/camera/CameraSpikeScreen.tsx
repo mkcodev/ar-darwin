@@ -1,12 +1,27 @@
-import { cameraBackdropColor, cameraColors, opacity, space, typography } from "@ar-darwin/ui";
-import { useIsFocused } from "expo-router";
+import type { CameraIssueKind } from "@ar-darwin/core";
+import { classifyCameraIssue } from "@ar-darwin/core";
+import {
+  cameraBackdropColor,
+  cameraColors,
+  controlsSide,
+  DEFAULT_HANDEDNESS,
+  opacity,
+  space,
+  typography,
+} from "@ar-darwin/ui";
+import { useKeepAwake } from "expo-keep-awake";
+import { Stack, useIsFocused } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { BackHandler, StyleSheet, Text, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, useCameraDevice } from "react-native-vision-camera";
 import { t } from "../i18n";
+import { CameraIssueNotice } from "./CameraIssueNotice";
 import { CameraPermissionGate } from "./CameraPermissionGate";
+import { LockButton } from "./LockButton";
+import { LockedToast } from "./LockedToast";
 import { OpacitySlider } from "./OpacitySlider";
 import { TestImageCanvas } from "./TestImageCanvas";
 import { TestImageToggle } from "./TestImageToggle";
@@ -17,50 +32,105 @@ const TEST_IMAGES = {
 };
 
 /**
- * Issue #17 (camera + test image) and #18 (drag/pinch/rotate with two fingers at once, double
- * tap to reset, opacity slider — all in `TestImageCanvas`/`useOverlayGestures`). `constraints={[{
- * fps: 30 }]}` biases the preview towards the screen's own resolution instead of the sensor's
- * maximum (see docs/ARCHITECTURE.md) — to be measured for real in #20. No lock or keep-awake
- * yet: #19-#20.
+ * Issue #17 (camera + test image), #18 (drag/pinch/rotate with two fingers at once, double tap
+ * to reset, opacity slider — all in `TestImageCanvas`/`useOverlayGestures`) and #19 (touch lock,
+ * `useKeepAwake`, the error notice below). `constraints={[{fps: 30}]}` biases the preview towards
+ * the screen's own resolution instead of the sensor's maximum (see docs/ARCHITECTURE.md) — to be
+ * measured for real in #20.
+ *
+ * Camera errors (#19): vision-camera's `onError` only ever fires for CameraX's CRITICAL errors
+ * (disabled by policy, removed, fatal) — `classifyCameraIssue` (core) reads its plain-text
+ * `message` into one of our three notices. A camera already in use by another app is instead
+ * RECOVERABLE, so CameraX reports it as an interruption, not an error: `onInterruptionStarted`/
+ * `onInterruptionEnded` cover that case directly (see docs/ARCHITECTURE.md).
  */
 export function CameraSpikeScreen() {
   const device = useCameraDevice("back");
   const isFocused = useIsFocused();
+  const insets = useSafeAreaInsets();
   const [showingSketch, setShowingSketch] = useState(false);
   const imageOpacity = useSharedValue<number>(opacity.overlayImage);
+  const locked = useSharedValue(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const [issue, setIssue] = useState<CameraIssueKind | null>(null);
+  const [cameraKey, setCameraKey] = useState(0);
+  const [unlockToastTrigger, setUnlockToastTrigger] = useState(0);
+
+  useKeepAwake();
+
+  // While locked, the hardware back button/gesture must not leave the camera (#19): swallow it
+  // and nudge the person towards the lock instead. The iOS swipe-back equivalent is the
+  // `gestureEnabled` below.
+  useEffect(() => {
+    if (!isLocked) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      setUnlockToastTrigger((n) => n + 1);
+      return true;
+    });
+    return () => subscription.remove();
+  }, [isLocked]);
+
+  const retry = () => {
+    setIssue(null);
+    setCameraKey((key) => key + 1);
+  };
+
+  const lockSide = controlsSide(DEFAULT_HANDEDNESS);
 
   return (
     <View style={[styles.frame, { backgroundColor: cameraBackdropColor }]}>
       <StatusBar style="light" />
+      <Stack.Screen options={{ gestureEnabled: !isLocked }} />
       <CameraPermissionGate>
         {device ? (
-          <>
-            <Camera
-              style={StyleSheet.absoluteFill}
-              device={device}
-              isActive={isFocused}
-              constraints={[{ fps: 30 }]}
-            />
-            <TestImageCanvas
-              source={TEST_IMAGES[showingSketch ? "sketch" : "calibration"]}
-              opacity={imageOpacity}
-            />
-            <View style={styles.controls} pointerEvents="box-none">
-              <OpacitySlider value={imageOpacity} />
-              <View style={styles.toggleRow}>
-                <TestImageToggle
-                  showingSketch={showingSketch}
-                  onToggle={() => setShowingSketch((s) => !s)}
-                />
-              </View>
-            </View>
-          </>
+          issue ? (
+            <CameraIssueNotice kind={issue} onRetry={retry} />
+          ) : (
+            <>
+              <Camera
+                key={cameraKey}
+                style={StyleSheet.absoluteFill}
+                device={device}
+                isActive={isFocused}
+                constraints={[{ fps: 30 }]}
+                onError={(error) => setIssue(classifyCameraIssue(error.message))}
+                onInterruptionStarted={() => setIssue("inUse")}
+                onInterruptionEnded={() => setIssue(null)}
+              />
+              <TestImageCanvas
+                source={TEST_IMAGES[showingSketch ? "sketch" : "calibration"]}
+                opacity={imageOpacity}
+                locked={locked}
+              />
+              {!isLocked && (
+                <View style={styles.controls} pointerEvents="box-none">
+                  <OpacitySlider value={imageOpacity} />
+                  <View style={styles.toggleRow}>
+                    <TestImageToggle
+                      showingSketch={showingSketch}
+                      onToggle={() => setShowingSketch((s) => !s)}
+                    />
+                  </View>
+                </View>
+              )}
+            </>
+          )
         ) : (
           <Text style={[styles.noDevice, { color: cameraColors.text }]}>
             {t("cameraSpike.noDevice")}
           </Text>
         )}
       </CameraPermissionGate>
+      <View
+        style={[
+          styles.lockWrap,
+          { top: insets.top + space[5] },
+          lockSide === "left" ? { left: space[5] } : { right: space[5] },
+        ]}
+      >
+        <LockButton locked={locked} isLocked={isLocked} onLockedChange={setIsLocked} />
+      </View>
+      <LockedToast trigger={unlockToastTrigger} />
     </View>
   );
 }
@@ -82,4 +152,5 @@ const styles = StyleSheet.create({
     gap: space[4],
   },
   toggleRow: { alignItems: "center" },
+  lockWrap: { position: "absolute" },
 });
