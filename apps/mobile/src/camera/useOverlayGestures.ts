@@ -19,12 +19,17 @@ import {
 type Options = {
   imageSize: SharedValue<Size>;
   canvasSize: SharedValue<Size>;
+  /** Touch lock (#19): while true, every gesture below is a no-op and the image stays put. */
+  locked: SharedValue<boolean>;
 };
 
 /**
  * Drag, pinch and rotate the test image with two fingers at once, all on the UI thread.
  * Double tap resets to `fitTransform`. No magnet here (that is phase 3): see the comment at
  * the bottom of the pinch/rotation handlers for exactly where `snapTransform` will go.
+ *
+ * Touch lock (#19): each handler bails out on `locked.value` before touching x/y/scale/rotation,
+ * so a finger already dragging when the lock engages stops dead instead of finishing its move.
  *
  * `translationX/Y`, `scale` and `rotation` from react-native-gesture-handler accumulate from
  * the start of each gesture's own activation, which does not line up across pan/pinch/rotation
@@ -37,7 +42,7 @@ type Options = {
  * must be a worklet: only core's transform.ts functions (checked by its tests) and inline
  * math. The double tap is the exception: `runOnJS(true)`, so `reset` may call plain JS.
  */
-export function useOverlayGestures({ imageSize, canvasSize }: Options) {
+export function useOverlayGestures({ imageSize, canvasSize, locked }: Options) {
   const reduce = useReducedMotion();
 
   const x = useSharedValue(0);
@@ -71,6 +76,7 @@ export function useOverlayGestures({ imageSize, canvasSize }: Options) {
   const pan = Gesture.Pan()
     .averageTouches(true)
     .onChange((e) => {
+      if (locked.value) return;
       const next = applyGesture(
         {
           x: x.value,
@@ -94,6 +100,7 @@ export function useOverlayGestures({ imageSize, canvasSize }: Options) {
     });
 
   const pinch = Gesture.Pinch().onChange((e) => {
+    if (locked.value) return;
     // Phase 3 magnet: compute `snapTransform` on this result for display, and only write it
     // here (the stored base for next frame) once the gesture ends.
     const next = applyGesture(
@@ -124,6 +131,7 @@ export function useOverlayGestures({ imageSize, canvasSize }: Options) {
       rotationAccum.value = 0;
     })
     .onChange((e) => {
+      if (locked.value) return;
       const before = rotationDeadZone(rotationAccum.value);
       rotationAccum.value += radiansToDegrees(e.rotationChange);
       const after = rotationDeadZone(rotationAccum.value);
@@ -152,6 +160,7 @@ export function useOverlayGestures({ imageSize, canvasSize }: Options) {
     });
 
   const reset = () => {
+    if (locked.value) return;
     const base = fitTransform(imageSize.value, canvasSize.value);
     const target = nudge(
       {

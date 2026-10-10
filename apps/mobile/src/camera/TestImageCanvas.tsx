@@ -24,6 +24,8 @@ type TestImageCanvasProps = {
   source: number;
   /** 0–1, shared with the opacity slider. */
   opacity: SharedValue<number>;
+  /** Touch lock (#19), shared with `LockButton` and forwarded to `useOverlayGestures`. */
+  locked: SharedValue<boolean>;
 };
 
 const ZERO_SIZE: Size = { width: 0, height: 0 };
@@ -40,7 +42,7 @@ const ZERO_SIZE: Size = { width: 0, height: 0 };
  * says "may not be a bug", and there's no supported way around it (see issue #25): it settles on
  * its own once the first layout lands.
  */
-export function TestImageCanvas({ source, opacity }: TestImageCanvasProps) {
+export function TestImageCanvas({ source, opacity, locked }: TestImageCanvasProps) {
   const image = useImage(source);
   const canvasSize = useSharedValue<Size>(ZERO_SIZE);
   const imageSize = useSharedValue<Size>(ZERO_SIZE);
@@ -49,7 +51,7 @@ export function TestImageCanvas({ source, opacity }: TestImageCanvasProps) {
     imageSize.value = image ? { width: image.width(), height: image.height() } : ZERO_SIZE;
   }, [image, imageSize]);
 
-  const { gesture, x, y, scale, rotation } = useOverlayGestures({ imageSize, canvasSize });
+  const { gesture, x, y, scale, rotation } = useOverlayGestures({ imageSize, canvasSize, locked });
 
   const matrix = useDerivedValue(() => {
     const img = imageSize.value;
