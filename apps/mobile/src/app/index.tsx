@@ -34,7 +34,8 @@ const GAP = space[3];
 
 /**
  * Library, the home screen: the projects in a two-column grid under the large title, importing
- * from the header's «+» (or the empty state) and each project's actions on tap or long press.
+ * from the header's «+» (or the empty state). Tapping a project opens its camera; a long press,
+ * its actions.
  * A plain ScrollView, not a FlatList: Reanimated's layout transitions (the grid closing the gap
  * of a deleted card) only work on a single-column FlatList, and a personal library stays small.
  */
@@ -75,6 +76,9 @@ export default function Library() {
     playHaptic("projectActions");
     setActionsStep(step);
     setActionsFor(project);
+  };
+  const openCamera = (project: Project) => {
+    router.push({ pathname: "/project/[id]/camera", params: { id: project.id } });
   };
   const pickSource = (source: ImportSource) => {
     setImportOpen(false);
@@ -126,6 +130,7 @@ export default function Library() {
             >
               <ProjectCard
                 project={project}
+                onOpen={openCamera}
                 onActions={openActions}
                 onDelete={(p) => openActions(p, "confirmDelete")}
               />
