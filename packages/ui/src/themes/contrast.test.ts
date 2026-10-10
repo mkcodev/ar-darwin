@@ -6,6 +6,7 @@ import {
   MAX_CATEGORY_CHROMA_DARK,
   MIN_CATEGORY_ACCENT_DELTA_E,
   MIN_CATEGORY_DELTA_E,
+  MIN_CATEGORY_TEXT_DELTA_E,
 } from "../categoryColors";
 import { blendOver, contrastRatio, deltaEOk, MIN_CONTRAST, type Rgba, toOklab } from "../contrast";
 import { themes } from "./index";
@@ -117,6 +118,11 @@ describe.each(Object.values(themes))("$name theme: category palette", (theme) =>
     it("stays well apart from the accent (OKLab ΔE)", () => {
       expect(deltaEOk(c.category[key], c.accent.default)).toBeGreaterThanOrEqual(
         MIN_CATEGORY_ACCENT_DELTA_E,
+      );
+    });
+    it("does not pass for a neutral icon (OKLab ΔE from text.primary)", () => {
+      expect(deltaEOk(c.category[key], c.text.primary)).toBeGreaterThanOrEqual(
+        MIN_CATEGORY_TEXT_DELTA_E,
       );
     });
     if (theme.name === "dark") {

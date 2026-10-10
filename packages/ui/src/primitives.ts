@@ -54,14 +54,14 @@ export const nonPhotoBlue = {
  * warm, vivid colour of the interface. Ochre leans to a muted yellow, away from the accent.
  */
 export const categoryInk = {
-  ochre: { onDark: "#D8BA7C", onLight: "#7A5B01" },
-  lichen: { onDark: "#DCEAA9", onLight: "#718109" },
+  ochre: { onDark: "#D5B276", onLight: "#7A5B01" },
+  lichen: { onDark: "#B6DBA0", onLight: "#718109" },
   moss: { onDark: "#6E9D6F", onLight: "#1C5C23" },
   pine: { onDark: "#81C1A8", onLight: "#197E61" },
   indigo: { onDark: "#9499D3", onLight: "#4642A2" },
   plum: { onDark: "#DFABD2", onLight: "#883679" },
   sepia: { onDark: "#B4947E", onLight: "#623A1D" },
-  slate: { onDark: "#737D93", onLight: "#343D50" },
+  slate: { onDark: "#737D93", onLight: "#3D4A66" },
 } as const;
 
 export const signal = {

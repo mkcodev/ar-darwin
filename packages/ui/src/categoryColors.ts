@@ -27,5 +27,8 @@ export const MIN_CATEGORY_DELTA_E = 0.1;
 /** Wider gap against the accent: vermilion must stay the only warm, vivid colour of the UI. */
 export const MIN_CATEGORY_ACCENT_DELTA_E = 0.15;
 
+/** Gap from text.primary, so no category colour passes for a neutral icon. */
+export const MIN_CATEGORY_TEXT_DELTA_E = 0.12;
+
 /** Most chroma (OKLCH C) a category colour may carry on the dark theme: pigment, not neon. */
 export const MAX_CATEGORY_CHROMA_DARK = 0.09;

@@ -52,19 +52,19 @@ Paleta propia de 8 tintas (`categoryInk` en primitivas, `theme.color.category[cl
 
 | Clave | Oscuro | Claro | Categoría de serie |
 | --- | --- | --- | --- |
-| ochre | #D8BA7C | #7A5B01 | Animales |
+| ochre | #D5B276 | #7A5B01 | Animales |
 | plum | #DFABD2 | #883679 | Personas |
 | moss | #6E9D6F | #1C5C23 | Paisajes |
 | indigo | #9499D3 | #4642A2 | Manga y anime |
 | sepia | #B4947E | #623A1D | Objetos |
-| slate | #737D93 | #343D50 | Letras |
+| slate | #737D93 | #3D4A66 | Letras |
 | pine | #81C1A8 | #197E61 | — |
-| lichen | #DCEAA9 | #718109 | — |
+| lichen | #B6DBA0 | #718109 | — |
 
 - **El color de categoría nunca va solo; siempre con icono o nombre.** Hay personas que no distinguen ciertos pares de tintas, y el color no debe ser la única pista.
 - **Pigmento, no neón.** Sobre grafito el croma (OKLCH) no pasa de 0,09 (`MAX_CATEGORY_CHROMA_DARK`): se lee como tiza o pigmento, igual de terroso que en papel. El bermellón es el único color cálido y vivo de la interfaz; el ocre tira a amarillo apagado.
 - Se usa como trazo de icono o punto, no como fondo de texto: ≥ 3:1 sobre lienzo, superficie y elevado en los dos temas (el peor da 3,4:1, `slate` en oscuro).
-- **Distinción perceptiva:** ΔE en OKLab ≥ 0,10 entre cada par de claves y frente a guía y peligro, y ≥ 0,15 frente al acento, en los dos temas (`MIN_CATEGORY_DELTA_E`, `MIN_CATEGORY_ACCENT_DELTA_E`). Con la misma luminosidad, 8 tintas quedaban a 0,04: por eso la luminosidad varía por clave.
+- **Distinción perceptiva:** ΔE en OKLab ≥ 0,10 entre cada par de claves y frente a guía y peligro, ≥ 0,15 frente al acento y ≥ 0,12 frente a `text.primary` (que ningún color parezca un icono neutro), en los dos temas (`MIN_CATEGORY_DELTA_E`, `MIN_CATEGORY_ACCENT_DELTA_E`, `MIN_CATEGORY_TEXT_DELTA_E`). El más cercano es lichen en oscuro (0,123), y por eso es más verde y algo más oscuro que un liquen claro. Con la misma luminosidad, 8 tintas quedaban a 0,04: por eso la luminosidad varía por clave.
 - Tonos lejos del bermellón (acción), del azul no-foto (guías) y del rosa de peligro, para que una categoría nunca parezca un estado.
 - El icono de manga son viñetas con cortes en diagonal, no un ojo (se confundiría con mostrar/ocultar).
 
