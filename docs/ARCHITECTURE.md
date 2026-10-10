@@ -23,7 +23,7 @@ apps/mobile (Expo)          apps/desktop (Vite PWA)
 | Cámara | react-native-vision-camera | Vista de cámara rápida y capturas para el time-lapse |
 | Dibujo del overlay | @shopify/react-native-skia | Imagen, guías y filtros a 60 fps; shaders para el boceto |
 | Gestos y animación | Reanimated + Gesture Handler | Pellizcar, arrastrar, rotar y muelles en el hilo de UI |
-| Extras nativos | expo-haptics, expo-keep-awake, expo-image-picker, expo-sqlite, expo-localization | Vibración del imán, pantalla encendida, importar, guardar, idioma del sistema |
+| Extras nativos | expo-haptics, expo-keep-awake, expo-image-picker, expo-sqlite, expo-file-system, expo-localization | Vibración del imán, pantalla encendida, importar, guardar, archivos de proyectos, idioma del sistema |
 | PC | Vite + React como PWA; Tauri si se quiere instalable | La app no necesita servidor ni SEO, así que Vite basta |
 | Animación web | Motion | Muelles equivalentes a los del móvil |
 | Validación | Zod | Modelos y datos importados seguros |
@@ -173,18 +173,43 @@ type Tile = {
   coreRect: Rect;          // recorte al ras, sin solapamiento
 };
 
+type ProjectStatus = "pending" | "in_progress" | "done";
+
 type Project = {
-  id: string;
+  id: string;              // UUID v4 (createProjectId), válido tal cual para Supabase
   name: string;
-  sourceUri: string;
-  transform: Transform;
+  sourceUri: string;       // ruta guardada: relativa a documentos o asset (ver «Rutas de archivo»)
+  transform: Transform;    // último ajuste de cámara
   opacity: number;         // 0..1
   split?: SplitConfig;
   currentTileId?: string;
+  status: ProjectStatus;
+  resultPhotoUri?: string; // foto del dibujo terminado, ruta guardada
+  resultTransform?: Transform;
+  completedAt?: string;    // ISO
+  notes?: string;
+  difficulty?: number;     // entero 1..5
+  timeSpentMs: number;     // entero ≥ 0
+  categoryIds: string[];   // N:M con Category, en el orden de las categorías
   createdAt: string;       // ISO
   updatedAt: string;       // ISO
 };
+
+type Category = {
+  id: string;              // las de serie: "animals", "people", "landscapes", "manga", "objects", "lettering"
+  key?: string;            // clave i18n ("categories.animals"): solo las de serie
+  name?: string;           // nombre escrito por la persona: solo las suyas (exactamente uno de key/name)
+  isDefault: boolean;
+  color?: string;          // clave de token de packages/ui, nunca hex (paleta pendiente, ver roadmap)
+  icon?: string;           // nombre de icono de packages/ui (iconos pendientes)
+  order: number;           // posición, entero ≥ 0
+};
 ```
+
+`ProjectSchema` y `CategorySchema` (Zod) validan todo lo que sale de la base de datos.
+`createProject({ id, name, sourceUri, opacity, now })` crea un proyecto `pending` en
+`IDENTITY_TRANSFORM` (la cámara encaja la imagen al abrirlo); la opacidad inicial la pasa la app
+desde `opacity.overlayImage` de packages/ui, para no duplicar el token en core.
 
 ## Funciones de core
 
@@ -257,3 +282,67 @@ Sin librerías: unas 60 líneas de TypeScript que funcionan igual en Expo (Herme
 
 - MVP: SQLite (expo-sqlite) en móvil e IndexedDB en PC. Las imágenes se copian al almacenamiento de la app.
 - Fase 3: Supabase para cuenta, almacenamiento de imágenes y sincronización.
+
+### SQLite en el móvil (issue #32)
+
+Reparto: el SQL, las migraciones y la conversión fila ↔ `Project` son código puro de
+`packages/core/src/storage/` (`migrations.ts`, `queries.ts`, `rows.ts`), probado en Vitest contra el
+SQLite de Node (`node:sqlite`, Node ≥ 26) con el mismo SQL que corre en el móvil. `apps/mobile/src/storage/`
+solo lo ejecuta con expo-sqlite: `database.ts` (migraciones), `projectRepository.ts`
+(`listProjects`, `getProject`, `saveProject`, `deleteProject`, `listCategories`) y `files.ts`
+(expo-file-system). Las queries usan solo parámetros posicionales `?`, que los dos drivers aceptan igual.
+
+Tablas (base `ar-darwin.db`):
+
+- `projects`: una columna por campo en snake_case; `transform`, `split` y `result_transform` van
+  como JSON en TEXT. CHECK en `opacity` (0..1), `status`, `difficulty` (1..5) y `time_spent_ms`.
+  Índice por `updated_at DESC` (la biblioteca lista los más recientes primero).
+- `categories`: `sort_order` en lugar de `order` (palabra reservada); CHECK de exactamente uno de
+  `key`/`name`.
+- `project_categories`: N:M con PK compuesta y `ON DELETE CASCADE` a los dos lados.
+  `PRAGMA foreign_keys = ON` se activa en cada apertura (es por conexión).
+
+Migraciones: `MIGRATIONS` es una lista numerada desde 1; la versión de la base vive en
+`PRAGMA user_version` (0 al crearla). `SQLiteProvider` (en `app/_layout.tsx`) llama a
+`migrateDbIfNeeded` en `onInit`, antes de pintar ninguna pantalla: activa WAL y claves foráneas, y
+ejecuta cada migración pendiente (`pendingMigrations(version)`) junto con su `PRAGMA user_version = N`
+en una sola transacción, así que un cierre a medias deja la base en la versión anterior. Si la base es
+más nueva que la app, `pendingMigrations` lanza. Para cambiar el esquema: añadir una migración nueva
+al final, nunca editar una publicada, y ampliar `storage.test.ts`. La v1 crea las tres tablas y
+siembra las 6 categorías de serie con su clave i18n (`categories.<id>`); `categoryLabel`
+(apps/mobile) traduce con `t(defaultCategoryKey(id))`, que no compila si falta alguna clave en
+packages/i18n.
+
+### Rutas de archivo
+
+`sourceUri` y `resultPhotoUri` nunca guardan una URI `file://` absoluta: en iOS la ruta del
+contenedor de la app cambia con cada actualización y una ruta absoluta guardada por la versión
+anterior ya no apunta a nada. Se guarda (`packages/core/src/filePath.ts`):
+
+- una ruta relativa al directorio de documentos (`projects/<id>/source.jpg`): archivos de la app;
+- o un asset empaquetado con prefijo `asset:`, tal cual (la app lo resuelve por su cuenta).
+
+`toStoredUri(uri, documentDir)` convierte al guardar (lanza si el archivo no está dentro del
+directorio de documentos: antes hay que copiarlo allí) y `resolveStoredUri(stored, documentDir)`
+reconstruye la URI al leer, con `Paths.document.uri` del momento. Se rechazan `..`, rutas absolutas y
+esquemas (`ProjectSchema` lo valida).
+
+### Borrado
+
+`deleteProject` borra primero la fila (sus enlaces a categorías caen en cascada) y después los
+archivos que son de la app (`isAppOwnedFile`: rutas relativas, nunca assets): la imagen original y la
+foto del resultado. Si falla el borrado de un archivo, el proyecto queda borrado igual y se registra
+con `console.warn`: un archivo huérfano solo ocupa sitio; un proyecto que apunta a un archivo que no
+existe rompe la biblioteca.
+
+### Ids
+
+`createProjectId()` genera un UUID v4 estándar (bits de versión y variante correctos) con
+`Math.random`: Hermes no tiene `crypto.randomUUID`, y los ids solo tienen que ser únicos en el
+dispositivo hasta que llegue la sincronización, que podrá usarlos tal cual como clave en Supabase.
+
+### Tipos de Node solo en tests
+
+`packages/core/tsconfig.json` excluye `*.test.ts` y fija `types: []`: si el código de core usa una
+API de Node por error, `pnpm typecheck` falla. `tsconfig.test.json` comprueba los tests con
+`types: ["node"]` (para `node:sqlite`); el script `typecheck` de core ejecuta las dos.
