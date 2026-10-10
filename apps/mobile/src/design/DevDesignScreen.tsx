@@ -27,6 +27,7 @@ import { CameraEntry } from "./CameraEntry";
 import { ComponentsGallery } from "./ComponentsGallery";
 import { IconGrid } from "./IconGrid";
 import { Preferences } from "./Preferences";
+import { ProjectsDebug } from "./ProjectsDebug";
 import { SpringRow } from "./SpringRow";
 
 const roles = Object.keys(typography) as TypeRoleName[];
@@ -117,6 +118,9 @@ export function DevDesignScreen() {
 
         <Text style={heading}>{t("devDesign.camera")}</Text>
         <CameraEntry open={cameraOpen} onOpenChange={setCameraOpen} />
+
+        <Text style={heading}>{t("devDesign.projects.title")}</Text>
+        <ProjectsDebug />
       </ScrollView>
 
       <BottomSheet

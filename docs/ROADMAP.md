@@ -48,9 +48,13 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 ## 3 · MVP móvil
 
 - [x] Componentes base nativos desde `packages/ui` (botón, píldora, hoja, slider, toggle) e iconos en Skia (issue #30)
-- [ ] Modelo `Project` y guardado local con expo-sqlite
+- [x] Modelo `Project` y guardado local con expo-sqlite: migraciones, categorías N:M, rutas
+      relativas (issue #32)
 - [ ] Navegación y estructura de pantallas (Expo Router)
 - [ ] Biblioteca: importar desde galería, cámara o archivos; reducir a 4096 px; lista de proyectos
+- [ ] Categorías: diseñar en `packages/ui` la paleta `categoryColors` (contraste AA en claro y
+      oscuro) y los 6 iconos de las categorías de serie (animales, personas, paisajes, manga/anime,
+      objetos, letras); rellenar `color`/`icon` con una migración
 - [ ] Cámara del proyecto: abrir, restaurar y guardar el último ajuste
 - [ ] Espejo H/V, linterna y ajustes de imagen (contraste, brillo, invertir) con Skia
 - [ ] Modo imán con guías y vibración (`snapTransform`)
