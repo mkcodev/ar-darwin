@@ -52,6 +52,10 @@ export const opacity = {
   /** Default opacity of the overlaid image in the camera. */
   overlayImage: 0.62,
   pressedContent: 0.88,
+  /** Ink of the press on neutral buttons: the text colour at this strength (web: color-mix 14 %). */
+  ink: 0.14,
+  /** Pressed or active fill of camera icon buttons over the pill (web: color-mix 16 %). */
+  pressFill: 0.16,
 } as const;
 
 /** Minimum touch target, in px: the app is used with a pencil in the other hand. */
