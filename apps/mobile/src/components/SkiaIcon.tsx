@@ -10,7 +10,6 @@ import {
   withTiming,
 } from "react-native-reanimated";
 import { animateFade, tweenPlan } from "../theme/motion";
-import { useReduceMotion } from "../theme/ReduceMotionProvider";
 
 type SkiaIconProps = {
   name: IconName;
@@ -24,6 +23,11 @@ type SkiaIconProps = {
    * another (`icon.drawStaggerMs`). 0 shows the icon at rest.
    */
   drawKey?: number;
+  /**
+   * «Reduce motion», read outside the Canvas by whoever opens it (`useReduceMotion`): Skia has
+   * its own React renderer and contexts do not cross into it.
+   */
+  reduce: boolean;
 };
 
 const [ex1, ey1, ex2, ey2] = easing.draw;
@@ -61,8 +65,8 @@ export function SkiaIcon({
   x = 0,
   y = 0,
   drawKey = 0,
+  reduce,
 }: SkiaIconProps) {
-  const { reduce } = useReduceMotion();
   const shapes = icons[name] as readonly IconShape[];
   const paths = useMemo(() => shapes.map(shapePath), [shapes]);
   const plan = tweenPlan(duration.long, easing.draw, reduce);

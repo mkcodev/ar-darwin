@@ -14,6 +14,7 @@ import { scheduleOnRN } from "react-native-worklets";
 import { t } from "../i18n";
 import { useHandedness } from "../theme/HandednessProvider";
 import { playHaptic } from "../theme/playHaptic";
+import { useReduceMotion } from "../theme/ReduceMotionProvider";
 import { SkiaIcon } from "./SkiaIcon";
 
 type LockButtonProps = {
@@ -62,6 +63,7 @@ export function LockButton({
   const progress = useSharedValue(0);
   const [drawKey, setDrawKey] = useState(0);
   const { controls } = useHandedness();
+  const { reduce } = useReduceMotion();
   const insets = useSafeAreaInsets();
 
   const toggle = () => {
@@ -139,6 +141,7 @@ export function LockButton({
                 y={(lockButton.size - ICON_SIZE) / 2}
                 color={isLocked ? cameraColors.accent : cameraColors.text}
                 drawKey={drawKey}
+                reduce={reduce}
               />
             </Group>
           </Canvas>
