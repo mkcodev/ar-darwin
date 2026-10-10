@@ -41,3 +41,10 @@ export const splitter = {
   tileGap: 12,
   cutDash: [4, 4],
 } as const;
+
+/** Touch-lock button over the camera: a ring fills clockwise during the long press. */
+export const lockButton = {
+  size: 56,
+  edgeWidth: 1,
+  ringWidth: 3,
+} as const;

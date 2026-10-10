@@ -226,6 +226,26 @@ export const es = {
     noDevice: "No se encuentra la cámara trasera",
     showCalibration: "Cuadrícula",
     showSketch: "Boceto Darwin",
+    lock: "Bloquear",
+    unlock: "Desbloquear",
+    lockHint: "Mantén pulsado 1 s",
+    locked: "Bloqueado",
+    unlockToExit: "Desbloquea para salir",
+    retry: "Reintentar",
+    issue: {
+      disabled: {
+        title: "Cámara desactivada",
+        body: "Puede estar apagada por privacidad o por una política del dispositivo. Actívala en los ajustes rápidos o en Ajustes.",
+      },
+      inUse: {
+        title: "Cámara ocupada",
+        body: "Otra app está usando la cámara. Cierra esa app y vuelve a intentarlo.",
+      },
+      unknown: {
+        title: "No se puede abrir la cámara",
+        body: "Ha ocurrido un problema inesperado. Inténtalo de nuevo.",
+      },
+    },
   },
   gallery: {
     buttons: "Botones",
