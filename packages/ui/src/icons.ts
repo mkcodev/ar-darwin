@@ -73,6 +73,17 @@ export const icons = {
   ],
   plus: [path("M12 5v14M5 12h14")],
   minus: [path("M5 12h14")],
+  image: [
+    { type: "rect", x: 3, y: 5, width: 18, height: 14, rx: 2 },
+    path("M4 17l5-5 4 4 2.5-2.5L20 17"),
+    { type: "circle", cx: 15.5, cy: 9.5, r: 1.5 },
+  ],
+  trash: [
+    path("M4 7h16"),
+    path("M9.5 7V4.5h5V7"),
+    path("M6 7l1 13h10l1-13"),
+    path("M10 11v5M14 11v5"),
+  ],
 } as const satisfies Record<string, readonly IconShape[]>;
 
 export type IconName = keyof typeof icons;

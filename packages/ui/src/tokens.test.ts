@@ -136,8 +136,8 @@ describe("spring sampling", () => {
 });
 
 describe("haptics, icons and handedness", () => {
-  it("has the 20 icons of the set", () => {
-    expect(Object.keys(icons)).toHaveLength(20);
+  it("has the 22 icons of the set", () => {
+    expect(Object.keys(icons)).toHaveLength(22);
   });
   it("map every semantic event to an expo-haptics family", () => {
     for (const h of Object.values(haptics))
