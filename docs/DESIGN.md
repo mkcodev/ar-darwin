@@ -122,6 +122,18 @@ Momentos de firma:
   borde superior, crece hasta 1,05 desde la izquierda (solo iOS: Android estira en vez de
   desplazar). Con «reducir movimiento», solo el fundido cruzado.
 - Pantallas secundarias (Ajustes, ficha, divisor): header nativo sobre el lienzo, sin sombra.
+
+## Biblioteca
+
+- Rejilla de 2 columnas bajo el titular. Tarjeta: miniatura en marco vertical 3:4 (proporción de
+  folio) sobre `bg.surface` con línea fina y radio `md`, sin sombra; debajo el nombre (`label`) y
+  el estado en Geist Mono (`value`, atenuado).
+- Importar: «+» en la barra y botón primario en el estado vacío; hoja con una fila por fuente.
+- Toque o pulsación larga en una tarjeta → hoja de acciones; «Eliminar» (botón `danger`) pide
+  confirmación dentro de la misma hoja, sin diálogo del sistema. Con lector de pantalla, la
+  tarjeta se lee «nombre, estado» y ofrece la acción «Eliminar».
+- Al borrar, la tarjeta se desvanece y la rejilla cierra el hueco con el muelle `gentle`; con
+  «reducir movimiento», solo el fundido.
 - Cámara: sin cabecera.
 
 ## Hápticos
@@ -135,10 +147,13 @@ Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:
 | Siguiente trozo / elegir trozo | Selección |
 | Un paso de ajuste fino (no en la repetición) | Selección |
 | Un valor llega a su límite | Aviso |
+| Abrir las acciones de un proyecto (toque o pulsación larga) | Impacto ligero |
+| Proyecto eliminado | Éxito |
+| Falla importar o eliminar | Error |
 
 ## Iconos
 
-Set propio en `packages/ui/src/icons.ts` (20 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
+Set propio en `packages/ui/src/icons.ts` (22 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
 
 Todo respeta la opción del sistema de reducir movimiento (sustituir por fundidos cortos o nada).
 

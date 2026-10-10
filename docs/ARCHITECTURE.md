@@ -107,7 +107,8 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   estados que `apps/desktop/src/components/`. Diferencias: el `Slider` recibe un `SharedValue`
   (el valor vive en el hilo de UI y `format` es un worklet, p. ej. `percentFormat` de
   `src/format.ts`); el `SegmentedControl` usa segmentos de igual ancho para que el indicador solo
-  se desplace; `Button` recibe `icon` como `IconName`.
+  se desplace; `Button` recibe `icon` como `IconName`. Variante `danger` (borrar) en las dos
+  apps: fondo `bg.raised`, texto y borde `danger` (contraste AA de texto en `contrast.test.ts`).
 - `apps/mobile/src/theme/`: `ThemeProvider`, `HandednessProvider` y `ReduceMotionProvider` se montan
   en `app/_layout.tsx`. Aceptan `initial` y `onChange` para que la tarea de Ajustes cargue y guarde
   la preferencia sin tocarlos. `ReduceMotionProvider` sigue el ajuste del sistema en vivo
@@ -286,6 +287,14 @@ Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`,
 - Nunca baja de `MIN_SCALE` (mismo límite que `nudge`/`fitTransform`); los espejos pasan intactos.
 - Imán (fase 3, pendiente): se mostrará `snapTransform` sobre el resultado mientras el gesto está activo, y solo se guardará el resultado sin imantar como base del siguiente fotograma — mismo contrato que `snapTransform` hoy.
 
+### Importar (`importImage.ts`)
+
+- `fitWithinMaxSide(size, maxSide = MAX_IMAGE_SIDE)`: lado largo a `maxSide` conservando el
+  aspecto (enteros, lado corto ≥ 1); nunca agranda. Lanza con lados ≤ 0.
+- `importFormat(mimeType)`: `"png"` para `image/png`, `"jpeg"` para todo lo demás.
+- `projectDir(id)`, `projectSourcePath(id, format)`, `projectThumbPath(id)`: rutas guardadas.
+- `projectNameFromFileName(fileName)`: nombre limpio o `null` (vacío o genérico).
+
 ### `rotationDeadZone(accumulatedDegrees, zoneDegrees?): number`
 
 - `zoneDegrees` por defecto `ROTATION_DEAD_ZONE_DEGREES` (4). El valor por defecto se resuelve dentro del cuerpo, no en la firma: el plugin de worklets no captura constantes externas usadas en valores por defecto de parámetros, y en el hilo de UI serían `undefined`.
@@ -351,11 +360,41 @@ directorio de documentos: antes hay que copiarlo allí) y `resolveStoredUri(stor
 reconstruye la URI al leer, con `Paths.document.uri` del momento. Se rechazan `..`, rutas absolutas y
 esquemas (`ProjectSchema` lo valida).
 
+### Importar imágenes (issue #36)
+
+- Fuentes: `apps/mobile/src/library/importSources.ts` es un registro (`IMPORT_SOURCES`) de
+  `{ id, icon, label, pick }`; `pick` devuelve `PickedImage` (`uri`, `width`, `height`,
+  `mimeType`, `fileName`), `"cancelled"` o `"denied"`. Hoy: galería (`launchImageLibraryAsync`, el
+  selector de fotos del sistema, sin permiso) y cámara del sistema (`requestCameraPermissionsAsync`
+  + `launchCameraAsync`). Añadir «archivos» (expo-document-picker, próximo rebuild) es una entrada
+  más; la hoja de importar y el pipeline no cambian.
+- Pipeline (`library/importProject.ts`): la imagen se decodifica una vez con
+  `ImageManipulator.manipulate(uri).renderAsync()` y **siempre** se re-codifica: aplica la
+  orientación EXIF, quita el EXIF (GPS incluido) y convierte HEIC/WebP. Tamaño medido en la imagen
+  decodificada (el selector puede dar 0 × 0); si el lado largo pasa de `MAX_IMAGE_SIDE` (4096) se
+  reduce con `fitWithinMaxSide`. Formato (`importFormat`): PNG se queda PNG (sin pérdida; dibujos
+  de línea y transparencia), todo lo demás JPEG 0,92. Del mismo `ImageRef` sale la miniatura
+  (`THUMB_MAX_SIDE` 512, JPEG 0,8). Los dos se mueven desde la caché a `projects/<id>/source.{jpg,png}`
+  y `projects/<id>/thumb.jpg` (`projectSourcePath`, `projectThumbPath`) y luego se guarda la fila.
+  Si algo falla después de crear la carpeta, se borra entera: no quedan proyectos a medias.
+- La miniatura no va en el modelo ni en SQLite: su ruta se deriva del id. La biblioteca la pinta
+  con expo-image y nunca carga el original.
+- Nombre: `projectNameFromFileName` (sin extensión, máx. 60) o, si no hay nombre o es genérico
+  (`IMG_`, `PXL_`, `DSC…`, `Screenshot…`, UUID, hex largo, solo cifras), `library.defaultName` con
+  la fecha en el idioma de la app (`locale` de `src/i18n.ts`).
+- Android puede matar la app con la cámara del sistema abierta: `useProjects` llama una vez por
+  arranque a `getPendingResultAsync()` y, si hay foto, la importa (probar con «No conservar
+  actividades» en las opciones de desarrollador).
+- Biblioteca: rejilla de 2 columnas en el `Animated.ScrollView` del titular grande, no FlatList:
+  las transiciones de layout de Reanimated (cerrar el hueco de una tarjeta borrada) solo funcionan
+  en FlatList de una columna, y una biblioteca personal es pequeña. Si crece, FlashList.
+
 ### Borrado
 
 `deleteProject` borra primero la fila (sus enlaces a categorías caen en cascada) y después los
-archivos que son de la app (`isAppOwnedFile`: rutas relativas, nunca assets): la imagen original y la
-foto del resultado. Si falla el borrado de un archivo, el proyecto queda borrado igual y se registra
+archivos que son de la app (`isAppOwnedFile`: rutas relativas, nunca assets): la carpeta entera del
+proyecto (`deleteProjectDir`: original, miniatura y lo que venga) y, por si viven fuera, la imagen
+original y la foto del resultado. Si falla el borrado de un archivo, el proyecto queda borrado igual y se registra
 con `console.warn`: un archivo huérfano solo ocupa sitio; un proyecto que apunta a un archivo que no
 existe rompe la biblioteca.
 
