@@ -1,4 +1,4 @@
-import { DEFAULT_CATEGORY_IDS, defaultCategoryKey } from "../models";
+import { DEFAULT_CATEGORY_IDS, type DefaultCategoryId, defaultCategoryKey } from "../models";
 
 /**
  * Numbered SQLite migrations. The database keeps its version in `PRAGMA user_version` (0 when
@@ -11,6 +11,29 @@ const seedCategories = DEFAULT_CATEGORY_IDS.map(
   (id, order) =>
     `INSERT INTO categories (id, key, name, is_default, color, icon, sort_order) VALUES ('${id}', '${defaultCategoryKey(id)}', NULL, 1, NULL, NULL, ${order});`,
 ).join("\n");
+
+/**
+ * Colour key and icon name of each built-in category, as migration 2 writes them. Keys of the
+ * packages/ui palette (`theme.color.category[key]`) and icon set, never hex values; apps/mobile
+ * checks them against packages/ui at typecheck time. Frozen with the migration: never edit.
+ */
+export const DEFAULT_CATEGORY_STYLES = {
+  animals: { color: "ochre", icon: "animal" },
+  people: { color: "plum", icon: "person" },
+  landscapes: { color: "moss", icon: "landscape" },
+  manga: { color: "indigo", icon: "manga" },
+  objects: { color: "sepia", icon: "object" },
+  lettering: { color: "slate", icon: "lettering" },
+} as const satisfies Record<DefaultCategoryId, { color: string; icon: string }>;
+
+// Each column only where it is still NULL: never overwrite a value already set.
+const fillCategoryStyles = DEFAULT_CATEGORY_IDS.flatMap((id) => {
+  const { color, icon } = DEFAULT_CATEGORY_STYLES[id];
+  return [
+    `UPDATE categories SET color = '${color}' WHERE id = '${id}' AND is_default = 1 AND color IS NULL;`,
+    `UPDATE categories SET icon = '${icon}' WHERE id = '${id}' AND is_default = 1 AND icon IS NULL;`,
+  ];
+}).join("\n");
 
 export const MIGRATIONS: readonly Migration[] = [
   {
@@ -56,6 +79,11 @@ CREATE INDEX project_categories_category ON project_categories (category_id);
 
 ${seedCategories}
 `,
+  },
+  {
+    // Colour and icon of the built-in categories (palette and icons from packages/ui).
+    version: 2,
+    sql: fillCategoryStyles,
   },
 ];
 
