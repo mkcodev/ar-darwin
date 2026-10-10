@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { isStoredUri } from "./filePath";
 
 export const RectSchema = z.object({
   x: z.number(),
@@ -65,3 +66,74 @@ export type Tile = {
   /** Flush crop, no overlap. All coreRects tile the image exactly. */
   coreRect: Rect;
 };
+
+/** A file path as stored: relative to the document directory or a bundled asset (see filePath.ts). */
+const StoredUriSchema = z.string().refine(isStoredUri, "not a relative path or asset URI");
+
+export const ProjectStatusSchema = z.enum(["pending", "in_progress", "done"]);
+export type ProjectStatus = z.infer<typeof ProjectStatusSchema>;
+
+export const ProjectSchema = z.object({
+  /** UUID v4 (see createProjectId), valid as is for the Supabase sync. */
+  id: z.uuid({ version: "v4" }),
+  name: z.string().min(1),
+  sourceUri: StoredUriSchema,
+  /** Last camera adjustment, restored when the project opens. */
+  transform: TransformSchema,
+  /** Overlay image opacity, 0..1. */
+  opacity: z.number().min(0).max(1),
+  split: SplitConfigSchema.optional(),
+  currentTileId: z.string().optional(),
+  status: ProjectStatusSchema,
+  /** Photo of the finished drawing. */
+  resultPhotoUri: StoredUriSchema.optional(),
+  /** How the result photo is shown next to the original. */
+  resultTransform: TransformSchema.optional(),
+  completedAt: z.iso.datetime().optional(),
+  notes: z.string().optional(),
+  /** 1 (easy) .. 5 (hard), set by the person. */
+  difficulty: z.int().min(1).max(5).optional(),
+  /** Time spent drawing, in ms. */
+  timeSpentMs: z.int().nonnegative(),
+  /** Category ids, many-to-many. */
+  categoryIds: z.array(z.string()),
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+});
+export type Project = z.infer<typeof ProjectSchema>;
+
+/** Built-in categories, seeded by the first migration. Their names come from i18n. */
+export const DEFAULT_CATEGORY_IDS = [
+  "animals",
+  "people",
+  "landscapes",
+  "manga",
+  "objects",
+  "lettering",
+] as const;
+export type DefaultCategoryId = (typeof DEFAULT_CATEGORY_IDS)[number];
+
+/** i18n key of a built-in category's name. */
+export function defaultCategoryKey<Id extends DefaultCategoryId>(id: Id): `categories.${Id}` {
+  return `categories.${id}`;
+}
+
+export const CategorySchema = z
+  .object({
+    id: z.string().min(1),
+    /** i18n key: only built-in categories have one. */
+    key: z.string().min(1).optional(),
+    /** Name typed by the person: only their own categories. */
+    name: z.string().min(1).optional(),
+    isDefault: z.boolean(),
+    /** Token key of a packages/ui colour, never a hex value. */
+    color: z.string().min(1).optional(),
+    /** Icon name from packages/ui. */
+    icon: z.string().min(1).optional(),
+    /** Position in the list, 0-based. */
+    order: z.int().nonnegative(),
+  })
+  .refine((c) => (c.key === undefined) !== (c.name === undefined), {
+    message: "a category has either a key or a name",
+  });
+export type Category = z.infer<typeof CategorySchema>;

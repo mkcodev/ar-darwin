@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // Tests run on Node (Vitest): node:sqlite checks the real SQL.
+    "types": ["node"]
+  },
+  "include": ["src"]
+}
