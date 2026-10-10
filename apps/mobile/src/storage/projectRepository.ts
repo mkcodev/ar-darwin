@@ -17,7 +17,7 @@ import {
   UPSERT_PROJECT,
 } from "@ar-darwin/core";
 import type { SQLiteDatabase } from "expo-sqlite";
-import { deleteStoredFile } from "./files";
+import { deleteProjectDir, deleteStoredFile } from "./files";
 
 /**
  * Projects in SQLite. The SQL and the row ↔ Project conversion live in packages/core (tested on
@@ -63,19 +63,25 @@ export async function saveProject(
 
 /**
  * Deletes the project (its category links go with it, ON DELETE CASCADE) and then the files the
- * app owns: the imported image and the result photo. The row goes first and file errors are only
- * logged: a file left behind wastes space, a project pointing at a missing file breaks the library.
+ * app owns: its folder `projects/<id>/` (image, thumbnail…) and the imported image and result
+ * photo wherever they are. The row goes first and file errors are only logged: a file left behind
+ * wastes space, a project pointing at a missing file breaks the library.
  */
 export async function deleteProject(db: SQLiteDatabase, id: string): Promise<void> {
   const project = await getProject(db, id);
   await db.runAsync(DELETE_PROJECT, [id]);
   if (project === null) return;
-  for (const stored of [project.sourceUri, project.resultPhotoUri]) {
-    if (stored === undefined) continue;
+  const deletions: [string, () => void][] = [
+    [`folder of project ${id}`, () => deleteProjectDir(id)],
+    ...[project.sourceUri, project.resultPhotoUri]
+      .filter((stored) => stored !== undefined)
+      .map((stored): [string, () => void] => [stored, () => deleteStoredFile(stored)]),
+  ];
+  for (const [what, remove] of deletions) {
     try {
-      deleteStoredFile(stored);
+      remove();
     } catch (error) {
-      console.warn(`deleteProject: could not delete ${stored} of project ${id}`, error);
+      console.warn(`deleteProject: could not delete ${what} of project ${id}`, error);
     }
   }
 }

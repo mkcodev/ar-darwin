@@ -5,7 +5,7 @@ import { t } from "../../i18n";
 
 const names = Object.keys(icons) as IconName[];
 
-/** The 20 icons. Each one is a toggle: turning it on redraws it with the live stroke. */
+/** The 22 icons. Each one is a toggle: turning it on redraws it with the live stroke. */
 export function IconGallery() {
   const [on, setOn] = useState<Partial<Record<IconName, number>>>({});
   return (

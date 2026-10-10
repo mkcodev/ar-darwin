@@ -69,9 +69,17 @@
   background: transparent;
   color: var(--color-text-primary);
 }
+.btn-danger {
+  background: var(--color-bg-raised);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
 .btn-secondary:hover:not(:disabled),
 .btn-ghost:hover:not(:disabled) {
   background: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+}
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-raised));
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-pressed);
@@ -99,6 +107,9 @@
 }
 .btn-primary .ink {
   background: var(--color-accent-pressed);
+}
+.btn-danger .ink {
+  background: color-mix(in srgb, var(--color-danger) 14%, transparent);
 }
 
 /* ---------- Icon button ---------- */

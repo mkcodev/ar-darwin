@@ -5,7 +5,8 @@ import { useReduceMotion } from "../theme/ReduceMotion";
 import { toMotionEase } from "../theme/transitions";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
+  /** `danger`: destructive actions (delete), in the theme's danger colour. */
+  variant?: "primary" | "secondary" | "ghost" | "danger";
   icon?: ReactNode;
 };
 

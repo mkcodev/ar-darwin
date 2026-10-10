@@ -28,7 +28,8 @@ import { useTheme } from "../theme/ThemeProvider";
 import { Icon } from "./Icon";
 
 type ButtonProps = {
-  variant?: "primary" | "secondary" | "ghost";
+  /** `danger`: destructive actions (delete), in the theme's danger colour. */
+  variant?: "primary" | "secondary" | "ghost" | "danger";
   /** Leading icon, coloured like the label. */
   icon?: IconName;
   children: string;
@@ -85,6 +86,13 @@ export function Button({
       text: c.text.primary,
       border: "transparent",
       ink: c.text.primary,
+      inkAlpha: opacity.ink,
+    },
+    danger: {
+      bg: c.bg.raised,
+      text: c.danger,
+      border: c.danger,
+      ink: c.danger,
       inkAlpha: opacity.ink,
     },
   }[variant];

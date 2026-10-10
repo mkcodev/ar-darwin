@@ -19,6 +19,10 @@ export const haptics = {
   nudgeStep: { kind: "selection" },
   /** A value hits its limit (max overlap, 10 rows, minimum scale). */
   limitReached: { kind: "notification", type: "warning" },
+  /** A project's actions open (tap or long press on its card in the library). */
+  projectActions: { kind: "impact", style: "light" },
+  /** A project is deleted after confirming. */
+  projectDeleted: { kind: "notification", type: "success" },
   error: { kind: "notification", type: "error" },
 } as const satisfies Record<string, HapticLevel>;
 

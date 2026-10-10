@@ -52,7 +52,8 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
       relativas (issue #32)
 - [x] Navegación y estructura de pantallas (Expo Router): solo Stack, cabecera de titular grande
       en Biblioteca y header nativo tematizado en Ajustes (issue #34)
-- [ ] Biblioteca: importar desde galería, cámara o archivos; reducir a 4096 px; lista de proyectos
+- [x] Biblioteca: importar desde galería o cámara; reducir a 4096 px con miniatura; lista de
+      proyectos y borrado (issue #36). «Archivos», en el bloque de rebuild de abajo
 - [ ] Categorías: diseñar en `packages/ui` la paleta `categoryColors` (contraste AA en claro y
       oscuro) y los 6 iconos de las categorías de serie (animales, personas, paisajes, manga/anime,
       objetos, letras); rellenar `color`/`icon` con una migración
@@ -69,6 +70,14 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 - [ ] Onboarding de 3 pantallas y permiso de cámara explicado (es/en)
 - [ ] Pasada de `impeccable` y `web-design-guidelines` sobre cada pantalla (Prompt 7)
 - [ ] Flujo principal con Maestro (importar, dividir, calcar un trozo)
+
+**Agrupar en el próximo rebuild nativo.** Cada módulo nativo nuevo exige otro development build
+(EAS); se hacen juntos en un solo build:
+
+- [ ] Importar desde archivos (`expo-document-picker`): una entrada más en `IMPORT_SOURCES`
+- [ ] Guardar la foto del dibujo terminado en la galería (`expo-media-library`)
+- [ ] Recibir imágenes con «Compartir» desde otras apps (intent de Android / share extension de iOS)
+- [ ] Modo inmersivo al bloquear (`expo-navigation-bar`, tarea de arriba)
 
 **Puerta:** terminas un dibujo real de 4 trozos solo con la app.
 

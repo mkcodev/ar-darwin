@@ -23,6 +23,14 @@ const UI_CHECKS: Check[] = [
     { what: `danger on bg.${bg}`, fg: (c) => c.danger, bg: (c) => c.bg[bg], min: nonText },
     { what: `focus on bg.${bg}`, fg: (c) => c.focus, bg: (c) => c.bg[bg], min: nonText },
   ]),
+  ...(["surface", "raised"] as const).map(
+    (bg): Check => ({
+      what: `danger as text on bg.${bg} (danger button in a sheet)`,
+      fg: (c) => c.danger,
+      bg: (c) => c.bg[bg],
+      min: text,
+    }),
+  ),
   {
     what: "text.onAccent on accent",
     fg: (c) => c.text.onAccent,
