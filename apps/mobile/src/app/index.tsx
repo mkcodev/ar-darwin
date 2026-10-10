@@ -86,7 +86,8 @@ export default function Library() {
   const openImport = () => setImportOpen(true);
 
   return (
-    <View style={styles.screen}>
+    // Own canvas: the stack's contentStyle does not repaint when the theme changes at runtime.
+    <View style={[styles.screen, { backgroundColor: c.bg.canvas }]}>
       <Stack.Screen options={{ title, headerShown: false }} />
       <Animated.ScrollView
         onScroll={onScroll}
