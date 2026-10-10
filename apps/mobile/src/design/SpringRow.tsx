@@ -1,36 +1,31 @@
 import {
   radius,
-  resolveMotion,
   type SpringToken,
   space,
-  type Theme,
   toNativeTextStyle,
-  toReanimatedSpring,
   touchTarget,
   typography,
 } from "@ar-darwin/ui";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withSequence,
-  withSpring,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { t } from "../i18n";
+import { animateFade, animateMove, springPlan } from "../theme/motion";
+import { useReduceMotion } from "../theme/ReduceMotionProvider";
+import { useTheme } from "../theme/ThemeProvider";
 
-type SpringRowProps = { name: string; token: SpringToken; theme: Theme };
+type SpringRowProps = { name: string; token: SpringToken };
 
 const DOT = 16;
 
 /**
- * One spring of packages/ui running on the UI thread with Reanimated. With the system's
- * «reduce motion» it runs the token's reduced variant (a short fade, or nothing).
+ * One spring of packages/ui running on the UI thread with Reanimated. With «reduce motion» (the
+ * system's or the /dev/design override) it runs the token's reduced variant (a short fade, or
+ * nothing).
  */
-export function SpringRow({ name, token, theme }: SpringRowProps) {
-  const reduce = useReducedMotion();
+export function SpringRow({ name, token }: SpringRowProps) {
+  const { theme } = useTheme();
+  const { reduce } = useReduceMotion();
   const [track, setTrack] = useState(0);
   const x = useSharedValue(0);
   const opacity = useSharedValue(1);
@@ -43,18 +38,14 @@ export function SpringRow({ name, token, theme }: SpringRowProps) {
 
   const play = () => {
     const end = Math.max(0, track - DOT);
-    const plan = resolveMotion(token, reduce);
-    if (plan.kind === "full") {
+    const plan = springPlan(token, reduce);
+    if (plan.mode === "full") {
       x.value = 0;
-      x.value = withSpring(end, toReanimatedSpring(plan.token));
-    } else if (plan.kind === "fade") {
-      x.value = end;
-      opacity.value = withSequence(
-        withTiming(0, { duration: 0 }),
-        withTiming(1, { duration: plan.duration }),
-      );
+      x.value = animateMove(end, plan);
     } else {
       x.value = end;
+      opacity.value = 0;
+      opacity.value = animateFade(1, plan, 0);
     }
   };
 

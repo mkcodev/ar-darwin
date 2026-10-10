@@ -215,6 +215,12 @@ export const es = {
     haptics: "Hápticos (expo-haptics)",
     camera: "Entrada a la cámara",
     closeCamera: "Salir de la cámara",
+    components: "Componentes",
+    icons: "Iconos (Skia)",
+    iconsHint: "Toca un icono para redibujarlo como un trazo.",
+    cameraControls: "Controles de cámara",
+    retreat: "Retirar el menú",
+    showMenu: "Mostrar el menú",
   },
   cameraSpike: {
     open: "Cámara (spike)",
