@@ -125,6 +125,30 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - Iconos: `SkiaIcon` es un elemento Skia (va dentro de un `<Canvas>`), un `Path` por trazo para
   recortar cada uno con `end` en el «trazo vivo»; `Icon` lo envuelve en su propio `<Canvas>`.
 
+## Navegación (Expo Router, issue #34)
+
+- Un solo navegador: el native-stack raíz (`src/navigation/AppStack.tsx`, montado por
+  `app/_layout.tsx` dentro de los providers de tema, mano y movimiento). Sin pestañas: la cámara va a
+  pantalla completa y Ajustes se abre desde un icono de la Biblioteca. Si los Retos (fase 2) piden
+  pestañas, se decide entonces.
+- `AppStack` también monta `SQLiteProvider` sobre una vista con `bg.canvas`, la barra de estado del
+  tema y el `ThemeProvider` de React Navigation con los colores de `packages/ui`: ningún fotograma en
+  blanco entre la splash, las migraciones y la primera pantalla.
+- Rutas hoy: `/` Biblioteca, `/settings` Ajustes, `/dev/design` y `/dev/camera` (solo desarrollo o
+  `spikesEnabled`). Cada tarea añade la suya (ficha del proyecto, cámara, divisor, onboarding).
+  Typed routes activas (`experiments.typedRoutes`): `router.push` y `href` comprueban la ruta.
+- Cabeceras:
+  - Principales (Biblioteca; Retos más adelante): `headerShown: false`, `LargeTitle` (titular en
+    Instrument Serif dentro del scroll) y `LargeTitleHeader` (barra fija con título compacto y
+    acciones). El scroll lleva `paddingTop` y `scrollIndicatorInsets.top` = alto de la barra
+    (`useLargeTitleBarHeight`: inset superior + 56 px). La matemática (`largeTitleCollapse`,
+    `largeTitleOverscrollScale`) está en `packages/core/src/controls.ts`; las escalas, en
+    `signature` de `packages/ui`.
+  - Secundarias (Ajustes; luego ficha, divisor…): header nativo con las opciones de
+    `useStackScreenOptions` (fondo `bg.canvas`, título con el rol `title`, sin sombra, atrás solo
+    con flecha). Con «reducir movimiento», las transiciones pasan a fundido.
+  - Cámara y rutas dev: sin header.
+
 ## Estructura del repo
 
 ```
@@ -303,7 +327,7 @@ Tablas (base `ar-darwin.db`):
   `PRAGMA foreign_keys = ON` se activa en cada apertura (es por conexión).
 
 Migraciones: `MIGRATIONS` es una lista numerada desde 1; la versión de la base vive en
-`PRAGMA user_version` (0 al crearla). `SQLiteProvider` (en `app/_layout.tsx`) llama a
+`PRAGMA user_version` (0 al crearla). `SQLiteProvider` (en `navigation/AppStack.tsx`) llama a
 `migrateDbIfNeeded` en `onInit`, antes de pintar ninguna pantalla: activa WAL y claves foráneas, y
 ejecuta cada migración pendiente (`pendingMigrations(version)`) junto con su `PRAGMA user_version = N`
 en una sola transacción, así que un cierre a medias deja la base en la versión anterior. Si la base es
