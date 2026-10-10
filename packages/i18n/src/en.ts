@@ -184,6 +184,10 @@ export const en = {
       componentsLead:
         "Try the keyboard: focus is visible everywhere. Touch targets are at least 48 px.",
       icons: "Icons",
+      categoryIcons: "Category icons",
+      categoryIconsLead:
+        "At 48 and 24 px, in their colour, on both themes: to judge the stroke at real size.",
+      categoryIconsSize: "{size} px",
       tokens: "Tokens",
       tokensLead: "Values of the {theme} theme, with the contrast each one needs.",
     },

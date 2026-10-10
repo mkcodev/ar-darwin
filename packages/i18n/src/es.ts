@@ -184,6 +184,10 @@ export const es = {
       componentsLead:
         "Prueba el teclado: el foco se ve en todos. Los objetivos táctiles miden 48 px como mínimo.",
       icons: "Iconos",
+      categoryIcons: "Iconos de categoría",
+      categoryIconsLead:
+        "A 48 y 24 px, en su color, sobre los dos temas: para juzgar el trazo a tamaño real.",
+      categoryIconsSize: "{size} px",
       tokens: "Tokens",
       tokensLead: "Valores del tema {theme}, con el contraste que exige cada uno.",
     },

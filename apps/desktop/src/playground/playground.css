@@ -754,6 +754,37 @@ code {
   background: var(--color-bg-surface);
   box-shadow: inset 0 0 0 1px var(--color-border-subtle);
 }
+.category-sheet {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+}
+.category-sheet-theme {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--color-border-subtle);
+}
+.category-sheet-title {
+  font-size: 13px;
+}
+.category-sheet-row {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+}
+.category-sheet-row li {
+  display: flex;
+}
+.category-sheet-size {
+  margin-left: auto;
+  font-size: 13px;
+}
 .category-chip code {
   font-size: 13px;
   color: var(--color-text-muted);
