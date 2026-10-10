@@ -18,6 +18,8 @@ import { StyleSheet, Text, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, useCameraDevice } from "react-native-vision-camera";
+import { Slider } from "../components/Slider";
+import { percentFormat } from "../format";
 import { t } from "../i18n";
 import { CameraIssueNotice } from "./CameraIssueNotice";
 import { CameraPermissionGate } from "./CameraPermissionGate";
@@ -25,9 +27,10 @@ import { FpsMeter } from "./FpsMeter";
 import { FpsToggle } from "./FpsToggle";
 import { LockButton } from "./LockButton";
 import { LockedToast } from "./LockedToast";
-import { OpacitySlider } from "./OpacitySlider";
 import { TestImageCanvas } from "./TestImageCanvas";
 import { TestImageToggle } from "./TestImageToggle";
+
+const opacityText = percentFormat(1);
 
 const TEST_IMAGES = {
   calibration: require("../../assets/images/test/calibration.png"),
@@ -107,7 +110,16 @@ export function CameraSpikeScreen() {
               {/* The slider stays usable while locked (opacity is tuned while drawing); the
                   image and fps toggles hide but keep their space so the slider doesn't jump. */}
               <View style={styles.controls} pointerEvents="box-none">
-                <OpacitySlider value={imageOpacity} />
+                <Slider
+                  label={t("camera.opacity")}
+                  value={imageOpacity}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  format={opacityText}
+                  compact
+                  tone="camera"
+                />
                 <View
                   style={[styles.toggleRow, isLocked && styles.hidden]}
                   pointerEvents={isLocked ? "none" : "box-none"}

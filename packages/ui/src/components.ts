@@ -21,10 +21,34 @@ export const cameraPill = {
   gap: 4,
 } as const;
 
-export const opacitySlider = {
+/** Native slider (opacity on the camera, values in sheets). */
+export const slider = {
   trackHeight: 4,
   thumbSize: 24,
   edgeWidth: 1,
+  /** Ring of the surface colour around the thumb, so it reads over the filled track. */
+  ringWidth: 3,
+} as const;
+
+/** On/off switch: a 48 × 24 track inside a 64 × 48 touch target. */
+export const toggle = {
+  width: 64,
+  trackWidth: 48,
+  trackHeight: 24,
+  thumbSize: 16,
+  /** Thumb travel from off to on. */
+  travel: 24,
+} as const;
+
+export const segmented = {
+  /** Gap between the sliding thumb and the control's edge. */
+  thumbInset: 3,
+} as const;
+
+/** Hold-to-repeat buttons (stepper, fine adjust): first repeat after `delayMs`, then every `everyMs`. */
+export const holdRepeat = {
+  delayMs: 380,
+  everyMs: 70,
 } as const;
 
 export const bottomSheet = {

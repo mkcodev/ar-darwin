@@ -1,8 +1,9 @@
+import { holdRepeat } from "@ar-darwin/ui";
 import { useEffect, useRef } from "react";
 
 /** Delay before a held button starts repeating, and the repeat interval. */
-export const HOLD_DELAY_MS = 380;
-export const HOLD_REPEAT_MS = 70;
+export const HOLD_DELAY_MS = holdRepeat.delayMs;
+export const HOLD_REPEAT_MS = holdRepeat.everyMs;
 
 /**
  * Runs `fn(false)` on press, then `fn(true)` every HOLD_REPEAT_MS after HOLD_DELAY_MS while
