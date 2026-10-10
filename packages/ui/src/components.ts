@@ -58,6 +58,12 @@ export const bottomSheet = {
   closeVelocity: 900,
   handleWidth: 36,
   handleHeight: 4,
+  /** Dragging above the open position only follows the finger this much. */
+  overdragElastic: 0.04,
+  /** Centred on wide screens (tablets, landscape). */
+  maxWidth: 560,
+  /** Fraction of the screen height. */
+  maxHeightRatio: 0.85,
 } as const;
 
 /** Splitter preview: gap opened between tiles when they separate. */

@@ -1,14 +1,6 @@
 import type { CameraIssueKind } from "@ar-darwin/core";
 import { classifyCameraIssue } from "@ar-darwin/core";
-import {
-  cameraBackdropColor,
-  cameraColors,
-  controlsSide,
-  DEFAULT_HANDEDNESS,
-  opacity,
-  space,
-  typography,
-} from "@ar-darwin/ui";
+import { cameraBackdropColor, cameraColors, opacity, space, typography } from "@ar-darwin/ui";
 import { useKeepAwake } from "expo-keep-awake";
 import { Stack, useIsFocused } from "expo-router";
 import { usePreventRemove } from "expo-router/react-navigation";
@@ -18,14 +10,15 @@ import { StyleSheet, Text, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, useCameraDevice } from "react-native-vision-camera";
+import { LockButton } from "../components/LockButton";
 import { Slider } from "../components/Slider";
 import { percentFormat } from "../format";
 import { t } from "../i18n";
+import { useHandedness } from "../theme/HandednessProvider";
 import { CameraIssueNotice } from "./CameraIssueNotice";
 import { CameraPermissionGate } from "./CameraPermissionGate";
 import { FpsMeter } from "./FpsMeter";
 import { FpsToggle } from "./FpsToggle";
-import { LockButton } from "./LockButton";
 import { LockedToast } from "./LockedToast";
 import { TestImageCanvas } from "./TestImageCanvas";
 import { TestImageToggle } from "./TestImageToggle";
@@ -63,6 +56,7 @@ export function CameraSpikeScreen() {
   const [cameraKey, setCameraKey] = useState(0);
   const [unlockToastTrigger, setUnlockToastTrigger] = useState(0);
   const [showFps, setShowFps] = useState(false);
+  const { controls } = useHandedness();
 
   useKeepAwake();
 
@@ -79,8 +73,6 @@ export function CameraSpikeScreen() {
     setIssue(null);
     setCameraKey((key) => key + 1);
   };
-
-  const lockSide = controlsSide(DEFAULT_HANDEDNESS);
 
   return (
     <View style={[styles.frame, { backgroundColor: cameraBackdropColor }]}>
@@ -141,18 +133,10 @@ export function CameraSpikeScreen() {
           </Text>
         )}
       </CameraPermissionGate>
-      <View
-        style={[
-          styles.lockWrap,
-          { top: insets.top + space[5] },
-          lockSide === "left" ? { left: space[5] } : { right: space[5] },
-        ]}
-      >
-        <LockButton locked={locked} isLocked={isLocked} onLockedChange={setIsLocked} />
-      </View>
+      <LockButton locked={locked} isLocked={isLocked} onLockedChange={setIsLocked} />
       {/* Stays visible while locked: the 10-minute test reads it while drawing. */}
       {showFps && (
-        <FpsMeter top={insets.top + space[5]} side={lockSide === "left" ? "right" : "left"} />
+        <FpsMeter top={insets.top + space[5]} side={controls === "left" ? "right" : "left"} />
       )}
       <LockedToast trigger={unlockToastTrigger} top={insets.top + space[5]} />
     </View>
@@ -177,5 +161,4 @@ const styles = StyleSheet.create({
   },
   toggleRow: { flexDirection: "row", justifyContent: "center", gap: space[3] },
   hidden: { opacity: 0 },
-  lockWrap: { position: "absolute" },
 });
