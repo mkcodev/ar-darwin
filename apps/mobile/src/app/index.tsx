@@ -2,6 +2,7 @@ import { createTranslator, resolveLocale } from "@ar-darwin/i18n";
 import { getLocales } from "expo-localization";
 import { Link } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
+import { spikesEnabled } from "../spikes";
 
 const t = createTranslator(resolveLocale(getLocales().map((locale) => locale.languageTag)));
 
@@ -10,7 +11,7 @@ export default function Index() {
     <View style={styles.container}>
       <Text>{t("app.name")}</Text>
       {__DEV__ && <Link href="/dev/design">{t("devDesign.open")}</Link>}
-      {__DEV__ && <Link href="/dev/camera">{t("cameraSpike.open")}</Link>}
+      {spikesEnabled && <Link href="/dev/camera">{t("cameraSpike.open")}</Link>}
     </View>
   );
 }

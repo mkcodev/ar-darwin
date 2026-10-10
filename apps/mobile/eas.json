@@ -12,6 +12,16 @@
       "env": {
         "APP_VARIANT": "development"
       }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "APP_VARIANT": "preview",
+        "EXPO_PUBLIC_SPIKES": "1"
+      }
     }
   }
 }
