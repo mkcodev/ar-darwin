@@ -27,7 +27,13 @@ const modules = [
   {
     file: "transform.ts",
     exports: transform as Record<string, unknown>,
-    mustExport: ["applyGesture", "rotationDeadZone", "radiansToDegrees"],
+    mustExport: [
+      "applyGesture",
+      "rotationDeadZone",
+      "radiansToDegrees",
+      "fitTransform",
+      "restoreTransform",
+    ],
   },
   {
     file: "frameStats.ts",

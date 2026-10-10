@@ -1,4 +1,5 @@
 export * from "./cameraIssue";
+export * from "./cameraSession";
 export { computeTiles, maxOverlapPx } from "./computeTiles";
 export * from "./controls";
 export * from "./filePath";

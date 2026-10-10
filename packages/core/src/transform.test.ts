@@ -8,6 +8,7 @@ import {
   type NudgeStep,
   nudge,
   ROTATION_DEAD_ZONE_DEGREES,
+  restoreTransform,
   rotationDeadZone,
   snapTransform,
 } from "./transform";
@@ -321,6 +322,44 @@ describe("fitTransform", () => {
     const base = fitTransform({ width: 1000, height: 500 }, VIEWPORT);
     const moved = nudge(nudge(base, "moveLeft", "coarse"), "scaleUp", "coarse");
     expect(nudge(moved, "reset", "fine", { base })).toEqual(base);
+  });
+});
+
+describe("restoreTransform", () => {
+  const saved = transform({ x: 100, y: 600, scale: 0.5, rotation: -30, flipX: true, flipY: true });
+
+  it("returns the same transform for the same viewport", () => {
+    expect(restoreTransform(saved, VIEWPORT, { ...VIEWPORT })).toEqual(saved);
+  });
+
+  it("split screen: keeps the relative center and scales with the short side", () => {
+    // 400×800 → 400×400: the short side stays 400, so the scale does not change.
+    expect(restoreTransform(saved, VIEWPORT, { width: 400, height: 400 })).toEqual(
+      transform({ x: 100, y: 300, scale: 0.5, rotation: -30, flipX: true, flipY: true }),
+    );
+  });
+
+  it("foldable opened and closed again comes back to the start", () => {
+    const open = { width: 800, height: 900 };
+    const opened = restoreTransform(saved, VIEWPORT, open);
+    expect(opened).toEqual(
+      transform({ x: 200, y: 675, scale: 1, rotation: -30, flipX: true, flipY: true }),
+    );
+    const closed = restoreTransform(opened, open, VIEWPORT);
+    expect(closed.x).toBeCloseTo(saved.x);
+    expect(closed.y).toBeCloseTo(saved.y);
+    expect(closed.scale).toBeCloseTo(saved.scale);
+  });
+
+  it("rotated canvas: width and height swapped keeps the short side and the scale", () => {
+    expect(restoreTransform(saved, VIEWPORT, { width: 800, height: 400 })).toEqual(
+      transform({ x: 200, y: 300, scale: 0.5, rotation: -30, flipX: true, flipY: true }),
+    );
+  });
+
+  it("leaves the transform alone when a viewport is empty", () => {
+    expect(restoreTransform(saved, { width: 0, height: 0 }, VIEWPORT)).toEqual(saved);
+    expect(restoreTransform(saved, VIEWPORT, { width: 0, height: 0 })).toEqual(saved);
   });
 });
 
