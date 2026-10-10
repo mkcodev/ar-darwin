@@ -90,6 +90,10 @@ export const es = {
     projectDetail: "2 × 2 · B1",
     openCamera: "Abrir cámara",
     hint: "La cámara es oscura con cualquier tema: al entrar, la pantalla funde a grafito.",
+    empty: "Aún no hay proyectos",
+  },
+  settings: {
+    title: "Ajustes",
   },
   projectStatus: {
     pending: "Pendiente",
