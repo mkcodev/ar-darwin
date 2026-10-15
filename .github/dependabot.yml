@@ -1,0 +1,13 @@
+# Only the GitHub Actions pinned in .github/workflows. npm stays out on purpose: Expo packages are
+# upgraded with `npx expo install`, never with Dependabot PRs.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
