@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # AR-Darwin
 
 App para calcar dibujos con la cámara (móvil) y preparar/proyectar imágenes (PC).
@@ -19,6 +23,20 @@ Prompts por fase: docs/PROMPTS.md. Flujo de git (issue, rama, PR, squash): docs/
 - pnpm test        (Vitest)
 - pnpm typecheck
 - pnpm lint        (Biome)
+- Un paquete: pnpm --filter @ar-darwin/core test  (o typecheck)
+- Un test: pnpm --filter @ar-darwin/core exec vitest run src/transform.test.ts  (-t "nombre" para filtrar)
+- Turbo: test y typecheck dependen del typecheck de las dependencias (^typecheck).
+  Solo core, ui e i18n tienen tests; las apps solo typecheck.
+- CI (.github/workflows) ejecuta además `pnpm dlx expo-doctor` en apps/mobile.
+
+## Trampas del monorepo
+- pnpm-workspace.yaml usa `nodeLinker: hoisted` a propósito (evita copias duplicadas de
+  vision-camera/nitro-image en Metro, issue #25). No lo cambies.
+- En apps/mobile, añade paquetes con `npx expo install <pkg>` (versiones compatibles con el SDK),
+  no con pnpm add. Más reglas de Expo en apps/mobile/AGENTS.md. No edites ios/ ni android/ (CNG).
+- app.config.ts (variantes por APP_VARIANT) lee textos de packages/i18n en Node ESM puro:
+  los imports relativos de i18n llevan extensión `.ts` explícita. No importes packages/ui ahí.
+- Las funciones de core que corren en el hilo de UI son worklets (ver worklet.test.ts).
 
 ## Reglas de código
 - TypeScript estricto. Prohibido `any`; usa `unknown` y estrecha.
