@@ -4,6 +4,7 @@ import {
   importFormat,
   MAX_IMAGE_SIDE,
   MAX_IMPORTED_NAME_LENGTH,
+  projectDir,
   projectNameFromFileName,
   projectSourcePath,
   projectThumbPath,
@@ -66,6 +67,12 @@ describe("importFormat", () => {
 });
 
 describe("project paths", () => {
+  it("keeps every project in its own folder under projects/", () => {
+    expect(projectDir("abc")).toBe("projects/abc");
+    expect(projectSourcePath("abc", "jpeg").startsWith(`${projectDir("abc")}/`)).toBe(true);
+    expect(projectThumbPath("abc").startsWith(`${projectDir("abc")}/`)).toBe(true);
+  });
+
   it("puts the source and the thumbnail in the project's folder", () => {
     expect(projectSourcePath("abc", "jpeg")).toBe("projects/abc/source.jpg");
     expect(projectSourcePath("abc", "png")).toBe("projects/abc/source.png");

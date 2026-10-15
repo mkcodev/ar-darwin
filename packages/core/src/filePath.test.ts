@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { isAppOwnedFile, isStoredUri, resolveStoredUri, toStoredUri } from "./filePath";
+import {
+  ASSET_URI_PREFIX,
+  isAppOwnedFile,
+  isAssetUri,
+  isStoredUri,
+  resolveStoredUri,
+  toStoredUri,
+} from "./filePath";
 
 const DOC = "file:///data/user/0/com.mkcodev.ardarwin/files/";
 
@@ -66,6 +73,22 @@ describe("isStoredUri", () => {
     ["a\\b.jpg", false],
   ] as const)("%s → %s", (value, expected) => {
     expect(isStoredUri(value)).toBe(expected);
+  });
+});
+
+describe("isAssetUri", () => {
+  it.each([
+    [`${ASSET_URI_PREFIX}calibration`, true],
+    [ASSET_URI_PREFIX, false],
+    ["ASSET:calibration", false],
+    ["projects/asset:x", false],
+    ["", false],
+  ] as const)("%s → %s", (value, expected) => {
+    expect(isAssetUri(value)).toBe(expected);
+  });
+
+  it("an empty asset name is not a stored URI either", () => {
+    expect(isStoredUri(ASSET_URI_PREFIX)).toBe(false);
   });
 });
 
