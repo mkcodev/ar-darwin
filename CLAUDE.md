@@ -27,7 +27,7 @@ Prompts por fase: docs/PROMPTS.md. Flujo de git (issue, rama, PR, squash): docs/
 - Un test: pnpm --filter @ar-darwin/core exec vitest run src/transform.test.ts  (-t "nombre" para filtrar)
 - Turbo: test y typecheck dependen del typecheck de las dependencias (^typecheck).
   Solo core, ui e i18n tienen tests; las apps solo typecheck.
-- CI (.github/workflows) ejecuta además `pnpm dlx expo-doctor` en apps/mobile.
+- CI (.github/workflows) ejecuta además expo-doctor y `expo install --check` en apps/mobile.
 
 ## Trampas del monorepo
 - pnpm-workspace.yaml usa `nodeLinker: hoisted` a propósito (evita copias duplicadas de
@@ -37,6 +37,10 @@ Prompts por fase: docs/PROMPTS.md. Flujo de git (issue, rama, PR, squash): docs/
 - app.config.ts (variantes por APP_VARIANT) lee textos de packages/i18n en Node ESM puro:
   los imports relativos de i18n llevan extensión `.ts` explícita. No importes packages/ui ahí.
 - Las funciones de core que corren en el hilo de UI son worklets (ver worklet.test.ts).
+- expo-doctor va fijado a una versión en ci.yml: súbela a mano al actualizar el SDK de Expo.
+- El aviso «Expo SDK» del CI significa ejecutar `npx expo install --check` en apps/mobile. pnpm 11
+  no instala versiones con menos de 24 h (`minimumReleaseAge` por defecto): si el parche es más
+  reciente, espera.
 
 ## Reglas de código
 - TypeScript estricto. Prohibido `any`; usa `unknown` y estrecha.
