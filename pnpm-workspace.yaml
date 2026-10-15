@@ -7,5 +7,14 @@ packages:
 # (mismo contenido, distinto hash de peers) y Metro las empaquetaba las dos, registrando dos veces
 # las vistas nativas de vision-camera y Skia. Ver issue #25 y docs.expo.dev/guides/monorepos.
 nodeLinker: hoisted
+# Solo estos paquetes pueden ejecutar scripts al instalar; lista mínima (`pnpm ignored-builds` sale
+# vacío). Skia lo necesita para colocar sus binarios nativos.
 allowBuilds:
   '@shopify/react-native-skia': true
+# Retraso de versiones nuevas: pnpm 11 ya no instala versiones con menos de 24 h
+# (`minimumReleaseAge: 1440` por defecto). No lo escribas aquí: hacerlo activa
+# `minimumReleaseAgeStrict` y pnpm fallaría en vez de quedarse con la versión anterior.
+# Para un parche urgente, exceptúa la versión exacta (nunca el paquete entero) y quítala al día
+# siguiente:
+# minimumReleaseAgeExclude:
+#   - expo@57.0.30
