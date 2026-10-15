@@ -9,7 +9,9 @@ Fuente de verdad del flujo de git. Una tarea del roadmap = un issue = una rama =
    - Scope por paquete: `core`, `mobile`, `desktop`, `ui`, `i18n`. Sin scope si afecta a todo el repo.
    - Ejemplos: `feat(core): add computeTiles`, `fix(mobile): keep image still when locked`, `chore: bump turbo`.
 4. **PR** hacia `main` con la plantilla; el cuerpo lleva `Closes #N` para cerrar el issue al fusionar.
-5. **CI** (`.github/workflows/ci.yml`) ejecuta typecheck, lint y test en cada PR y en `main`. La regla de `main` exige PR y el check `verify` en verde: no se fusiona en rojo.
+5. **CI** (`.github/workflows/ci.yml`) ejecuta typecheck, lint, test y expo-doctor en cada PR y en `main`. La regla de `main` exige PR y el check `verify` en verde: no se fusiona en rojo.
+   - Permisos de solo lectura, 15 min como máximo y actions fijadas al SHA del commit; Dependabot (`.github/dependabot.yml`) abre una PR semanal agrupada para subirlas, que **no** se fusiona sola.
+   - expo-doctor va fijado a una versión y bloquea en todo menos en la comprobación de versiones del SDK. Si Expo publica parches, el run deja un aviso «Expo SDK» sin ponerse en rojo: toca `npx expo install --check` (con el retraso de 24 h de pnpm, ver CLAUDE.md).
 6. **Revisión.** El plan aprobado es la revisión previa. Claude fusiona automáticamente solo si se cumplen las tres condiciones:
    - el CI está en verde;
    - no se ha desviado del plan aprobado;
