@@ -6,8 +6,10 @@ import {
   NUDGE_STEPS,
   type NudgeAction,
   type NudgeStep,
+  normalizeRotation,
   nudge,
   ROTATION_DEAD_ZONE_DEGREES,
+  radiansToDegrees,
   restoreTransform,
   rotationDeadZone,
   snapTransform,
@@ -20,6 +22,49 @@ const IMAGE = { width: 100, height: 50 };
 function transform(patch: Partial<Transform>): Transform {
   return Object.freeze({ ...IDENTITY_TRANSFORM, ...patch });
 }
+
+describe("normalizeRotation", () => {
+  it.each([
+    [0, 0],
+    [90, 90],
+    [180, 180],
+    [-180, 180],
+    [190, -170],
+    [-190, 170],
+    [360, 0],
+    [540, 180],
+    [-540, 180],
+    [720 + 45, 45],
+    [-0.5, -0.5],
+    [179.999, 179.999],
+  ])("%s° → %s°", (degrees, expected) => {
+    expect(normalizeRotation(degrees)).toBeCloseTo(expected, 9);
+  });
+
+  it("always lands in (-180, 180]", () => {
+    for (let degrees = -1080; degrees <= 1080; degrees += 7.5) {
+      const result = normalizeRotation(degrees);
+      expect(result).toBeGreaterThan(-180);
+      expect(result).toBeLessThanOrEqual(180);
+    }
+  });
+
+  it("returns +0 for -0, so a stored rotation never reads as -0", () => {
+    expect(Object.is(normalizeRotation(-0), 0)).toBe(true);
+    expect(Object.is(normalizeRotation(-360), 0)).toBe(true);
+  });
+});
+
+describe("radiansToDegrees", () => {
+  it.each([
+    [0, 0],
+    [Math.PI, 180],
+    [-Math.PI / 2, -90],
+    [2 * Math.PI, 360],
+  ])("%s rad → %s°", (radians, expected) => {
+    expect(radiansToDegrees(radians)).toBeCloseTo(expected, 9);
+  });
+});
 
 describe("snapTransform · move", () => {
   // y = 300 keeps the image away from every horizontal guide (0, 400, 800).
