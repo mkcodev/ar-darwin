@@ -1,3 +1,5 @@
+// First: Zod's JIT must be off before any schema is built (production CSP).
+import "./schemaJit";
 import { lazy, StrictMode, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";

@@ -183,6 +183,19 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     con flecha). Con «reducir movimiento», las transiciones pasan a fundido.
   - Cámara y rutas dev: sin header.
 
+## Content-Security-Policy (apps/desktop, issue #47)
+
+- Solo en `vite build`: un plugin de `vite.config.ts` inyecta la meta en `index.html` (el HMR de
+  Vite necesita scripts inline en dev). Todo `'self'`, sin `'unsafe-inline'` ni `'unsafe-eval'`;
+  `data:` en `img-src` (fondos SVG del playground) y en `font-src` (fuentes que Vite incrusta);
+  `worker-src`/`manifest-src` listos para la PWA. Sin `frame-ancestors`: en una meta se ignora y
+  tendrá que ir como cabecera del hosting.
+- Zod 4 prueba `Function("")` al construir cada esquema para decidir si compila validadores (JIT).
+  Con la CSP esa prueba falla sin consecuencias, pero el navegador la registra como violación.
+  `apps/desktop/src/schemaJit.ts` es el **primer** import de `main.tsx` y llama a
+  `disableSchemaJit()` (`packages/core/src/schemaJit.ts`, importado por ruta directa y no desde
+  el índice, que ya construiría los esquemas de `models.ts`). El móvil no lo usa.
+
 ## Estructura del repo
 
 ```
