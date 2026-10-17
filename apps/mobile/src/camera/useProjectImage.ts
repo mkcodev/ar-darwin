@@ -8,15 +8,28 @@ export type ProjectImage =
   | { status: "missing" };
 
 /**
+ * How long an image waits after its screen unmounts before `dispose()`. Disposing it while the
+ * Canvas can still draw it throws ("Attempted to access a disposed object") on the UI thread; by
+ * then the Canvas that showed it is gone and no frame can be using it.
+ */
+const DISPOSE_DELAY_MS = 1000;
+
+/**
  * Decodes a project's image (a stored URI) for Skia. Not Skia's `useImage`: for a file that does
  * not exist its loader rejects without calling `onError`, so the camera would wait forever. Here
  * a missing file and one that doesn't decode both end as `missing`.
+ *
+ * Memory: a 4096 px image is tens of MB of native and GPU memory, and Hermes's GC doesn't see
+ * that weight, so it isn't left to the GC (issue #62). The encoded bytes are
+ * released as soon as the image exists, the image `DISPOSE_DELAY_MS` after the screen goes (or at
+ * once if it decoded after the screen had already gone: it was never drawn).
  */
 export function useProjectImage(stored: string): ProjectImage {
   const [state, setState] = useState<ProjectImage>({ status: "loading" });
 
   useEffect(() => {
     let alive = true;
+    let decoded: SkImage | null = null;
     setState({ status: "loading" });
     if (!storedFileExists(stored)) {
       setState({ status: "missing" });
@@ -24,8 +37,20 @@ export function useProjectImage(stored: string): ProjectImage {
     }
     Skia.Data.fromURI(storedFileUri(stored))
       .then((data) => {
-        const image = Skia.Image.MakeImageFromEncoded(data);
-        if (alive) setState(image ? { status: "ready", image } : { status: "missing" });
+        let image: SkImage | null;
+        try {
+          image = Skia.Image.MakeImageFromEncoded(data);
+        } finally {
+          // The image decodes lazily but holds its own reference to the bytes: only the JS
+          // wrapper goes here.
+          data.dispose();
+        }
+        if (!alive) {
+          image?.dispose();
+          return;
+        }
+        decoded = image;
+        setState(image ? { status: "ready", image } : { status: "missing" });
       })
       .catch((error: unknown) => {
         console.warn(`useProjectImage: could not load ${stored}`, error);
@@ -33,6 +58,8 @@ export function useProjectImage(stored: string): ProjectImage {
       });
     return () => {
       alive = false;
+      const image = decoded;
+      if (image) setTimeout(() => image.dispose(), DISPOSE_DELAY_MS);
     };
   }, [stored]);
 
