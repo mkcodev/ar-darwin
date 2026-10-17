@@ -15,6 +15,11 @@ type IconButtonProps = {
   /** Draws on the dark camera pill instead of the theme surface. */
   tone?: "theme" | "camera";
   disabled?: boolean;
+  /**
+   * Mobile only: while `disabled`, a tap calls this instead of doing nothing (e.g. the camera's
+   * mirror buttons explain the lock). The button still looks and reads as disabled.
+   */
+  onDisabledPress?: () => void;
   onPress?: () => void;
   /** Touch-down and release, for hold-to-repeat (Stepper). */
   onPressIn?: () => void;
@@ -30,6 +35,7 @@ export function IconButton({
   flipGlyph,
   tone = "theme",
   disabled = false,
+  onDisabledPress,
   onPress,
   onPressIn,
   onPressOut,
@@ -56,13 +62,17 @@ export function IconButton({
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled, checked: pressed }}
-      disabled={disabled}
+      disabled={disabled && onDisabledPress === undefined}
       onPress={() => {
+        if (disabled) {
+          onDisabledPress?.();
+          return;
+        }
         if (pressed === false) setDrawKey((k) => k + 1);
         onPress?.();
       }}
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
+      onPressIn={disabled ? undefined : onPressIn}
+      onPressOut={disabled ? undefined : onPressOut}
       style={[styles.button, disabled && styles.disabled]}
     >
       {({ pressed: touching }) => (
@@ -78,7 +88,7 @@ export function IconButton({
               ]}
             />
           )}
-          {touching && !on && (
+          {touching && !on && !disabled && (
             <View
               style={[
                 styles.fill,

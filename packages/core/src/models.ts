@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { isStoredUri } from "./filePath";
+import { ImageAdjustmentsSchema } from "./imageAdjustments";
 
 export const RectSchema = z.object({
   x: z.number(),
@@ -93,6 +94,8 @@ export const ProjectSchema = z.object({
   transformViewport: ViewportSchema.optional(),
   /** Overlay image opacity, 0..1. */
   opacity: z.number().min(0).max(1),
+  /** Brightness, contrast and invert of the overlay image. Absent = NEUTRAL_ADJUSTMENTS. */
+  imageAdjustments: ImageAdjustmentsSchema.optional(),
   split: SplitConfigSchema.optional(),
   currentTileId: z.string().optional(),
   status: ProjectStatusSchema,

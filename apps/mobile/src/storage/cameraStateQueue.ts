@@ -20,6 +20,7 @@ export function enqueueCameraSave(
     ...state,
     transform: { ...state.transform },
     transformViewport: state.transformViewport && { ...state.transformViewport },
+    imageAdjustments: state.imageAdjustments && { ...state.imageAdjustments },
   };
   tail = tail
     .then(() => saveCameraState(db, id, snapshot, now))

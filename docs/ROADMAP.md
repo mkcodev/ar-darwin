@@ -59,7 +59,7 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
       objetos, letras); rellenar `color`/`icon` con una migración (issue #38)
 - [x] Cámara del proyecto: abrir, restaurar y guardar el último ajuste; tiempo dedicado y estado
       «en curso»; migración v3 `transform_viewport` (issue #40)
-- [ ] Espejo H/V, linterna y ajustes de imagen (contraste, brillo, invertir) con Skia
+- [x] Espejo H/V, linterna y ajustes de imagen (contraste, brillo, invertir) con Skia (issue #55)
 - [ ] Modo imán con guías y vibración (`snapTransform`)
 - [ ] Ajuste fino: dos velocidades, pulsación larga, reset y candado (`nudge`)
 - [ ] Menú flotante en píldora que se oculta solo
