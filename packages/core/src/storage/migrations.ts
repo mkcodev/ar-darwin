@@ -91,6 +91,11 @@ ${seedCategories}
     version: 3,
     sql: "ALTER TABLE projects ADD COLUMN transform_viewport TEXT;",
   },
+  {
+    // Brightness, contrast and invert of the overlay image (JSON); NULL = no adjustments.
+    version: 4,
+    sql: "ALTER TABLE projects ADD COLUMN image_adjustments TEXT;",
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;
