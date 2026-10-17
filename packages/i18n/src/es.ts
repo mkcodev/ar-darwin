@@ -69,7 +69,9 @@ export const es = {
       contrast: "Contraste",
       invert: "Invertir colores",
       reset: "Restablecer",
+      handle: "Arrastra hacia abajo para cerrar",
     },
+    unlockToMirror: "Desbloquea para usar el espejo",
     menu: {
       top: "Imagen",
       tools: "Herramientas",

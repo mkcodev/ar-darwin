@@ -69,7 +69,9 @@ export const en = {
       contrast: "Contrast",
       invert: "Invert colours",
       reset: "Reset",
+      handle: "Drag down to close",
     },
+    unlockToMirror: "Unlock to mirror the image",
     menu: {
       top: "Image",
       tools: "Tools",
