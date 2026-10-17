@@ -115,4 +115,41 @@ Crecimiento sostenido: las imágenes de Skia no se liberaban al salir de la cám
 no ve su peso nativo). Arreglo: `dispose()` explícito en `useProjectImage` (ver
 docs/ARCHITECTURE.md, «Cámara del proyecto»).
 
-**Después del arreglo:** pendiente de repetir la misma medición.
+**Después del arreglo:** Graphics siguió subiendo unos 7 MB por apertura. La foto no era la fuga
+principal. El `dispose()` se queda porque es correcto.
+
+### Investigación (17 oct 2026)
+
+Medido con GC forzado (`kill -10`) antes de cada lectura, 10 aperturas por variante, en una
+pantalla de diagnóstico que montaba cada pieza por separado (ya retirada):
+
+| Variante | Texturas GL | Views | Lectura |
+| --- | --- | --- | --- |
+| Solo `<Camera>` | plano | +13 por apertura | Vision Camera retiene su vista |
+| Solo el Canvas de Skia con la foto | +7 MB la primera vez (caché), luego plano | plano | Skia está bien |
+| Pantalla real sin overlay | plano | 131 → 299 | ídem |
+| Pantalla real sin `<Camera>` | +7 MB una vez, luego plano | plano | Skia está bien |
+
+Las texturas solo filtran con la cámara y el overlay juntos.
+
+**Causa:**
+[vision-camera#4180](https://github.com/mrousavy/react-native-vision-camera/issues/4180) (5.2.3, Android,
+abierto). Al desmontar se llama a `onDropView()`, no a `dispose()`, y `HybridPreviewView` nunca
+desconecta el preview output. Ese output es un objeto Nitro de JS que Hermes casi nunca recoge, y su
+referencia global JNI retiene la `PreviewView`. La cadena completa: JNI → `HybridPreviewOutput` →
+`surfaceProvider` → `PreviewView` → `mParent` → toda la pantalla → `SkiaTextureView` y su textura a
+pantalla completa (~7 MB). Además, `useCameraSession` nunca libera la sesión: su `CustomLifecycle`
+sigue registrado, así que se filtra una `HybridCameraSession` por apertura.
+
+**Descartado:**
+- Parche de Skia ([#4079](https://github.com/Shopify/react-native-skia/issues/4079)/PR #4080):
+  bajó de 7 a 5,3 MB, pero no era la causa.
+- Apaños en JS:
+  - pasar `previewOutput={undefined}`: Fabric lo manda como `null` y Nitro solo acepta `undefined`;
+  - llamar a `previewOutput.dispose()`: en desarrollo, Fabric congela las props de los componentes
+    nativos (`deepFreezeAndThrowOnMutationInDev`) y Hermes ya no puede quitar el `NativeState`.
+
+**Arreglo previsto:** en el próximo rebuild nativo (ver docs/ROADMAP.md), parche de
+react-native-vision-camera con las PRs #4185 (`onDropView()` suelta la vista y desconecta el
+output) y #4186 (se destruye el `CustomLifecycle` en cada `configure`), más `session.dispose()` en
+el teardown de `useCameraSession`.

@@ -79,6 +79,11 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 - [ ] Guardar la foto del dibujo terminado en la galería (`expo-media-library`)
 - [ ] Recibir imágenes con «Compartir» desde otras apps (intent de Android / share extension de iOS)
 - [ ] Modo inmersivo al bloquear (`expo-navigation-bar`, tarea de arriba)
+- [ ] Fuga de memoria de la cámara (issue #62): parche de `react-native-vision-camera` (`pnpm patch`)
+      con las PRs #4185 y #4186 de vision-camera#4180 y `session.dispose()` en el teardown de
+      `useCameraSession` (ver docs/spikes/camera.md). Al aplicarlo, documentarlo en CLAUDE.md
+      («Trampas»)
+- [ ] Actualizaciones de parche de Expo SDK 57 (`npx expo install --check` en apps/mobile)
 
 **Puerta:** terminas un dibujo real de 4 trozos solo con la app.
 

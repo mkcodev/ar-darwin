@@ -20,7 +20,7 @@ const DISPOSE_DELAY_MS = 1000;
  * a missing file and one that doesn't decode both end as `missing`.
  *
  * Memory: a 4096 px image is tens of MB of native and GPU memory, and Hermes's GC doesn't see
- * that weight, so leaving it to the GC let every camera visit pile up. The encoded bytes are
+ * that weight, so it isn't left to the GC (issue #62). The encoded bytes are
  * released as soon as the image exists, the image `DISPOSE_DELAY_MS` after the screen goes (or at
  * once if it decoded after the screen had already gone: it was never drawn).
  */
