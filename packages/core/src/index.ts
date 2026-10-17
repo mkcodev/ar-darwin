@@ -4,6 +4,7 @@ export { computeTiles, maxOverlapPx } from "./computeTiles";
 export * from "./controls";
 export * from "./filePath";
 export * from "./frameStats";
+export * from "./imageAdjustments";
 export * from "./importImage";
 export * from "./models";
 export * from "./project";
