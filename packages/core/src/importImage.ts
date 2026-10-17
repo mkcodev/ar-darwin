@@ -70,5 +70,6 @@ export function projectNameFromFileName(fileName?: string | null): string | null
   if (fileName === undefined || fileName === null) return null;
   const name = fileName.trim().replace(EXTENSION, "").replace(/\s+/g, " ").trim();
   if (name.length === 0 || GENERIC_NAMES.some((pattern) => pattern.test(name))) return null;
-  return name.slice(0, MAX_IMPORTED_NAME_LENGTH).trim();
+  // Cut by code points, not UTF-16 units, so an emoji's surrogate pair is never split.
+  return Array.from(name).slice(0, MAX_IMPORTED_NAME_LENGTH).join("").trim();
 }

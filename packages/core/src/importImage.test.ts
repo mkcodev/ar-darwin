@@ -92,6 +92,12 @@ describe("projectNameFromFileName", () => {
     expect(name).toHaveLength(MAX_IMPORTED_NAME_LENGTH);
   });
 
+  it("never splits an emoji when cutting (#54)", () => {
+    const name = projectNameFromFileName(`${"a".repeat(59)}🦜🦜.jpg`);
+    expect(name).toBe(`${"a".repeat(59)}🦜`);
+    expect(Array.from(name ?? "")).toHaveLength(MAX_IMPORTED_NAME_LENGTH);
+  });
+
   it("returns null without a name", () => {
     expect(projectNameFromFileName(undefined)).toBeNull();
     expect(projectNameFromFileName(null)).toBeNull();
