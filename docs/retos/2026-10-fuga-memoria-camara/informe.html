@@ -1,0 +1,605 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>La fuga de la cámara</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: expediente de investigación — una columna de lectura con piezas de evidencia a lo ancho
+   (gráficas, maqueta de capas, árbol de vistas). Paleta «Grafito y luz» de la propia app. Oscuro por defecto. */
+:root{
+  --bg:#0F0F0E; --surface:#1A1A18; --raised:#232320; --line:#3A3A36;
+  --fg:#F3EEE4; --muted:#ADA799; --accent:#FF5A1F; --guide:#7FD3F7; --ok:#8FBF8A; --dim:#6F6A60;
+  --f-display:"Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --f-body:"Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"Geist Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
+  --bg:#F3EEE4; --surface:#FBF8F1; --raised:#EDE7DA; --line:#D6CEBE;
+  --fg:#1A1A18; --muted:#615C52; --accent:#C9410E; --guide:#0F6E96; --ok:#3F7A3B; --dim:#9A9488; color-scheme:light; } }
+:root[data-theme="light"]{
+  --bg:#F3EEE4; --surface:#FBF8F1; --raised:#EDE7DA; --line:#D6CEBE;
+  --fg:#1A1A18; --muted:#615C52; --accent:#C9410E; --guide:#0F6E96; --ok:#3F7A3B; --dim:#9A9488; color-scheme:light; }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));padding-block:0 72px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:1080px;margin:0 auto}
+a{color:var(--guide)}
+:focus-visible{outline:2px solid var(--guide);outline-offset:3px;border-radius:6px}
+.mono{font-family:var(--f-mono);font-size:.86em}
+.eyebrow{font-family:var(--f-mono);font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+p{margin:0}
+.read{max-width:66ch}
+.muted{color:var(--muted)}
+
+/* ---------- Portada ---------- */
+header.hero{padding-block:56px 12px;display:grid;gap:20px}
+.case{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.stamp{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+  border:1.5px solid var(--accent);padding:4px 10px;border-radius:4px;transform:rotate(-2deg);display:inline-block}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(46px,8.4vw,96px);line-height:.95;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1 em{font-style:italic;color:var(--accent)}
+.lede{max-width:60ch;color:var(--muted);font-size:18px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:8px}
+.stat{background:var(--surface);padding:16px 18px;display:grid;gap:2px;min-width:0}
+.stat b{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,4.4vw,44px);line-height:1;font-variant-numeric:tabular-nums}
+.stat b.hot{color:var(--accent)}
+.stat span{font-size:13px;color:var(--muted);line-height:1.35}
+
+/* Gráfica de portada */
+.figure{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 18px 12px;margin-top:22px}
+.figure .cap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 18px;align-items:baseline;margin-bottom:8px}
+.figure .cap h3{margin:0;font-size:15px;font-weight:600}
+.key{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--muted)}
+.key i{display:inline-block;width:18px;height:3px;border-radius:2px;vertical-align:3px;margin-right:6px}
+.chart{width:100%;height:auto;display:block;overflow:visible}
+.chart text{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .leak{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+.chart .leakArea{fill:var(--accent);opacity:.12}
+.chart .flat{fill:none;stroke:var(--guide);stroke-width:2;stroke-dasharray:5 6}
+.chart .pt{fill:var(--bg);stroke:var(--accent);stroke-width:2}
+.chart .end{fill:var(--accent)}
+.chart .lbl{fill:var(--fg);font-size:12px}
+.draw{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw 2.2s cubic-bezier(.3,.7,.2,1) .3s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* ---------- Navegación ---------- */
+nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-top:36px}
+nav.toc ul{list-style:none;margin:0 auto;padding:10px 0;display:flex;gap:6px;overflow-x:auto;max-width:1080px;scrollbar-width:none}
+nav.toc a{display:block;white-space:nowrap;text-decoration:none;color:var(--muted);font-size:14px;padding:6px 12px;border-radius:999px;border:1px solid transparent}
+nav.toc a:hover{color:var(--fg);border-color:var(--line)}
+
+section{padding-block:56px 8px;scroll-margin-top:64px}
+h2{font-family:var(--f-display);font-weight:400;font-size:clamp(34px,5.4vw,52px);line-height:1.02;margin:8px 0 14px;text-wrap:balance}
+h2 em{font-style:italic;color:var(--accent)}
+h3{font-size:17px;font-weight:600;margin:0 0 6px}
+.intro{max-width:66ch;color:var(--muted);margin:0 0 28px}
+
+/* ---------- Escena: capas de la pantalla ---------- */
+.scene{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:28px;align-items:center}
+.stage{position:relative;height:420px;perspective:1400px;display:grid;place-items:center}
+.stack{position:relative;width:200px;height:360px;transform-style:preserve-3d;transform:rotateX(58deg) rotateZ(-38deg);transition:transform .8s}
+.layer{position:absolute;inset:0;border-radius:24px;border:1.5px solid var(--line);transform-style:preserve-3d;transition:transform .7s cubic-bezier(.3,.7,.2,1),opacity .5s,filter .5s}
+.layer .tag{position:absolute;left:100%;top:12px;margin-left:16px;white-space:nowrap;font-family:var(--f-mono);font-size:12px;color:var(--fg);
+  transform:rotateZ(38deg) rotateX(-58deg);transform-origin:left top}
+.layer .tag small{display:block;color:var(--muted);font-size:10.5px}
+.l-cam{transform:translateZ(0);background:
+   radial-gradient(120px 90px at 40% 40%, color-mix(in srgb,var(--guide) 30%,transparent), transparent 70%),
+   repeating-linear-gradient(135deg, color-mix(in srgb,var(--guide) 14%,var(--raised)) 0 10px, var(--raised) 10px 20px);}
+.l-skia{transform:translateZ(80px);background:color-mix(in srgb,var(--accent) 10%,transparent);border-color:var(--accent);border-style:dashed}
+.l-skia::after{content:"";position:absolute;inset:70px 36px 110px;border-radius:6px;border:1.5px solid var(--accent);
+  background:repeating-linear-gradient(45deg,transparent 0 6px,color-mix(in srgb,var(--accent) 22%,transparent) 6px 7px)}
+.l-ui{transform:translateZ(160px);background:transparent}
+.l-ui::before,.l-ui::after{content:"";position:absolute;left:22px;right:22px;height:34px;border-radius:17px;background:color-mix(in srgb,var(--fg) 14%,transparent);border:1px solid var(--line)}
+.l-ui::before{top:16px}.l-ui::after{bottom:18px}
+.layer.off{opacity:.12;filter:grayscale(1)}
+.layer.off .tag{opacity:.4}
+.legendcards{display:grid;gap:10px}
+.lc{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.sw{width:14px;height:14px;border-radius:4px;margin-top:4px}
+.lc p{font-size:14px;color:var(--muted)}
+
+/* ---------- Método ---------- */
+.proto{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;counter-reset:s}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:6px;position:relative;min-width:0}
+.step .n{font-family:var(--f-mono);font-size:11px;color:var(--accent)}
+.step b{font-size:15px;font-weight:600}
+.step span{font-size:13px;color:var(--muted);line-height:1.4}
+.term{margin-top:18px;background:#0A0A09;color:#D9D3C7;border:1px solid var(--line);border-radius:12px;overflow-x:auto;font-family:var(--f-mono);font-size:12.5px;line-height:1.7}
+.term .bar{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid #2A2A27}
+.term .bar i{width:10px;height:10px;border-radius:50%;background:#3A3A36}
+.term pre{margin:0;padding:14px 16px;white-space:pre}
+.term .hl{color:#FF7A45}.term .hv{color:#7FD3F7}.term .c{color:#7A7469}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+.metric{border-left:2px solid var(--line);padding:2px 0 2px 12px}
+.metric b{font-family:var(--f-mono);font-size:13px}
+.metric p{font-size:13.5px;color:var(--muted)}
+
+/* ---------- Cronología de hipótesis ---------- */
+.timeline{position:relative;display:grid;gap:14px;padding-left:28px}
+.timeline::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--line),var(--accent))}
+.ev{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:grid;gap:8px}
+.ev::before{content:"";position:absolute;left:-26px;top:20px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--dim)}
+.ev.win::before{border-color:var(--accent);background:var(--accent);box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 22%,transparent)}
+.ev .top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.ev h3{margin:0}
+.ev p{font-size:14.5px;color:var(--muted);max-width:72ch}
+.verdict{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.verdict.no{color:var(--dim)}
+.verdict.part{color:var(--guide);border-color:color-mix(in srgb,var(--guide) 45%,transparent)}
+.verdict.yes{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+.meter{display:flex;align-items:center;gap:10px;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.meter .track{flex:1;max-width:320px;height:8px;border-radius:4px;background:var(--raised);overflow:hidden}
+.meter .fill{height:100%;background:var(--accent);border-radius:4px}
+
+/* Pares antes/después */
+.pairs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pair{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px;min-width:0}
+.pair .h{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.pair .h b{font-size:14px}
+.pair .h span{font-family:var(--f-mono);font-size:11px}
+.bars2{display:grid;gap:6px}
+.b2{display:grid;grid-template-columns:52px minmax(0,1fr) 64px;gap:8px;align-items:center;font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.b2 .t{height:10px;border-radius:3px;background:var(--raised);overflow:hidden}
+.b2 .t i{display:block;height:100%;border-radius:3px;background:var(--dim)}
+.b2 .t i.a{background:var(--guide)}
+.b2 em{font-style:normal;color:var(--fg);text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---------- Laboratorio de variantes ---------- */
+.lab{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px;align-items:start}
+.vtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.vtab{font:inherit;font-size:14px;cursor:pointer;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:7px 14px;display:inline-flex;gap:8px;align-items:center}
+.vtab b{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.vtab[aria-pressed="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.vtab[aria-pressed="true"] b{color:var(--accent)}
+.readout{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;display:grid;gap:16px}
+.readout h3{font-family:var(--f-display);font-weight:400;font-size:30px;margin:0;line-height:1.05}
+.parts{display:flex;flex-wrap:wrap;gap:6px}
+.part{font-family:var(--f-mono);font-size:11.5px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);color:var(--muted)}
+.part.on{color:var(--fg);border-color:var(--fg)}
+.part.off{text-decoration:line-through;opacity:.55}
+.gauge{display:grid;gap:6px}
+.gauge .lab2{display:flex;justify-content:space-between;font-size:13px}
+.gauge .lab2 span{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.gtrack{position:relative;height:14px;border-radius:7px;background:var(--raised);overflow:hidden}
+.gtrack .g0{position:absolute;left:0;top:0;bottom:0;background:var(--dim);border-radius:7px;transition:width .6s}
+.gtrack .g1{position:absolute;top:0;bottom:0;border-radius:0 7px 7px 0;transition:left .6s,width .6s}
+.gtrack .g1.bad{background:repeating-linear-gradient(45deg,var(--accent) 0 6px,color-mix(in srgb,var(--accent) 70%,var(--bg)) 6px 12px)}
+.gtrack .g1.once{background:color-mix(in srgb,var(--guide) 70%,transparent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;padding:4px 10px;border-radius:999px;border:1px solid var(--line);display:inline-flex;gap:6px;align-items:center}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.chip.leak{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
+.chip.clean{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.readout .note{font-size:14px;color:var(--muted)}
+.minifone{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.mf{border-radius:10px;border:1px solid var(--line);padding:10px 8px;text-align:center;font-family:var(--f-mono);font-size:11px;color:var(--muted);transition:all .4s}
+.mf.on{color:var(--fg);border-color:var(--fg);background:var(--raised)}
+
+.matrix{margin-top:26px;overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+.matrix table{width:100%;border-collapse:collapse;min-width:620px;font-size:14px}
+.matrix th,.matrix td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line)}
+.matrix tr:last-child td{border-bottom:0}
+.matrix th{font-family:var(--f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500;background:var(--surface)}
+.matrix td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dotc{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--dim);vertical-align:-1px}
+.dotc.f{background:var(--fg);border-color:var(--fg)}
+.matrix tr.real td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.y{color:var(--accent);font-weight:600}.nn{color:var(--ok)}
+
+/* ---------- Causa raíz ---------- */
+.rootfig{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;overflow-x:auto}
+.rootfig svg{display:block;width:100%;min-width:640px;height:auto}
+.rootfig text{font-family:var(--f-body);font-size:13px;fill:var(--fg)}
+.rootfig .sub{font-family:var(--f-mono);font-size:10.5px;fill:var(--muted)}
+.rootfig .node{fill:var(--raised);stroke:var(--line);stroke-width:1.2}
+.rootfig .node.vc{fill:color-mix(in srgb,var(--accent) 16%,var(--raised));stroke:var(--accent)}
+.rootfig .node.tex{fill:color-mix(in srgb,var(--accent) 9%,var(--raised));stroke:var(--accent);stroke-dasharray:5 4}
+.rootfig .edge{fill:none;stroke:var(--line);stroke-width:1.5}
+.rootfig .hold{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-dasharray:8 7;animation:flow 1.1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-30}}
+.rootfig .ahead{fill:var(--accent)}
+.chain{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.chain .c{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:6px}
+.chain .c .n{font-family:var(--f-mono);font-size:11px;color:var(--accent)}
+.chain .c p{font-size:14px;color:var(--muted)}
+.ghosts{margin-top:22px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+.gstack{position:relative;width:220px;height:150px}
+.gh{position:absolute;width:74px;height:130px;border-radius:12px;border:1.5px solid var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--bg))}
+.gcount{font-family:var(--f-display);font-size:56px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.honest{margin-top:16px;display:flex;gap:12px;align-items:flex-start;border:1px dashed var(--line);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--muted)}
+.honest b{color:var(--fg)}
+
+/* ---------- Solución ---------- */
+.plan{display:grid;gap:8px}
+.pi{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.pi .box{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--line)}
+.pi.done .box{background:var(--ok);border-color:var(--ok)}
+.pi p{font-size:14.5px}
+.pi small{display:block;color:var(--muted);font-size:13px}
+.pending{font-family:var(--f-mono);font-size:11px;color:var(--muted);white-space:nowrap}
+
+/* ---------- Lecciones ---------- */
+.lessons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.lesson{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:8px;align-content:start}
+.lesson q{font-family:var(--f-display);font-size:24px;line-height:1.12;quotes:none}
+.lesson p{font-size:14px;color:var(--muted)}
+.lesson.big{grid-column:span 2;background:color-mix(in srgb,var(--accent) 8%,var(--surface));border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+.lesson.big q{font-size:clamp(28px,3.6vw,38px)}
+
+.spec{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.spec dl{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 16px}
+.spec dl div{display:grid;grid-template-columns:130px minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.spec dl div:last-child{border-bottom:0}
+.spec dt{color:var(--muted);font-family:var(--f-mono);font-size:12px;padding-top:2px}
+.spec dd{margin:0;min-width:0}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;color:var(--muted);font-size:13px}
+
+@media (max-width:860px){
+  .scene,.lab{grid-template-columns:minmax(0,1fr)}
+  .proto{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pairs,.chain,.lessons,.metrics{grid-template-columns:minmax(0,1fr)}
+  .lesson.big{grid-column:auto}
+  .spec{grid-template-columns:minmax(0,1fr)}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stage{height:380px}
+}
+@media (max-width:480px){
+  .stack{width:150px;height:270px}
+  .stage{height:320px;margin-left:-60px}
+  .layer .tag{font-size:11px;margin-left:10px}
+  .ghosts{grid-template-columns:minmax(0,1fr)}
+  .spec dl div{grid-template-columns:minmax(0,1fr);gap:2px}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .draw{stroke-dashoffset:0}
+}
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="case">
+      <span class="stamp">Caso #62 · causa confirmada</span>
+      <span class="eyebrow">AR-Darwin · Informe de reto técnico · 17 oct 2026</span>
+    </div>
+    <h1>La fuga que no estaba <em>donde parecía</em></h1>
+    <p class="lede">Cada visita a la cámara dejaba unos 7 MB de memoria gráfica atrapada, para siempre. Este es el recorrido completo: cómo lo medí, las dos pistas falsas, el aislamiento pieza a pieza y la cadena de referencias que lo explica.</p>
+    <div class="stats" role="list">
+      <div class="stat" role="listitem"><b class="hot">~7 MB</b><span>de texturas GL perdidas por cada apertura de la cámara</span></div>
+      <div class="stat" role="listitem"><b>×5</b><span>memoria gráfica tras 10 aperturas (13 → 66 MB)</span></div>
+      <div class="stat" role="listitem"><b>5</b><span>variantes de la pantalla aisladas y medidas</span></div>
+      <div class="stat" role="listitem"><b>2</b><span>hipótesis razonables descartadas por los datos</span></div>
+    </div>
+
+    <figure class="figure" style="margin-inline:0">
+      <div class="cap">
+        <h3>Memoria gráfica (GL mtrack) tras cada apertura de la cámara</h3>
+        <div class="key"><span><i style="background:var(--accent)"></i>Medido</span><span><i style="background:var(--guide)"></i>Lo esperable: plano</span></div>
+      </div>
+      <svg class="chart" id="heroChart" viewBox="0 0 900 300" role="img" aria-label="La memoria gráfica sube de 25 a 102 MB en 10 aperturas, cuando debería quedarse plana"></svg>
+      <p class="muted" style="font-size:12.5px;margin-top:6px">Serie real medida con <span class="mono">adb shell dumpsys meminfo</span> en un Vivo Android, arrancando desde cero (<span class="mono">force-stop</span>). Sube de forma lineal y no baja al esperar.</p>
+    </figure>
+  </header>
+
+  <nav class="toc" aria-label="Secciones">
+    <ul>
+      <li><a href="#escena">La escena</a></li>
+      <li><a href="#metodo">El método</a></li>
+      <li><a href="#pistas">Pistas falsas</a></li>
+      <li><a href="#aislamiento">Aislamiento</a></li>
+      <li><a href="#causa">Causa raíz</a></li>
+      <li><a href="#solucion">Solución</a></li>
+      <li><a href="#lecciones">Lecciones</a></li>
+    </ul>
+  </nav>
+
+  <!-- ESCENA -->
+  <section id="escena">
+    <span class="eyebrow">01 · La escena</span>
+    <h2>Una pantalla, <em>tres capas</em> pesadas</h2>
+    <p class="intro">AR-Darwin superpone una imagen sobre la cámara para calcarla en papel. La pantalla de cámara apila tres piezas, y cualquiera podía ser la sospechosa.</p>
+    <div class="scene">
+      <div class="stage" aria-hidden="true">
+        <div class="stack" id="stack">
+          <div class="layer l-cam" data-l="cam"><span class="tag">Vision Camera<small>vista previa nativa</small></span></div>
+          <div class="layer l-skia" data-l="skia"><span class="tag">Canvas de Skia<small>imagen a pantalla completa</small></span></div>
+          <div class="layer l-ui" data-l="ui"><span class="tag">Controles<small>iconos Skia, candado, gestos</small></span></div>
+        </div>
+      </div>
+      <div class="legendcards">
+        <div class="lc"><span class="sw" style="background:var(--guide)"></span><div><h3>Vista previa de la cámara</h3><p>Vision Camera 5.2.3 dibuja lo que ve el móvil. Es una vista nativa de Android gestionada por CameraX.</p></div></div>
+        <div class="lc"><span class="sw" style="background:var(--accent)"></span><div><h3>Canvas de Skia a pantalla completa</h3><p>Dibuja la imagen que el usuario calca, con escala, giro, opacidad y espejo. Vive en una textura de GPU del tamaño de la pantalla.</p></div></div>
+        <div class="lc"><span class="sw" style="background:var(--muted)"></span><div><h3>Controles</h3><p>Barra de herramientas, botón de candado y gestos. Cada icono es su propio Canvas de Skia pequeño.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MÉTODO -->
+  <section id="metodo">
+    <span class="eyebrow">02 · El método</span>
+    <h2>Medir antes de <em>arreglar</em></h2>
+    <p class="intro">La primera pista fue una sensación: el móvil se calentaba y se volvía lento tras un rato. Para convertirla en un dato monté un protocolo idéntico para cada prueba y lo automaticé con funciones de PowerShell.</p>
+    <div class="proto">
+      <div class="step"><span class="n">PASO 1</span><b>Partir de cero</b><span><span class="mono">am force-stop</span> mata el proceso para que no arrastre memoria de antes.</span></div>
+      <div class="step"><span class="n">PASO 2</span><b>Reposo y GC</b><span>30 s quieto y recolección de basura forzada antes de medir.</span></div>
+      <div class="step"><span class="n">PASO 3</span><b>Medir</b><span>Lectura de <span class="mono">meminfo</span>: texturas, superficies y vistas.</span></div>
+      <div class="step"><span class="n">PASO 4</span><b>10 aperturas</b><span>Entrar y salir de la cámara diez veces, unos 3 s dentro.</span></div>
+      <div class="step"><span class="n">PASO 5</span><b>Medir otra vez</b><span>30 s, GC forzado y lectura final. La diferencia es la fuga.</span></div>
+    </div>
+    <div class="term" role="img" aria-label="Salida de meminfo con GL mtrack y Views destacados">
+      <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="c">PS&gt; function MedirGC { kill -10 $pid; Start-Sleep 5; Medir }   # GC forzado + lectura</span>
+<span class="c">PS&gt;</span> MedirGC
+
+  Native Heap   531854   531824        8       27   533312
+  <span class="hl">  GL mtrack    66580    66580</span>        0        0    66580    <span class="c">← texturas de la GPU</span>
+            Graphics:    <span class="hl">66580</span>
+           TOTAL PSS:   792140            TOTAL RSS:   934832
+               Views:      <span class="hv">256</span>         ViewRootImpl:        1    <span class="c">← vistas nativas vivas</span></pre>
+    </div>
+    <div class="metrics">
+      <div class="metric"><b>GL mtrack</b><p>Texturas en la GPU. Si sube, alguien guarda imágenes o lienzos dibujados.</p></div>
+      <div class="metric"><b>EGL mtrack</b><p>Superficies de dibujo de ventanas. Nunca apareció: descartó una línea entera.</p></div>
+      <div class="metric"><b>Views</b><p>Vistas nativas de Android vivas. Si sube y no baja, hay pantallas que no mueren.</p></div>
+    </div>
+  </section>
+
+  <!-- PISTAS FALSAS -->
+  <section id="pistas">
+    <span class="eyebrow">03 · Las hipótesis</span>
+    <h2>Dos pistas falsas y <em>una prueba de fuego</em></h2>
+    <p class="intro">Cada hipótesis tenía sentido. Los datos fueron descartando las que no explicaban el síntoma.</p>
+    <div class="timeline">
+      <article class="ev">
+        <div class="top"><h3>H1 · La foto no se liberaba</h3><span class="verdict no">Descartada</span></div>
+        <p>Añadí <span class="mono">dispose()</span> explícito a los objetos nativos de Skia (<span class="mono">SkData</span> y <span class="mono">SkImage</span>), incluso para el caso en que la decodificación termina después de cerrar la pantalla. El código quedó más correcto. La memoria siguió subiendo igual.</p>
+        <div class="meter"><span>por apertura</span><div class="track"><div class="fill" style="width:100%"></div></div><span>~7 MB</span></div>
+      </article>
+      <article class="ev">
+        <div class="top"><h3>H2 · Un bug real de React Native Skia</h3><span class="verdict part">Ayudó poco</span></div>
+        <p>Leyendo <span class="mono">node_modules</span> encontré que cada Canvas creaba un <em>recorder</em> nuevo en cada redibujado y nunca liberaba el anterior (<a href="https://github.com/Shopify/react-native-skia/issues/4079">issue #4079</a>). Apliqué el arreglo del <a href="https://github.com/Shopify/react-native-skia/pull/4080">PR #4080</a> con <span class="mono">pnpm patch</span>, adaptado a mi versión: el <span class="mono">dispose()</span> del PR no existe en 2.6.2 y habría cerrado la app, así que lo cambié por <span class="mono">reset()</span>.</p>
+        <div class="meter"><span>por apertura</span><div class="track"><div class="fill" style="width:76%"></div></div><span>~5,3 MB</span></div>
+      </article>
+      <article class="ev">
+        <div class="top"><h3>Prueba de fuego · ¿fuga o recolector perezoso?</h3><span class="verdict yes">Fuga real</span></div>
+        <p>Forcé la recolección de basura en la app (<span class="mono">kill -10</span>) con 10 aperturas acumuladas. La memoria total bajó, así que el GC se ejecutó. Las texturas y las vistas no se movieron: algo las mantenía vivas de verdad.</p>
+        <div class="pairs" id="gcPairs"></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- AISLAMIENTO -->
+  <section id="aislamiento">
+    <span class="eyebrow">04 · El aislamiento</span>
+    <h2>Desmontar la pantalla <em>pieza a pieza</em></h2>
+    <p class="intro">Creé una pantalla de diagnóstico, solo en desarrollo, que abre cada combinación de piezas por separado. Cada variante pasó por el mismo protocolo. Toca una para ver qué monta y qué ocurrió.</p>
+    <div class="lab">
+      <div>
+        <div class="vtabs" role="group" aria-label="Variantes" id="vtabs"></div>
+        <div class="minifone" id="minifone">
+          <div class="mf" data-p="cam">Cámara</div>
+          <div class="mf" data-p="skia">Canvas Skia</div>
+          <div class="mf" data-p="ui">Controles</div>
+        </div>
+      </div>
+      <div class="readout" id="readout" aria-live="polite"></div>
+    </div>
+
+    <div class="matrix">
+      <table>
+        <thead><tr><th>Variante</th><th>Cámara</th><th>Canvas</th><th>Controles</th><th>Texturas GL</th><th>Vistas</th><th>¿Filtra?</th></tr></thead>
+        <tbody id="mbody"></tbody>
+      </table>
+    </div>
+    <p class="muted" style="font-size:13px;margin-top:10px">Ninguna pieza por separado filtra texturas. Las vistas solo se acumulan cuando está la cámara. Las texturas solo se acumulan con la cámara y el Canvas juntos.</p>
+  </section>
+
+  <!-- CAUSA RAÍZ -->
+  <section id="causa">
+    <span class="eyebrow">05 · La causa raíz</span>
+    <h2>Quien ocupa la memoria <em>no es quien la retiene</em></h2>
+    <p class="intro">Skia parecía el culpable porque era quien ocupaba la memoria. Era una víctima. El problema nace en Vision Camera y se contagia por el árbol de vistas de Android.</p>
+
+    <div class="rootfig">
+      <svg viewBox="0 0 980 330" role="img" aria-label="Una referencia de Vision Camera retiene la vista de la cámara; por la referencia al padre se retiene toda la pantalla, incluida la textura de Skia de 7 MB">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahead" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+        <!-- Vision Camera -->
+        <rect class="node vc" x="20" y="135" width="190" height="64" rx="12"/>
+        <text x="38" y="162">Vision Camera</text>
+        <text class="sub" x="38" y="182">referencia que no se suelta</text>
+        <!-- Camera view -->
+        <rect class="node" x="290" y="135" width="170" height="64" rx="12"/>
+        <text x="308" y="162">Vista de la cámara</text>
+        <text class="sub" x="308" y="182">PreviewView · ~13 vistas</text>
+        <!-- Screen root -->
+        <rect class="node" x="540" y="135" width="170" height="64" rx="12"/>
+        <text x="558" y="162">Raíz de la pantalla</text>
+        <text class="sub" x="558" y="182">ya desmontada en React</text>
+        <!-- children -->
+        <rect class="node tex" x="790" y="30" width="170" height="64" rx="12"/>
+        <text x="808" y="57">SkiaTextureView</text>
+        <text class="sub" x="808" y="77">textura ≈ 7 MB</text>
+        <rect class="node" x="790" y="135" width="170" height="64" rx="12"/>
+        <text x="808" y="162">Controles</text>
+        <text class="sub" x="808" y="182">iconos, candado</text>
+        <rect class="node" x="790" y="240" width="170" height="64" rx="12"/>
+        <text x="808" y="267">Resto del árbol</text>
+        <text class="sub" x="808" y="287">contenedores, textos</text>
+        <!-- edges -->
+        <path class="hold" d="M210,167 L286,167" marker-end="url(#ah)"/>
+        <text class="sub" x="222" y="155">retiene</text>
+        <path class="hold" d="M460,167 L536,167" marker-end="url(#ah)"/>
+        <text class="sub" x="470" y="155">mParent</text>
+        <path class="hold" d="M710,160 C750,160 750,62 786,62" marker-end="url(#ah)"/>
+        <path class="edge" d="M710,167 L786,167" marker-end="url(#ah)"/>
+        <path class="edge" d="M710,174 C750,174 750,272 786,272" marker-end="url(#ah)"/>
+        <text class="sub" x="720" y="120">hijos</text>
+      </svg>
+    </div>
+
+    <div class="chain">
+      <div class="c"><span class="n">ESLABÓN 1</span><h3>Vision Camera no suelta su vista</h3><p>Al cerrar la pantalla, algo dentro de Vision Camera sigue apuntando a su vista nativa. Por eso las vistas suben siempre que hay cámara (A y C) y nunca sin ella (B y D).</p></div>
+      <div class="c"><span class="n">ESLABÓN 2</span><h3>Cada vista guarda a su padre</h3><p>En Android, toda vista tiene una referencia a su contenedor (<span class="mono">mParent</span>). Retener una sola vista retiene la cadena hacia arriba y, con ella, la pantalla completa.</p></div>
+      <div class="c"><span class="n">ESLABÓN 3</span><h3>La textura de Skia queda atrapada</h3><p>La pantalla incluye el Canvas a pantalla completa: 1080 × ~1700 px × 4 bytes ≈ 7 MB. Cada apertura deja una pantalla fantasma más, con su textura.</p></div>
+    </div>
+
+    <div class="ghosts">
+      <div>
+        <h3>Diez aperturas, diez pantallas fantasma</h3>
+        <p class="muted" style="font-size:14.5px;max-width:52ch">Ninguna se ve, ninguna responde, pero todas siguen en memoria con su textura. Con el uso normal, Android termina cerrando la app por falta de memoria.</p>
+        <p style="margin-top:10px"><span class="gcount" id="gcount">0</span> <span class="mono muted">pantallas · <span id="gmb">0</span> MB atrapados</span></p>
+      </div>
+      <div class="gstack" id="gstack" aria-hidden="true"></div>
+    </div>
+
+    <div class="honest"><span class="mono" style="color:var(--accent)">✓</span><p><b>Confirmado en el código.</b> En Vision Camera 5.2.3, al desmontar la vista nativa se llama a <span class="mono">onDropView()</span> y no a <span class="mono">dispose()</span>, así que el <span class="mono">surfaceProvider</span> del output de vista previa sigue apuntando a la <span class="mono">PreviewView</span>. Ese output es un objeto de Nitro creado desde JS que Hermes casi nunca recoge. Ruta completa: referencia global JNI → <span class="mono">HybridPreviewOutput</span> → <span class="mono">surfaceProvider</span> → <span class="mono">PreviewView</span> → <span class="mono">mParent</span>… → <span class="mono">SkiaTextureView</span> → textura. Coincide con el issue abierto <a href="https://github.com/mrousavy/react-native-vision-camera/issues/4180">vision-camera #4180</a>.</p></div>
+  </section>
+
+  <!-- SOLUCIÓN -->
+  <section id="solucion">
+    <span class="eyebrow">06 · La solución</span>
+    <h2>Cortar la cadena <em>por el primer eslabón</em></h2>
+    <p class="intro">Arreglar Skia o los controles no serviría: son víctimas. El arreglo tiene que soltar la vista de la cámara al salir de la pantalla.</p>
+    <div class="plan">
+      <div class="pi done"><span class="box"></span><p>Liberar <span class="mono">SkData</span> y <span class="mono">SkImage</span> de forma explícita<small>Correcto aunque no fuera la causa. PR #63.</small></p><span class="pending">hecho</span></div>
+      <div class="pi done"><span class="box"></span><p>Parche de Skia (backport del PR #4080, adaptado a 2.6.2)<small>Arregla un bug real; documentado en CLAUDE.md para quitarlo al actualizar.</small></p><span class="pending">hecho, sin commit</span></div>
+      <div class="pi done"><span class="box"></span><p>Pantalla de aislamiento <span class="mono">/dev/leak</span> con 5 variantes<small>Señaló a Vision Camera.</small></p><span class="pending">hecho</span></div>
+      <div class="pi done"><span class="box"></span><p>Leer el código Android de Vision Camera 5.2.3 y encontrar la referencia<small><span class="mono">onDropView()</span> no desconecta el output: issue upstream #4180, PRs #4185, #4186 y #4197 sin fusionar.</small></p><span class="pending">hecho</span></div>
+      <div class="pi"><span class="box"></span><p>Fase 1 · mitigación solo JS, sin rebuild<small>Cambiar <span class="mono">&lt;Camera&gt;</span> por sus piezas públicas y soltar el <span class="mono">previewOutput</span> un frame antes de salir de la pantalla (salida en dos tiempos con <span class="mono">beforeRemove</span>).</small></p><span class="pending">siguiente</span></div>
+      <div class="pi"><span class="box"></span><p>Medir de nuevo, con y sin el parche de Skia<small>Objetivo: vistas planas y texturas planas tras la primera apertura. Si sin el parche ya queda plano, el parche se descarta.</small></p><span class="pending">pendiente</span></div>
+      <div class="pi"><span class="box"></span><p>Fase 2 · parche nativo en el próximo rebuild<small><span class="mono">pnpm patch</span> con los arreglos Kotlin de #4185 y #4186, más <span class="mono">session.dispose()</span> en JS.</small></p><span class="pending">pendiente</span></div>
+      <div class="pi"><span class="box"></span><p>Comentar en #4180 con nuestras medidas<small>La variante A (+13 vistas por apertura) como reproducción para empujar la fusión.</small></p><span class="pending">pendiente</span></div>
+    </div>
+  </section>
+
+  <!-- LECCIONES -->
+  <section id="lecciones">
+    <span class="eyebrow">07 · Lo que me llevo</span>
+    <h2>Lecciones</h2>
+    <div class="lessons">
+      <div class="lesson big"><q>Quien ocupa la memoria no siempre es quien la retiene.</q><p>La textura era de Skia; la referencia que la mantenía viva, de Vision Camera. Arreglar al que ocupa la memoria solo maquilla el problema.</p></div>
+      <div class="lesson"><q>Medir antes de arreglar.</q><p>Dos soluciones razonables no resolvían nada. Sin números habría dado el problema por cerrado.</p></div>
+      <div class="lesson"><q>Aislar es más rápido que adivinar.</q><p>Cinco variantes y una tabla señalaron al culpable en una tarde.</p></div>
+      <div class="lesson"><q>Fuga real o GC perezoso.</q><p>Forzar el GC antes de medir evita perseguir fantasmas.</p></div>
+      <div class="lesson"><q>Leer el código de las dependencias.</q><p>Encontré un bug real de Skia en <span class="mono">node_modules</span> y lo parcheé de forma segura y documentada.</p></div>
+    </div>
+  </section>
+
+  <section id="ficha">
+    <span class="eyebrow">Ficha técnica</span>
+    <h2>Herramientas y contexto</h2>
+    <div class="spec">
+      <dl>
+        <div><dt>Proyecto</dt><dd>AR-Darwin · app de calco con realidad aumentada, sin anuncios</dd></div>
+        <div><dt>Stack</dt><dd>Expo SDK 57 · React Native 0.86 · Vision Camera 5.2.3 · React Native Skia 2.6.2 · Reanimated 4</dd></div>
+        <div><dt>Dispositivo</dt><dd>Vivo Android, development build</dd></div>
+        <div><dt>Fecha</dt><dd>17 de octubre de 2026</dd></div>
+      </dl>
+      <dl>
+        <div><dt>Medición</dt><dd><span class="mono">adb shell dumpsys meminfo</span>, <span class="mono">dumpsys activity top</span>, GC forzado con <span class="mono">kill -10</span></dd></div>
+        <div><dt>Automatización</dt><dd>Funciones de PowerShell (<span class="mono">Medir</span>, <span class="mono">Vistas</span>, <span class="mono">MedirGC</span>)</dd></div>
+        <div><dt>Arreglos</dt><dd><span class="mono">dispose()</span> de recursos nativos · <span class="mono">pnpm patch</span> · pantalla de aislamiento</dd></div>
+        <div><dt>Referencias</dt><dd>Issue #62 · PR #63 · <a href="https://github.com/mrousavy/react-native-vision-camera/issues/4180">Vision Camera #4180</a> · <a href="https://github.com/Shopify/react-native-skia/issues/4079">Skia #4079</a> · <a href="https://github.com/Shopify/react-native-skia/pull/4080">Skia PR #4080</a></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <footer><span>Mikel · mkcodev</span><span>AR-Darwin · Retos técnicos</span></footer>
+</div>
+
+<script>
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  const el=(t,a={},p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;};
+
+  /* --- Gráfica de portada --- */
+  const vals=[25,31,38,45,52,60,67,74,88,95,102];
+  const svg=document.getElementById("heroChart");
+  const W=900,H=300,L=48,R=70,T=16,B=36,max=110;
+  const x=i=>L+i*(W-L-R)/(vals.length-1), y=v=>T+(1-v/max)*(H-T-B);
+  [0,25,50,75,100].forEach(v=>{el("line",{class:"grid",x1:L,x2:W-R,y1:y(v),y2:y(v)},svg);const t=el("text",{x:L-8,y:y(v)+4,"text-anchor":"end"},svg);t.textContent=v+" MB";});
+  vals.forEach((_,i)=>{const t=el("text",{x:x(i),y:H-12,"text-anchor":"middle"},svg);t.textContent=i;});
+  const xl=el("text",{x:W-R,y:H-12,"text-anchor":"start",dx:12},svg);xl.textContent="aperturas";
+  const d=vals.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+","+y(v).toFixed(1)).join(" ");
+  el("path",{class:"leakArea",d:d+` L${x(vals.length-1)},${y(0)} L${x(0)},${y(0)} Z`},svg);
+  const flat=el("path",{class:"flat",d:`M${x(0)},${y(25)} L${x(vals.length-1)},${y(25)}`},svg);
+  const line=el("path",{class:"leak draw",d},svg);
+  const len=line.getTotalLength?line.getTotalLength():1400;line.style.setProperty("--len",len);
+  vals.forEach((v,i)=>{el("circle",{class:i===vals.length-1?"end":"pt",cx:x(i),cy:y(v),r:i===vals.length-1?5:3.2},svg);});
+  const e1=el("text",{class:"lbl",x:x(vals.length-1)+10,y:y(102)+4},svg);e1.textContent="102 MB";
+  const e2=el("text",{x:x(vals.length-1)+10,y:y(25)+4},svg);e2.textContent="25 MB";
+
+  /* --- Prueba del GC --- */
+  const gc=[["Memoria total (PSS)",792,763,820,"bajó: el GC corrió"],["Texturas GL",66.6,66.5,80,"no se mueve"],["Vistas nativas",256,256,300,"no se mueve"]];
+  document.getElementById("gcPairs").innerHTML=gc.map(([n,a,b,m,v])=>`
+    <div class="pair"><div class="h"><b>${n}</b><span style="color:${a!==b&&n.startsWith("Memoria")?"var(--guide)":"var(--accent)"}">${v}</span></div>
+    <div class="bars2">
+      <div class="b2"><span>antes</span><div class="t"><i style="width:${a/m*100}%"></i></div><em>${String(a).replace(".",",")}</em></div>
+      <div class="b2"><span>tras GC</span><div class="t"><i class="a" style="width:${b/m*100}%"></i></div><em>${String(b).replace(".",",")}</em></div>
+    </div></div>`).join("");
+
+  /* --- Laboratorio de variantes --- */
+  const V=[
+    {k:"A",name:"Solo la cámara",p:{cam:1,skia:0,ui:0},gl:[22.4,22.4],gOnce:false,vw:[144,183],n:"3",glLeak:false,vLeak:true,
+     note:"La vista previa no usa texturas GL, así que la memoria gráfica no se mueve. Pero cada apertura deja unas 13 vistas nativas vivas que nadie recoge: primera señal contra Vision Camera."},
+    {k:"B",name:"Solo Skia con la foto",p:{cam:0,skia:1,ui:0},gl:[24.3,31.6],gOnce:true,vw:[131,131],n:"10",glLeak:false,vLeak:false,
+     note:"Sube 7 MB en la primera apertura (Skia guarda la foto en caché) y después se queda plano. Sin cámara, Skia libera todo correctamente."},
+    {k:"C",name:"Pantalla real sin el Canvas",p:{cam:1,skia:0,ui:1},gl:[24.8,24.3],gOnce:false,vw:[131,299],n:"10",glLeak:false,vLeak:true,
+     note:"Sin el Canvas del overlay no hay textura grande que atrapar: GL plano. Las vistas se siguen acumulando, porque la cámara sigue ahí."},
+    {k:"D",name:"Pantalla real sin la cámara",p:{cam:0,skia:1,ui:1},gl:[24.8,31.3],gOnce:true,vw:[131,131],n:"10",glLeak:false,vLeak:false,
+     note:"El Canvas y los controles, sin cámara, se liberan bien: solo la caché de la primera vez. Quitando la cámara desaparece la fuga."},
+    {k:"Real",name:"Pantalla completa",p:{cam:1,skia:1,ui:1},gl:[13.1,66.6],gOnce:false,vw:[100,256],n:"10",glLeak:true,vLeak:true,
+     note:"Con la cámara y el Canvas juntos, la cámara retiene la pantalla entera y la textura de Skia queda atrapada en cada apertura: unos 5–7 MB cada vez."}
+  ];
+  const tabs=document.getElementById("vtabs"),ro=document.getElementById("readout"),stack=document.getElementById("stack");
+  const fmt=n=>String(n).replace(".",",");
+  function show(i){
+    const v=V[i];
+    [...tabs.children].forEach((b,j)=>b.setAttribute("aria-pressed",j===i?"true":"false"));
+    stack.querySelectorAll(".layer").forEach(l=>l.classList.toggle("off",!v.p[l.dataset.l]));
+    document.querySelectorAll("#minifone .mf").forEach(m=>m.classList.toggle("on",!!v.p[m.dataset.p]));
+    const g0=v.gl[0]/70*100,g1=Math.max(0,v.gl[1]-v.gl[0])/70*100;
+    const w0=Math.min(v.vw[0],v.vw[1])/320*100,w1=Math.max(0,v.vw[1]-v.vw[0])/320*100;
+    const parts=[["cam","Cámara"],["skia","Canvas"],["ui","Controles"]].map(([k,n])=>`<span class="part ${v.p[k]?"on":"off"}">${n}</span>`).join("");
+    ro.innerHTML=`
+      <div><span class="eyebrow">Variante ${v.k} · ${v.n} aperturas</span><h3>${v.name}</h3></div>
+      <div class="parts">${parts}</div>
+      <div class="gauge"><div class="lab2"><b>Texturas GL</b><span>${fmt(v.gl[0])} → ${fmt(v.gl[1])} MB</span></div>
+        <div class="gtrack"><div class="g0" style="width:${g0}%"></div><div class="g1 ${v.glLeak?"bad":"once"}" style="left:${g0}%;width:${g1}%"></div></div></div>
+      <div class="gauge"><div class="lab2"><b>Vistas nativas</b><span>${v.vw[0]} → ${v.vw[1]}</span></div>
+        <div class="gtrack"><div class="g0" style="width:${w0}%"></div><div class="g1 ${v.vLeak?"bad":"once"}" style="left:${w0}%;width:${w1}%"></div></div></div>
+      <div class="chips"><span class="chip ${v.glLeak?"leak":"clean"}">Texturas ${v.glLeak?"filtran":"no filtran"}</span><span class="chip ${v.vLeak?"leak":"clean"}">Vistas ${v.vLeak?"filtran":"no filtran"}</span></div>
+      <p class="note">${v.note}</p>`;
+  }
+  V.forEach((v,i)=>{const b=document.createElement("button");b.className="vtab";b.type="button";b.id="v-"+v.k;
+    b.innerHTML=`<b>${v.k}</b>${v.name}`;b.addEventListener("click",()=>show(i));tabs.appendChild(b);});
+  show(4);
+  const dot=on=>`<span class="dotc ${on?"f":""}" aria-label="${on?"sí":"no"}"></span>`;
+  document.getElementById("mbody").innerHTML=V.map(v=>`<tr class="${v.k==="Real"?"real":""}"><td><b>${v.k}</b> · ${v.name}</td>
+    <td>${dot(v.p.cam)}</td><td>${dot(v.p.skia)}</td><td>${dot(v.p.ui)}</td>
+    <td class="n">${fmt(v.gl[0])} → ${fmt(v.gl[1])}${v.gOnce?" *":""}</td><td class="n">${v.vw[0]} → ${v.vw[1]}</td>
+    <td>${v.glLeak?'<span class="y">Texturas y vistas</span>':v.vLeak?'<span class="y">Solo vistas</span>':'<span class="nn">No</span>'}</td></tr>`).join("")
+    +`<tr><td colspan="7" class="muted" style="font-size:12.5px">* Sube una sola vez por la caché de la imagen y luego se queda plano.</td></tr>`;
+
+  /* --- Pantallas fantasma --- */
+  const gs=document.getElementById("gstack"),gc2=document.getElementById("gcount"),gmb=document.getElementById("gmb");
+  const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function ghosts(n){gs.innerHTML="";for(let i=0;i<n;i++){const g=document.createElement("div");g.className="gh";
+    g.style.left=(i*14)+"px";g.style.top=(i*1.5)+"px";g.style.opacity=(0.25+0.75*(i+1)/n).toFixed(2);gs.appendChild(g);}
+    gc2.textContent=n;gmb.textContent=Math.round(n*5.3);}
+  if(reduce){ghosts(10);}else{
+    ghosts(10);
+    let started=false;
+    const io=new IntersectionObserver(es=>{if(es[0].isIntersecting&&!started){started=true;let n=1;ghosts(1);
+      const t=setInterval(()=>{n++;ghosts(n);if(n>=10)clearInterval(t);},260);}},{threshold:.5});
+    io.observe(gs);
+  }
+})();
+</script>
+
+</body></html>
