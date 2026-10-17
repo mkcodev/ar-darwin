@@ -125,6 +125,12 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   un archivo inexistente, el cargador de `useImage` rechaza sin llamar a `onError` y la cámara se
   quedaría esperando. Archivo inexistente o que no decodifica → aviso «No se encuentra la imagen de
   este proyecto» con botón para volver.
+  Libera la memoria a mano (issue #62): el GC de Hermes no ve el peso nativo/GPU de una imagen de
+  4096 px y cada visita a la cámara la acumulaba (medido en docs/spikes/camera.md). `SkData` se
+  libera nada más crear la imagen (la imagen diferida guarda su propia referencia a los bytes); el
+  `SkImage`, 1 s después de desmontar la pantalla (`DISPOSE_DELAY_MS`: usar un objeto liberado
+  lanza en el hilo de UI si el Canvas aún lo pinta), o al momento si decodifica tras desmontar.
+  Ningún shared value guarda el `SkImage` (solo su tamaño).
 - `useProjectCameraSession` (solo con la imagen cargada): `statusOnOpen` pasa `pending → in_progress`
   y se guarda al momento; el reloj (`startClock`/`stopClock`/`drainClock` de
   `packages/core/src/cameraSession.ts`) corre solo con la pantalla enfocada y la app en primer plano;

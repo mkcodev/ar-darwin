@@ -99,3 +99,20 @@ imagen no se mueve con el candado. Sin cifras registradas: no se anotaron los va
 modelos, temperatura ni batería, así que la tabla de arriba queda como plantilla para repetir la
 medición si aparece algún problema de rendimiento (p. ej. al añadir el divisor en trozos o la
 importación de fotos grandes en la fase 3). Plan B no necesario por ahora.
+
+## Memoria de la imagen del overlay (issue #62)
+
+**Antes del arreglo** (development build, `adb shell dumpsys meminfo com.mkcodev.ardarwin.dev`,
+varias tandas de abrir y cerrar la cámara de proyectos con 2 fotos grandes):
+
+| Medida | Evolución |
+| --- | --- |
+| Graphics / GL mtrack | 31 → 38 → 52 → 59 → 71 → 73 MB (sube en cada tanda, no baja) |
+| Native Heap | 503 → 542 MB |
+| TOTAL PSS | 675 → 786 MB |
+
+Crecimiento sostenido: las imágenes de Skia no se liberaban al salir de la cámara (el GC de Hermes
+no ve su peso nativo). Arreglo: `dispose()` explícito en `useProjectImage` (ver
+docs/ARCHITECTURE.md, «Cámara del proyecto»).
+
+**Después del arreglo:** pendiente de repetir la misma medición.
