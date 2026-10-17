@@ -27,6 +27,7 @@ export const en = {
     mirrorH: "Mirror horizontally",
     mirrorV: "Mirror vertically",
     flash: "Torch",
+    adjust: "Image adjustments",
     arrowUp: "Up",
     arrowDown: "Down",
     arrowLeft: "Left",
@@ -61,6 +62,14 @@ export const en = {
     mirrorV: "Mirror vertically",
     tile: "Tile {id}",
     nextTile: "Next tile",
+    adjust: {
+      open: "Image adjustments",
+      title: "Image adjustments",
+      brightness: "Brightness",
+      contrast: "Contrast",
+      invert: "Invert colours",
+      reset: "Reset",
+    },
     menu: {
       top: "Image",
       tools: "Tools",

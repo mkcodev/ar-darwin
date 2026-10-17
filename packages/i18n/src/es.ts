@@ -27,6 +27,7 @@ export const es = {
     mirrorH: "Espejo horizontal",
     mirrorV: "Espejo vertical",
     flash: "Linterna",
+    adjust: "Ajustes de imagen",
     arrowUp: "Arriba",
     arrowDown: "Abajo",
     arrowLeft: "Izquierda",
@@ -61,6 +62,14 @@ export const es = {
     mirrorV: "Espejo vertical",
     tile: "Trozo {id}",
     nextTile: "Siguiente trozo",
+    adjust: {
+      open: "Ajustes de imagen",
+      title: "Ajustes de imagen",
+      brightness: "Brillo",
+      contrast: "Contraste",
+      invert: "Invertir colores",
+      reset: "Restablecer",
+    },
     menu: {
       top: "Imagen",
       tools: "Herramientas",
