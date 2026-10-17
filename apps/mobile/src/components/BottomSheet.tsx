@@ -34,6 +34,11 @@ type BottomSheetProps = {
   title: string;
   /** Name of the drag handle for screen readers; activating it closes the sheet. */
   handleLabel: string;
+  /**
+   * Dims what is behind the sheet (default). `false` keeps it fully visible (e.g. a live preview
+   * of the camera image); a tap outside still closes the sheet and never reaches what is behind.
+   */
+  scrim?: boolean;
   children: ReactNode;
 };
 
@@ -47,7 +52,14 @@ type BottomSheetProps = {
  * It covers its parent (absolute, `zIndex.sheet`): render it at the root of the screen, outside
  * any ScrollView. Android's back button and the iOS escape gesture close it.
  */
-export function BottomSheet({ open, onClose, title, handleLabel, children }: BottomSheetProps) {
+export function BottomSheet({
+  open,
+  onClose,
+  title,
+  handleLabel,
+  scrim = true,
+  children,
+}: BottomSheetProps) {
   const [mounted, setMounted] = useState(open);
   if (open && !mounted) setMounted(true);
   if (!mounted) return null;
@@ -58,6 +70,7 @@ export function BottomSheet({ open, onClose, title, handleLabel, children }: Bot
       onClosed={() => setMounted(false)}
       title={title}
       handleLabel={handleLabel}
+      scrim={scrim}
     >
       {children}
     </SheetBody>
@@ -66,7 +79,15 @@ export function BottomSheet({ open, onClose, title, handleLabel, children }: Bot
 
 type SheetBodyProps = BottomSheetProps & { onClosed: () => void };
 
-function SheetBody({ open, onClose, onClosed, title, handleLabel, children }: SheetBodyProps) {
+function SheetBody({
+  open,
+  onClose,
+  onClosed,
+  title,
+  handleLabel,
+  scrim,
+  children,
+}: SheetBodyProps) {
   const { theme } = useTheme();
   const { reduce } = useReduceMotion();
   const insets = useSafeAreaInsets();
@@ -145,7 +166,7 @@ function SheetBody({ open, onClose, onClosed, title, handleLabel, children }: Sh
 
   return (
     <View style={styles.root} pointerEvents={open ? "auto" : "none"}>
-      <Animated.View style={[styles.fill, { backgroundColor: c.bg.overlay }, scrimStyle]}>
+      <Animated.View style={[styles.fill, scrim && { backgroundColor: c.bg.overlay }, scrimStyle]}>
         <Pressable
           style={styles.fill}
           onPress={onClose}

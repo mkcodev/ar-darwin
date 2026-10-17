@@ -1,13 +1,14 @@
-import type { Size } from "@ar-darwin/core";
+import { adjustmentColorMatrix, type Size } from "@ar-darwin/core";
 import {
   Canvas,
+  ColorMatrix,
   Group,
   Image,
   type SkImage,
   Skia,
   type SkMatrix,
 } from "@shopify/react-native-skia";
-import { useEffect } from "react";
+import { type Ref, useEffect, useImperativeHandle } from "react";
 import { StyleSheet, View } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
 import {
@@ -16,7 +17,24 @@ import {
   useDerivedValue,
   useSharedValue,
 } from "react-native-reanimated";
-import { type OverlayPlacement, useOverlayGestures } from "./useOverlayGestures";
+import {
+  type FlipAxis,
+  type Flips,
+  type OverlayPlacement,
+  useOverlayGestures,
+} from "./useOverlayGestures";
+
+/** Live brightness, contrast (-1..1) and invert (0..1, animatable), shared with the sheet. */
+export type OverlayAdjustments = {
+  brightness: SharedValue<number>;
+  contrast: SharedValue<number>;
+  invert: SharedValue<number>;
+};
+
+export type OverlayCanvasHandle = {
+  /** Mirrors the image on one axis; `null` (nothing done) while locked or not yet placed. */
+  toggleFlip: (axis: FlipAxis) => Flips | null;
+};
 
 type OverlayCanvasProps = {
   /** The image over the camera, already decoded; `null` while it loads. */
@@ -27,8 +45,10 @@ type OverlayCanvasProps = {
   locked: SharedValue<boolean>;
   /** Where the image was left last time; absent fits it. Read once, on the first placement. */
   initial?: OverlayPlacement | null;
-  /** Transform settled (placed, gesture ended, reset): never per frame. */
+  /** Transform settled (placed, gesture ended, reset, mirrored): never per frame. */
   onSettle?: (placement: OverlayPlacement) => void;
+  adjustments: OverlayAdjustments;
+  ref?: Ref<OverlayCanvasHandle>;
 };
 
 const ZERO_SIZE: Size = { width: 0, height: 0 };
@@ -38,13 +58,23 @@ const ZERO_SIZE: Size = { width: 0, height: 0 };
  * (`useOverlayGestures`, #18), placed once both the canvas and the image have real sizes (restored
  * from `initial` or fitted), double tap to reset. Opacity comes from the slider next to it; the
  * image stays invisible until it is placed, so it never flashes at the top-left corner.
+ * Brightness, contrast and invert are a `<ColorMatrix>` on the image, derived on the UI thread
+ * from `adjustments` (`adjustmentColorMatrix`, core). The mirror buttons go through `ref`.
  *
  * Sized with `onLayout` on the wrapping View (same box as the Canvas: both fill the screen), not
  * Skia's `onSize`: the Canvas itself doesn't support `onLayout` on the New Architecture, and
  * `onSize` calls Reanimated's `measure()` on every frame, which floods Metro with "undefined
  * `LayoutMetrics`" warnings before the first layout lands (issue #25).
  */
-export function OverlayCanvas({ image, opacity, locked, initial, onSettle }: OverlayCanvasProps) {
+export function OverlayCanvas({
+  image,
+  opacity,
+  locked,
+  initial,
+  onSettle,
+  adjustments,
+  ref,
+}: OverlayCanvasProps) {
   const canvasSize = useSharedValue<Size>(ZERO_SIZE);
   const imageSize = useSharedValue<Size>(ZERO_SIZE);
 
@@ -52,13 +82,20 @@ export function OverlayCanvas({ image, opacity, locked, initial, onSettle }: Ove
     imageSize.value = image ? { width: image.width(), height: image.height() } : ZERO_SIZE;
   }, [image, imageSize]);
 
-  const { gesture, x, y, scale, rotation, flipX, flipY, placed } = useOverlayGestures({
+  const { gesture, x, y, scale, rotation, flipX, flipY, placed, toggleFlip } = useOverlayGestures({
     imageSize,
     canvasSize,
     locked,
     initial,
     onSettle,
   });
+
+  useImperativeHandle(ref, () => ({ toggleFlip }), [toggleFlip]);
+
+  const { brightness, contrast, invert } = adjustments;
+  const colorMatrix = useDerivedValue(() =>
+    adjustmentColorMatrix(brightness.value, contrast.value, invert.value),
+  );
 
   const matrix = useDerivedValue(() => {
     const img = imageSize.value;
@@ -82,7 +119,14 @@ export function OverlayCanvas({ image, opacity, locked, initial, onSettle }: Ove
         }}
       >
         <Canvas style={StyleSheet.absoluteFill}>
-          {image && <ImageLayer image={image} matrix={matrix} opacity={shownOpacity} />}
+          {image && (
+            <ImageLayer
+              image={image}
+              matrix={matrix}
+              opacity={shownOpacity}
+              colorMatrix={colorMatrix}
+            />
+          )}
         </Canvas>
       </View>
     </GestureDetector>
@@ -93,12 +137,15 @@ type ImageLayerProps = {
   image: SkImage;
   matrix: DerivedValue<SkMatrix>;
   opacity: DerivedValue<number>;
+  colorMatrix: DerivedValue<number[]>;
 };
 
-function ImageLayer({ image, matrix, opacity }: ImageLayerProps) {
+function ImageLayer({ image, matrix, opacity, colorMatrix }: ImageLayerProps) {
   return (
     <Group matrix={matrix} opacity={opacity}>
-      <Image image={image} x={0} y={0} width={image.width()} height={image.height()} />
+      <Image image={image} x={0} y={0} width={image.width()} height={image.height()}>
+        <ColorMatrix matrix={colorMatrix} />
+      </Image>
     </Group>
   );
 }
