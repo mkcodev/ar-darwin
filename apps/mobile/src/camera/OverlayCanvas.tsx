@@ -71,6 +71,8 @@ const ZERO_SIZE: Size = { width: 0, height: 0 };
  * image stays invisible until it is placed, so it never flashes at the top-left corner.
  * Brightness, contrast and invert are a `<ColorMatrix>` on the image, derived on the UI thread
  * from `adjustments` (`adjustmentColorMatrix`, core). The mirror buttons go through `ref`.
+ * The fine-adjust pad (`NudgePad`) is a sibling of the gesture detector, not inside it, so touches
+ * on it never reach the drag and pinch gestures.
  *
  * Sized with `onLayout` on the wrapping View (same box as the Canvas: both fill the screen), not
  * Skia's `onSize`: the Canvas itself doesn't support `onLayout` on the New Architecture, and
