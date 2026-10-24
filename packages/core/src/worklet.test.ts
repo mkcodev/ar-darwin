@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import * as controls from "./controls";
 import * as frameStats from "./frameStats";
 import * as imageAdjustments from "./imageAdjustments";
+import * as nudgeHold from "./nudgeHold";
 import * as transform from "./transform";
 
 // apps/mobile runs these functions on Reanimated's UI thread (gesture callbacks, the fps
@@ -60,6 +61,11 @@ const modules = [
     file: "imageAdjustments.ts",
     exports: imageAdjustments as Record<string, unknown>,
     mustExport: ["adjustmentColorMatrix", "isNeutralAdjustments"],
+  },
+  {
+    file: "nudgeHold.ts",
+    exports: nudgeHold as Record<string, unknown>,
+    mustExport: ["holdSpeed", "holdDistance", "moveWithin", "nudgeMove"],
   },
 ];
 

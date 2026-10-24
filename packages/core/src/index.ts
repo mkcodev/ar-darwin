@@ -7,6 +7,7 @@ export * from "./frameStats";
 export * from "./imageAdjustments";
 export * from "./importImage";
 export * from "./models";
+export * from "./nudgeHold";
 export * from "./project";
 export * from "./storage/migrations";
 export * from "./storage/queries";
