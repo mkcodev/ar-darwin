@@ -1,5 +1,5 @@
 import type { CameraIssueKind, ImageAdjustments } from "@ar-darwin/core";
-import { classifyCameraIssue } from "@ar-darwin/core";
+import { classifyCameraIssue, isIgnorableCameraError } from "@ar-darwin/core";
 import { cameraBackdropColor, cameraColors, opacity, space, typography } from "@ar-darwin/ui";
 import type { SkImage } from "@shopify/react-native-skia";
 import { useKeepAwake } from "expo-keep-awake";
@@ -51,7 +51,10 @@ type CameraOverlayScreenProps = {
  * camera preview, overlay (`OverlayCanvas`), opacity slider, tools (`CameraTools`: mirror, torch,
  * image adjustments in `ImageAdjustSheet`), touch lock, keep-awake and the camera's error notices.
  * The torch is vision-camera's `torchMode`, only passed when the device has one (setting it on a
- * device without a torch throws into `onError`); unmounting the camera turns it off. `constraints={[{fps: 30}]}` biases the preview towards the screen's own
+ * device without a torch throws into `onError`) and only once it was turned on: any value, even
+ * `"off"`, makes vision-camera call `setTorchMode` as soon as the camera mounts, and CameraX
+ * cancels that call while the camera is not active yet (`isIgnorableCameraError`). Unmounting the
+ * camera turns it off. `constraints={[{fps: 30}]}` biases the preview towards the screen's own
  * resolution instead of the sensor's maximum (see docs/ARCHITECTURE.md).
  *
  * Camera errors (#19): vision-camera's `onError` only ever fires for CameraX's CRITICAL errors
@@ -86,6 +89,7 @@ export function CameraOverlayScreen({
     flipY: initialPlacement?.transform.flipY ?? false,
   }));
   const [torchOn, setTorchOn] = useState(false);
+  const [torchUsed, setTorchUsed] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const adjustments = {
     brightness: useSharedValue(initialAdjustments?.brightness ?? 0),
@@ -134,8 +138,12 @@ export function CameraOverlayScreen({
                 device={device}
                 isActive={isFocused}
                 constraints={[{ fps: 30 }]}
-                torchMode={device.hasTorch ? (torchOn ? "on" : "off") : undefined}
-                onError={(error) => setIssue(classifyCameraIssue(error.message))}
+                torchMode={device.hasTorch && torchUsed ? (torchOn ? "on" : "off") : undefined}
+                onError={(error) => {
+                  if (__DEV__) console.warn("[camera] onError", error);
+                  if (isIgnorableCameraError(error)) return;
+                  setIssue(classifyCameraIssue(error.message));
+                }}
                 onInterruptionStarted={() => setIssue("inUse")}
                 onInterruptionEnded={() => setIssue(null)}
               />
@@ -169,7 +177,10 @@ export function CameraOverlayScreen({
                   onFlip={flip}
                   onLockedFlip={() => showToast(t("camera.unlockToMirror"))}
                   torchOn={device.hasTorch ? torchOn : null}
-                  onTorchChange={setTorchOn}
+                  onTorchChange={(on) => {
+                    setTorchOn(on);
+                    if (on) setTorchUsed(true);
+                  }}
                   adjustOpen={adjustOpen}
                   onOpenAdjust={() => setAdjustOpen(true)}
                 />

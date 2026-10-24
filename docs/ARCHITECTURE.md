@@ -99,6 +99,11 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   RECOVERABLE y CameraX la reporta como `onInterruptionStarted`/`onInterruptionEnded`, no como
   error — por eso `CameraOverlayScreen` escucha las dos cosas. `classifyCameraIssue` (packages/core)
   traduce el `message` en texto plano de `onError` a `"disabled" | "inUse" | "unknown"`.
+  `isIgnorableCameraError` filtra antes los errores que no son una cámara rota (CameraX cancela
+  `setTorchAsync` con `OperationCanceledException: Camera is not active` si la cámara aún no está
+  activa): no se muestra aviso, solo `console.warn` en desarrollo. Por eso `torchMode` solo se pasa
+  a `<Camera>` tras encender la linterna por primera vez (cualquier valor, también `"off"`, hace que
+  vision-camera llame a `setTorchMode` al montar).
 
 ## Cámara del proyecto (issue #40)
 
