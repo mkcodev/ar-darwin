@@ -17,6 +17,7 @@ import {
   useDerivedValue,
   useSharedValue,
 } from "react-native-reanimated";
+import { NudgePad } from "./NudgePad";
 import {
   type FlipAxis,
   type Flips,
@@ -34,6 +35,8 @@ export type OverlayAdjustments = {
 export type OverlayCanvasHandle = {
   /** Mirrors the image on one axis; `null` (nothing done) while locked or not yet placed. */
   toggleFlip: (axis: FlipAxis) => Flips | null;
+  /** Ends a fine-adjust hold in progress (focus lost, app in the background), keeping its result. */
+  nudgeStop: () => void;
 };
 
 type OverlayCanvasProps = {
@@ -48,6 +51,14 @@ type OverlayCanvasProps = {
   /** Transform settled (placed, gesture ended, reset, mirrored): never per frame. */
   onSettle?: (placement: OverlayPlacement) => void;
   adjustments: OverlayAdjustments;
+  /** JS mirror of `locked`, for the pad's screen-reader state. */
+  isLocked: boolean;
+  /** Shows the fine-adjust pad; closing it also ends a hold in progress. */
+  nudgeOpen: boolean;
+  /** Distance from the bottom of the screen to the pad: it sits above the camera's controls. */
+  nudgeBottom: number;
+  /** A pad button was tapped while locked. */
+  onNudgeBlocked: () => void;
   ref?: Ref<OverlayCanvasHandle>;
 };
 
@@ -73,6 +84,10 @@ export function OverlayCanvas({
   initial,
   onSettle,
   adjustments,
+  isLocked,
+  nudgeOpen,
+  nudgeBottom,
+  onNudgeBlocked,
   ref,
 }: OverlayCanvasProps) {
   const canvasSize = useSharedValue<Size>(ZERO_SIZE);
@@ -82,15 +97,29 @@ export function OverlayCanvas({
     imageSize.value = image ? { width: image.width(), height: image.height() } : ZERO_SIZE;
   }, [image, imageSize]);
 
-  const { gesture, x, y, scale, rotation, flipX, flipY, placed, toggleFlip } = useOverlayGestures({
-    imageSize,
-    canvasSize,
-    locked,
-    initial,
-    onSettle,
-  });
+  const {
+    gesture,
+    x,
+    y,
+    scale,
+    rotation,
+    flipX,
+    flipY,
+    placed,
+    toggleFlip,
+    nudgeGestures,
+    nudgeHeld,
+    nudgeTap,
+    nudgeStop,
+    resetToOpening,
+  } = useOverlayGestures({ imageSize, canvasSize, locked, initial, onSettle, onNudgeBlocked });
 
-  useImperativeHandle(ref, () => ({ toggleFlip }), [toggleFlip]);
+  useImperativeHandle(ref, () => ({ toggleFlip, nudgeStop }), [toggleFlip, nudgeStop]);
+
+  // Closing the pad (the adjustments sheet opens, the button is toggled) releases a held arrow.
+  useEffect(() => {
+    if (!nudgeOpen) nudgeStop();
+  }, [nudgeOpen, nudgeStop]);
 
   const { brightness, contrast, invert } = adjustments;
   const colorMatrix = useDerivedValue(() =>
@@ -110,26 +139,40 @@ export function OverlayCanvas({
   const shownOpacity = useDerivedValue(() => (placed.value ? opacity.value : 0));
 
   return (
-    <GestureDetector gesture={gesture}>
-      <View
-        style={StyleSheet.absoluteFill}
-        onLayout={(e) => {
-          const { width, height } = e.nativeEvent.layout;
-          canvasSize.value = { width, height };
-        }}
-      >
-        <Canvas style={StyleSheet.absoluteFill}>
-          {image && (
-            <ImageLayer
-              image={image}
-              matrix={matrix}
-              opacity={shownOpacity}
-              colorMatrix={colorMatrix}
-            />
-          )}
-        </Canvas>
-      </View>
-    </GestureDetector>
+    <>
+      <GestureDetector gesture={gesture}>
+        <View
+          style={StyleSheet.absoluteFill}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            canvasSize.value = { width, height };
+          }}
+        >
+          <Canvas style={StyleSheet.absoluteFill}>
+            {image && (
+              <ImageLayer
+                image={image}
+                matrix={matrix}
+                opacity={shownOpacity}
+                colorMatrix={colorMatrix}
+              />
+            )}
+          </Canvas>
+        </View>
+      </GestureDetector>
+      {nudgeOpen && (
+        <NudgePad
+          gestures={nudgeGestures}
+          held={nudgeHeld}
+          locked={locked}
+          isLocked={isLocked}
+          bottom={nudgeBottom}
+          onStep={nudgeTap}
+          onReset={resetToOpening}
+          onLockedPress={onNudgeBlocked}
+        />
+      )}
+    </>
   );
 }
 

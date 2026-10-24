@@ -28,6 +28,7 @@ export const en = {
     mirrorV: "Mirror vertically",
     flash: "Torch",
     adjust: "Image adjustments",
+    nudge: "Fine adjust",
     arrowUp: "Up",
     arrowDown: "Down",
     arrowLeft: "Left",

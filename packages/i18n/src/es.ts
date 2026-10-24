@@ -28,6 +28,7 @@ export const es = {
     mirrorV: "Espejo vertical",
     flash: "Linterna",
     adjust: "Ajustes de imagen",
+    nudge: "Ajuste fino",
     arrowUp: "Arriba",
     arrowDown: "Abajo",
     arrowLeft: "Izquierda",

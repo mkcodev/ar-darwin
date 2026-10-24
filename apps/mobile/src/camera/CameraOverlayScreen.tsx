@@ -6,8 +6,8 @@ import { useKeepAwake } from "expo-keep-awake";
 import { Stack, useIsFocused } from "expo-router";
 import { usePreventRemove } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
-import { type ReactNode, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { type ReactNode, useEffect, useRef, useState } from "react";
+import { AppState, StyleSheet, Text, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, useCameraDevice } from "react-native-vision-camera";
@@ -91,6 +91,9 @@ export function CameraOverlayScreen({
   const [torchOn, setTorchOn] = useState(false);
   const [torchUsed, setTorchUsed] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
+  const [nudgeOpen, setNudgeOpen] = useState(false);
+  /** Height of the controls column: the fine-adjust pad sits right above it. */
+  const [controlsHeight, setControlsHeight] = useState(0);
   const adjustments = {
     brightness: useSharedValue(initialAdjustments?.brightness ?? 0),
     contrast: useSharedValue(initialAdjustments?.contrast ?? 0),
@@ -107,6 +110,18 @@ export function CameraOverlayScreen({
   };
 
   useKeepAwake();
+
+  // A fine-adjust arrow held down must not keep moving the image when the screen loses focus or
+  // the app goes to the background (a locked phone): its release would never reach us.
+  useEffect(() => {
+    if (!isFocused) canvas.current?.nudgeStop();
+  }, [isFocused]);
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active") canvas.current?.nudgeStop();
+    });
+    return () => subscription.remove();
+  }, []);
 
   // While locked, going back must not leave the camera (#19): block the screen's removal and
   // nudge the person towards the lock instead. A raw `BackHandler` listener wasn't enough — the
@@ -155,11 +170,19 @@ export function CameraOverlayScreen({
                 initial={initialPlacement}
                 onSettle={onPlacementSettle}
                 adjustments={adjustments}
+                isLocked={isLocked}
+                nudgeOpen={nudgeOpen}
+                nudgeBottom={space[10] + controlsHeight + space[4]}
+                onNudgeBlocked={() => showToast(t("camera.unlockToNudge"))}
               />
               {/* The slider and the tools stay usable while locked (opacity, torch and image
                   adjustments are tuned while drawing; the mirror dims); the extra controls hide
                   but keep their space so nothing jumps. */}
-              <View style={styles.controls} pointerEvents="box-none">
+              <View
+                style={styles.controls}
+                pointerEvents="box-none"
+                onLayout={(e) => setControlsHeight(e.nativeEvent.layout.height)}
+              >
                 <Slider
                   label={t("camera.opacity")}
                   value={imageOpacity}
@@ -181,8 +204,15 @@ export function CameraOverlayScreen({
                     setTorchOn(on);
                     if (on) setTorchUsed(true);
                   }}
+                  nudgeOpen={nudgeOpen}
+                  onToggleNudge={() => setNudgeOpen((open) => !open)}
                   adjustOpen={adjustOpen}
-                  onOpenAdjust={() => setAdjustOpen(true)}
+                  onOpenAdjust={() => {
+                    // The sheet owns the screen while it is open: the pad closes (and releases a
+                    // held arrow) and does not come back by itself.
+                    setNudgeOpen(false);
+                    setAdjustOpen(true);
+                  }}
                 />
                 {extraControls && (
                   <View
