@@ -72,6 +72,7 @@ export const es = {
       handle: "Arrastra hacia abajo para cerrar",
     },
     unlockToMirror: "Desbloquea para usar el espejo",
+    unlockToNudge: "Desbloquea para ajustar la imagen",
     menu: {
       top: "Imagen",
       tools: "Herramientas",
@@ -88,6 +89,8 @@ export const es = {
       scaleUp: "Agrandar",
       scaleDown: "Encoger",
       reset: "Restablecer posición",
+      resetHint: "Vuelve a donde estaba la imagen al abrir la cámara",
+      pad: "Flechas de ajuste fino",
       stepFine: "Paso fino: 1 px. Pulsa para paso grueso",
       stepCoarse: "Paso grueso: 10 px. Pulsa para paso fino",
       stepValue: "{px} px",

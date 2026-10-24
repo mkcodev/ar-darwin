@@ -72,6 +72,7 @@ export const en = {
       handle: "Drag down to close",
     },
     unlockToMirror: "Unlock to mirror the image",
+    unlockToNudge: "Unlock to adjust the image",
     menu: {
       top: "Image",
       tools: "Tools",
@@ -88,6 +89,8 @@ export const en = {
       scaleUp: "Enlarge",
       scaleDown: "Shrink",
       reset: "Reset position",
+      resetHint: "Back to where the image was when the camera opened",
+      pad: "Fine adjust arrows",
       stepFine: "Fine step: 1 px. Press for coarse step",
       stepCoarse: "Coarse step: 10 px. Press for fine step",
       stepValue: "{px} px",
