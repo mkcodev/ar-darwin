@@ -1,12 +1,12 @@
-import type { CameraIssueKind } from "@ar-darwin/core";
-import { classifyCameraIssue } from "@ar-darwin/core";
+import type { CameraIssueKind, ImageAdjustments } from "@ar-darwin/core";
+import { classifyCameraIssue, isIgnorableCameraError } from "@ar-darwin/core";
 import { cameraBackdropColor, cameraColors, opacity, space, typography } from "@ar-darwin/ui";
 import type { SkImage } from "@shopify/react-native-skia";
 import { useKeepAwake } from "expo-keep-awake";
 import { Stack, useIsFocused } from "expo-router";
 import { usePreventRemove } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,9 +17,11 @@ import { percentFormat } from "../format";
 import { t } from "../i18n";
 import { CameraIssueNotice } from "./CameraIssueNotice";
 import { CameraPermissionGate } from "./CameraPermissionGate";
+import { CameraTools } from "./CameraTools";
+import { ImageAdjustSheet } from "./ImageAdjustSheet";
 import { LockedToast } from "./LockedToast";
-import { OverlayCanvas } from "./OverlayCanvas";
-import type { OverlayPlacement } from "./useOverlayGestures";
+import { OverlayCanvas, type OverlayCanvasHandle } from "./OverlayCanvas";
+import type { FlipAxis, Flips, OverlayPlacement } from "./useOverlayGestures";
 
 const opacityText = percentFormat(1);
 
@@ -34,6 +36,10 @@ type CameraOverlayScreenProps = {
   onPlacementSettle?: (placement: OverlayPlacement) => void;
   /** The opacity slider was released (or stepped by the screen reader). */
   onOpacitySettle?: (opacity: number) => void;
+  /** Brightness, contrast and invert to start with; absent = none. Read once. */
+  initialAdjustments?: ImageAdjustments;
+  /** An image adjustment settled (slider released, invert toggled, reset). */
+  onAdjustmentsSettle?: (adjustments: ImageAdjustments) => void;
   /** Extra controls under the slider; hidden (keeping their space) while locked. */
   extraControls?: ReactNode;
   /** Drawn over everything, also while locked (e.g. the spike's fps meter). */
@@ -42,8 +48,13 @@ type CameraOverlayScreenProps = {
 
 /**
  * The camera with an image over it, shared by the project camera and the spike (`/dev/camera`):
- * camera preview, overlay (`OverlayCanvas`), opacity slider, touch lock, keep-awake and the
- * camera's error notices. `constraints={[{fps: 30}]}` biases the preview towards the screen's own
+ * camera preview, overlay (`OverlayCanvas`), opacity slider, tools (`CameraTools`: mirror, torch,
+ * image adjustments in `ImageAdjustSheet`), touch lock, keep-awake and the camera's error notices.
+ * The torch is vision-camera's `torchMode`, only passed when the device has one (setting it on a
+ * device without a torch throws into `onError`) and only once it was turned on: any value, even
+ * `"off"`, makes vision-camera call `setTorchMode` as soon as the camera mounts, and CameraX
+ * cancels that call while the camera is not active yet (`isIgnorableCameraError`). Unmounting the
+ * camera turns it off. `constraints={[{fps: 30}]}` biases the preview towards the screen's own
  * resolution instead of the sensor's maximum (see docs/ARCHITECTURE.md).
  *
  * Camera errors (#19): vision-camera's `onError` only ever fires for CameraX's CRITICAL errors
@@ -58,6 +69,8 @@ export function CameraOverlayScreen({
   initialPlacement,
   onPlacementSettle,
   onOpacitySettle,
+  initialAdjustments,
+  onAdjustmentsSettle,
   extraControls,
   overlay,
 }: CameraOverlayScreenProps) {
@@ -69,7 +82,29 @@ export function CameraOverlayScreen({
   const [isLocked, setIsLocked] = useState(false);
   const [issue, setIssue] = useState<CameraIssueKind | null>(null);
   const [cameraKey, setCameraKey] = useState(0);
-  const [unlockToastTrigger, setUnlockToastTrigger] = useState(0);
+  const [toast, setToast] = useState({ trigger: 0, message: "" });
+  const canvas = useRef<OverlayCanvasHandle>(null);
+  const [flips, setFlips] = useState<Flips>(() => ({
+    flipX: initialPlacement?.transform.flipX ?? false,
+    flipY: initialPlacement?.transform.flipY ?? false,
+  }));
+  const [torchOn, setTorchOn] = useState(false);
+  const [torchUsed, setTorchUsed] = useState(false);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const adjustments = {
+    brightness: useSharedValue(initialAdjustments?.brightness ?? 0),
+    contrast: useSharedValue(initialAdjustments?.contrast ?? 0),
+    invert: useSharedValue(initialAdjustments?.invert ? 1 : 0),
+  };
+
+  const showToast = (message: string) => {
+    setToast((last) => ({ trigger: last.trigger + 1, message }));
+  };
+
+  const flip = (axis: FlipAxis) => {
+    const next = canvas.current?.toggleFlip(axis);
+    if (next) setFlips(next);
+  };
 
   useKeepAwake();
 
@@ -79,7 +114,7 @@ export function CameraOverlayScreen({
   // every way of leaving (button, gesture, `router.back()`) ends up. The iOS swipe-back, which
   // native-stack can't intercept this way, is disabled with `gestureEnabled` below.
   usePreventRemove(isLocked, () => {
-    setUnlockToastTrigger((n) => n + 1);
+    showToast(t("cameraSpike.unlockToExit"));
   });
 
   const retry = () => {
@@ -103,19 +138,27 @@ export function CameraOverlayScreen({
                 device={device}
                 isActive={isFocused}
                 constraints={[{ fps: 30 }]}
-                onError={(error) => setIssue(classifyCameraIssue(error.message))}
+                torchMode={device.hasTorch && torchUsed ? (torchOn ? "on" : "off") : undefined}
+                onError={(error) => {
+                  if (__DEV__) console.warn("[camera] onError", error);
+                  if (isIgnorableCameraError(error)) return;
+                  setIssue(classifyCameraIssue(error.message));
+                }}
                 onInterruptionStarted={() => setIssue("inUse")}
                 onInterruptionEnded={() => setIssue(null)}
               />
               <OverlayCanvas
+                ref={canvas}
                 image={image}
                 opacity={imageOpacity}
                 locked={locked}
                 initial={initialPlacement}
                 onSettle={onPlacementSettle}
+                adjustments={adjustments}
               />
-              {/* The slider stays usable while locked (opacity is tuned while drawing); the
-                  extra controls hide but keep their space so the slider doesn't jump. */}
+              {/* The slider and the tools stay usable while locked (opacity, torch and image
+                  adjustments are tuned while drawing; the mirror dims); the extra controls hide
+                  but keep their space so nothing jumps. */}
               <View style={styles.controls} pointerEvents="box-none">
                 <Slider
                   label={t("camera.opacity")}
@@ -127,6 +170,19 @@ export function CameraOverlayScreen({
                   compact
                   tone="camera"
                   onChangeEnd={onOpacitySettle}
+                />
+                <CameraTools
+                  flips={flips}
+                  isLocked={isLocked}
+                  onFlip={flip}
+                  onLockedFlip={() => showToast(t("camera.unlockToMirror"))}
+                  torchOn={device.hasTorch ? torchOn : null}
+                  onTorchChange={(on) => {
+                    setTorchOn(on);
+                    if (on) setTorchUsed(true);
+                  }}
+                  adjustOpen={adjustOpen}
+                  onOpenAdjust={() => setAdjustOpen(true)}
                 />
                 {extraControls && (
                   <View
@@ -149,7 +205,13 @@ export function CameraOverlayScreen({
       </CameraPermissionGate>
       <LockButton locked={locked} isLocked={isLocked} onLockedChange={setIsLocked} />
       {overlay}
-      <LockedToast trigger={unlockToastTrigger} top={insets.top + space[5]} />
+      <ImageAdjustSheet
+        open={adjustOpen}
+        onClose={() => setAdjustOpen(false)}
+        adjustments={adjustments}
+        onSettle={onAdjustmentsSettle}
+      />
+      <LockedToast trigger={toast.trigger} message={toast.message} top={insets.top + space[5]} />
     </View>
   );
 }

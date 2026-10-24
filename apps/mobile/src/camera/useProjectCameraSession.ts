@@ -3,6 +3,7 @@ import {
   type CameraState,
   drainClock,
   IDLE_CLOCK,
+  type ImageAdjustments,
   type Project,
   startClock,
   statusOnOpen,
@@ -22,13 +23,16 @@ export type ProjectCameraSession = {
   /** Where to put the image: the saved transform with its canvas, or `null` to fit it. */
   initialPlacement: OverlayPlacement | null;
   initialOpacity: number;
+  /** Absent = no adjustments. */
+  initialAdjustments: ImageAdjustments | undefined;
   onPlacementSettle: (placement: OverlayPlacement) => void;
   onOpacitySettle: (opacity: number) => void;
+  onAdjustmentsSettle: (adjustments: ImageAdjustments) => void;
 };
 
 /**
  * Keeps a project in sync with its camera while `active` (its image is up: never for a missing
- * image): `pending → in_progress` on open (saved straight away), the settled transform and opacity saved after `SAVE_DEBOUNCE_MS` of quiet, and the time
+ * image): `pending → in_progress` on open (saved straight away), the settled transform, opacity and image adjustments saved after `SAVE_DEBOUNCE_MS` of quiet, and the time
  * spent counted only while this screen is focused and the app in the foreground. Leaving the
  * screen, going to the background or unmounting saves at once. Every write goes through
  * `enqueueCameraSave`, which outlives the screen and keeps them in order.
@@ -46,11 +50,13 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
         ? null
         : { transform: project.transform, viewport: project.transformViewport },
     opacity: project.opacity,
+    adjustments: project.imageAdjustments,
   }));
   const state = useRef<CameraState>({
     transform: project.transform,
     transformViewport: project.transformViewport,
     opacity: project.opacity,
+    imageAdjustments: project.imageAdjustments,
     status: statusOnOpen(project.status),
     timeSpentMs: project.timeSpentMs,
   });
@@ -131,10 +137,20 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
     [saveSoon],
   );
 
+  const onAdjustmentsSettle = useCallback(
+    (imageAdjustments: ImageAdjustments) => {
+      state.current = { ...state.current, imageAdjustments };
+      saveSoon();
+    },
+    [saveSoon],
+  );
+
   return {
     initialPlacement: initial.placement,
     initialOpacity: initial.opacity,
+    initialAdjustments: initial.adjustments,
     onPlacementSettle,
     onOpacitySettle,
+    onAdjustmentsSettle,
   };
 }

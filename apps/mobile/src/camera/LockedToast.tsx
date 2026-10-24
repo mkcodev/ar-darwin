@@ -9,18 +9,22 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
-import { t } from "../i18n";
 
 type LockedToastProps = {
   /** Bumped by `CameraOverlayScreen` every time the blocked hardware back press needs re-showing
    *  this toast (a plain counter so the same message can fade in again while already visible). */
   trigger: number;
+  /** What the lock is blocking, e.g. "Unlock to leave". */
+  message: string;
   /** Distance from the top of the screen (safe area included): the slider owns the bottom. */
   top: number;
 };
 
-/** "Unlock to leave" (#19): shown when the back button/gesture is blocked while locked. */
-export function LockedToast({ trigger, top }: LockedToastProps) {
+/**
+ * Shown when the lock blocks something: "Unlock to leave" for the back button/gesture (#19),
+ * "Unlock to mirror" for the mirror buttons.
+ */
+export function LockedToast({ trigger, message, top }: LockedToastProps) {
   const reduce = useReducedMotion();
   const opacity = useSharedValue(0);
 
@@ -37,9 +41,7 @@ export function LockedToast({ trigger, top }: LockedToastProps) {
 
   return (
     <Animated.View style={[styles.pill, { top }, style]} pointerEvents="none">
-      <Text style={[styles.label, { color: cameraColors.text }]}>
-        {t("cameraSpike.unlockToExit")}
-      </Text>
+      <Text style={[styles.label, { color: cameraColors.text }]}>{message}</Text>
     </Animated.View>
   );
 }

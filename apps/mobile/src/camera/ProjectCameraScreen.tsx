@@ -43,6 +43,8 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
       initialPlacement={session.initialPlacement}
       onPlacementSettle={session.onPlacementSettle}
       onOpacitySettle={session.onOpacitySettle}
+      initialAdjustments={session.initialAdjustments}
+      onAdjustmentsSettle={session.onAdjustmentsSettle}
     />
   );
 }

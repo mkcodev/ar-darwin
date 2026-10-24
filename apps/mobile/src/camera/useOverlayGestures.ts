@@ -24,6 +24,9 @@ import { scheduleOnRN } from "react-native-worklets";
 /** A saved transform and the canvas its x/y are px of (`Project.transformViewport`). */
 export type OverlayPlacement = { transform: Transform; viewport: Size };
 
+export type FlipAxis = "x" | "y";
+export type Flips = Pick<Transform, "flipX" | "flipY">;
+
 type Options = {
   imageSize: SharedValue<Size>;
   canvasSize: SharedValue<Size>;
@@ -71,6 +74,10 @@ const NO_STEP: GestureStep = {
  * Everything the pan/pinch/rotation callbacks and the reaction call runs on the UI thread and
  * must be a worklet: only core's transform.ts functions (checked by its tests) and inline
  * math. The double tap is the exception: `runOnJS(true)`, so `reset` may call plain JS.
+ *
+ * `toggleFlip` (the mirror buttons, JS thread) flips one axis in place: the matrix mirrors around
+ * the image's center, so nothing moves. Like the gestures, it does nothing while locked or before
+ * the first placement (returns `null`); otherwise it settles and returns the new flips.
  */
 export function useOverlayGestures({ imageSize, canvasSize, locked, initial, onSettle }: Options) {
   const reduce = useReducedMotion();
@@ -245,5 +252,19 @@ export function useOverlayGestures({ imageSize, canvasSize, locked, initial, onS
 
   const gesture = Gesture.Simultaneous(pan, pinch, rotate, doubleTap);
 
-  return { gesture, x, y, scale, rotation, flipX, flipY, placed };
+  const toggleFlip = (axis: FlipAxis): Flips | null => {
+    if (locked.value || !placed.value) return null;
+    // Built from the value read before writing: don't read a shared value back right after
+    // setting it from JS.
+    const before = current();
+    const transform =
+      axis === "x" ? { ...before, flipX: !before.flipX } : { ...before, flipY: !before.flipY };
+    flipX.value = transform.flipX;
+    flipY.value = transform.flipY;
+    const canvas = canvasSize.value;
+    settle({ transform, viewport: { width: canvas.width, height: canvas.height } });
+    return { flipX: transform.flipX, flipY: transform.flipY };
+  };
+
+  return { gesture, x, y, scale, rotation, flipX, flipY, placed, toggleFlip };
 }

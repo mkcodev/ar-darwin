@@ -1,5 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
+import { NEUTRAL_ADJUSTMENTS } from "../imageAdjustments";
 import { DEFAULT_CATEGORY_IDS, IDENTITY_TRANSFORM, type Project } from "../models";
 import { createProject, createProjectId } from "../project";
 import {
@@ -184,7 +185,7 @@ describe("migrations on SQLite", () => {
     const db = openMigrated(1);
     const project = newProject("p", "2026-10-10T10:00:00.000Z", { categoryIds: ["animals"] });
     saveLegacy(db, project);
-    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2, 3]);
+    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2, 3, 4]);
     migrate(db);
     expect(db.prepare(SELECT_SCHEMA_VERSION).get()?.user_version).toBe(LATEST_SCHEMA_VERSION);
     expect(load(db, project.id)).toEqual(project);
@@ -207,6 +208,35 @@ describe("migrations on SQLite", () => {
     expect(after).toEqual(placed);
     expect(after?.transformViewport).toBeUndefined();
     expect(load(db, fresh.id)).toEqual(fresh);
+  });
+
+  it("v3 → v4 keeps every project, with no image adjustments", () => {
+    const db = openMigrated(3);
+    const project = newProject("p", "2026-10-10T10:00:00.000Z", {
+      transformViewport: { width: 400, height: 800 },
+      categoryIds: ["objects"],
+    });
+    db.prepare(
+      `INSERT INTO projects (id, name, source_uri, transform, transform_viewport, opacity, status,
+         time_spent_ms, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      project.id,
+      project.name,
+      project.sourceUri,
+      JSON.stringify(project.transform),
+      JSON.stringify(project.transformViewport),
+      project.opacity,
+      project.status,
+      project.timeSpentMs,
+      project.createdAt,
+      project.updatedAt,
+    );
+    db.prepare(INSERT_PROJECT_CATEGORY).run(project.id, "objects");
+    migrate(db);
+    expect(db.prepare(SELECT_PROJECT).get(project.id)).toMatchObject({ image_adjustments: null });
+    const after = load(db, project.id);
+    expect(after).toEqual(project);
+    expect(after?.imageAdjustments).toBeUndefined();
   });
 
   it("enforces the CHECK constraints", () => {
@@ -246,6 +276,21 @@ describe("project repository SQL", () => {
     save(db, project);
     // Categories come back in category order, not insertion order.
     expect(load(db, project.id)).toEqual({ ...project, categoryIds: ["animals", "people"] });
+  });
+
+  it("round-trips image adjustments and stores neutral ones as NULL", () => {
+    const db = openMigrated();
+    const adjusted = newProject("adjusted", "2026-10-10T10:00:00.000Z", {
+      imageAdjustments: { brightness: -0.25, contrast: 0.5, invert: true },
+    });
+    const neutral = newProject("neutral", "2026-10-10T10:00:00.000Z", {
+      imageAdjustments: NEUTRAL_ADJUSTMENTS,
+    });
+    save(db, adjusted);
+    save(db, neutral);
+    expect(load(db, adjusted.id)).toEqual(adjusted);
+    expect(db.prepare(SELECT_PROJECT).get(neutral.id)).toMatchObject({ image_adjustments: null });
+    expect(load(db, neutral.id)?.imageAdjustments).toBeUndefined();
   });
 
   it("round-trips a minimal project", () => {
@@ -310,6 +355,7 @@ describe("project repository SQL", () => {
       transform: { ...IDENTITY_TRANSFORM, x: 200, y: 400, scale: 0.25, rotation: 90, flipX: true },
       transformViewport: { width: 400, height: 800 },
       opacity: 0.3,
+      imageAdjustments: { brightness: 0.1, contrast: -0.4, invert: false },
       status: "in_progress" as const,
       timeSpentMs: 12345,
     };
@@ -377,5 +423,19 @@ describe("projectFromRow", () => {
     expect(() => projectFromRow({ ...row, opacity: "high" }, [])).toThrow(/^projectFromRow:/);
     expect(() => projectFromRow({ ...row, transform: '{"x":0}' }, [])).toThrow(/^projectFromRow:/);
     expect(() => projectFromRow(null, [])).toThrow(/^projectFromRow:/);
+  });
+
+  it("loads corrupt, partial or neutral image adjustments without throwing", () => {
+    const adjustments = (text: string) =>
+      projectFromRow({ ...row, image_adjustments: text }, []).imageAdjustments;
+    expect(adjustments("{oops")).toBeUndefined();
+    expect(adjustments("42")).toBeUndefined();
+    expect(adjustments("null")).toBeUndefined();
+    expect(adjustments('{"brightness":0,"contrast":0,"invert":false}')).toBeUndefined();
+    expect(adjustments('{"contrast":3,"invert":"yes","sharpness":1}')).toEqual({
+      brightness: 0,
+      contrast: 1,
+      invert: false,
+    });
   });
 });

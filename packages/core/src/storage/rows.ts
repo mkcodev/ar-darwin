@@ -1,4 +1,9 @@
 import * as z from "zod";
+import {
+  type ImageAdjustments,
+  ImageAdjustmentsSchema,
+  isNeutralAdjustments,
+} from "../imageAdjustments";
 import { type Category, CategorySchema, type Project, ProjectSchema, type Size } from "../models";
 
 /** A `projects` row as SQLite returns it: snake_case, JSON in TEXT columns, NULL for missing. */
@@ -9,6 +14,7 @@ const ProjectRowSchema = z.object({
   transform: z.string(),
   transform_viewport: z.string().nullable(),
   opacity: z.number(),
+  image_adjustments: z.string().nullable(),
   split: z.string().nullable(),
   current_tile_id: z.string().nullable(),
   status: z.string(),
@@ -51,6 +57,29 @@ function parseJson(text: string | null, column: string): unknown {
   }
 }
 
+/** Neutral adjustments are stored as NULL, like absent ones. */
+function adjustmentsJson(adjustments: ImageAdjustments | undefined): string | null {
+  return adjustments === undefined || isNeutralAdjustments(adjustments)
+    ? null
+    : JSON.stringify(adjustments);
+}
+
+/**
+ * Unlike parseJson, never throws: corrupt JSON or a value that is not an object loads as no
+ * adjustments, so a bad stored value can't keep the project from opening.
+ */
+function parseAdjustments(text: string | null): ImageAdjustments | undefined {
+  if (text === null) return undefined;
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+  const parsed = ImageAdjustmentsSchema.safeParse(value);
+  return parsed.success && !isNeutralAdjustments(parsed.data) ? parsed.data : undefined;
+}
+
 function orUndefined<T>(value: T | null): T | undefined {
   return value === null ? undefined : value;
 }
@@ -63,6 +92,7 @@ export function projectToRow(project: Project): ProjectRow {
     transform: JSON.stringify(project.transform),
     transform_viewport: json(project.transformViewport),
     opacity: project.opacity,
+    image_adjustments: adjustmentsJson(project.imageAdjustments),
     split: json(project.split),
     current_tile_id: project.currentTileId ?? null,
     status: project.status,
@@ -86,6 +116,7 @@ export function projectRowParams(row: ProjectRow): SqlValue[] {
     row.transform,
     row.transform_viewport,
     row.opacity,
+    row.image_adjustments,
     row.split,
     row.current_tile_id,
     row.status,
@@ -104,7 +135,10 @@ export function projectRowParams(row: ProjectRow): SqlValue[] {
  * What the project camera saves (UPDATE_PROJECT_CAMERA). `transformViewport` is absent until the
  * image has been placed once (status and time can be saved before): the project stays unplaced.
  */
-export type CameraState = Pick<Project, "transform" | "opacity" | "status" | "timeSpentMs"> & {
+export type CameraState = Pick<
+  Project,
+  "transform" | "opacity" | "imageAdjustments" | "status" | "timeSpentMs"
+> & {
   transformViewport?: Size;
 };
 
@@ -114,6 +148,7 @@ export function cameraStateParams(id: string, state: CameraState, now: Date): Sq
     JSON.stringify(state.transform),
     json(state.transformViewport),
     state.opacity,
+    adjustmentsJson(state.imageAdjustments),
     state.status,
     state.timeSpentMs,
     now.toISOString(),
@@ -135,6 +170,7 @@ export function projectFromRow(row: unknown, categoryIds: readonly string[]): Pr
     transform: parseJson(r.transform, "transform"),
     transformViewport: parseJson(r.transform_viewport, "transform_viewport"),
     opacity: r.opacity,
+    imageAdjustments: parseAdjustments(r.image_adjustments),
     split: parseJson(r.split, "split"),
     currentTileId: orUndefined(r.current_tile_id),
     status: r.status,

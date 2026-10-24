@@ -37,6 +37,12 @@ export const icons = {
   mirrorH: [path("M12 3v18", true), path("M9 7 4 17h5Z"), path("M15 7l5 10h-5Z")],
   mirrorV: [path("M3 12h18", true), path("M7 9 17 4v5Z"), path("M7 15l10 5v-5Z")],
   flash: [path("M8 3h8v4l-2 4v10h-4V11L8 7Z"), path("M8 7h8"), path("M12 14v2.5")],
+  // A sun: brightness, contrast and invert of the overlay image.
+  adjust: [
+    { type: "circle", cx: 12, cy: 12, r: 4 },
+    path("M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2"),
+    path("M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"),
+  ],
   arrowUp: [path("M12 19V5M6 11l6-6 6 6")],
   arrowDown: [path("M12 5v14M6 13l6 6 6-6")],
   arrowLeft: [path("M19 12H5M11 6l-6 6 6 6")],

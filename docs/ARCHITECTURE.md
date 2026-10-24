@@ -99,15 +99,34 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   RECOVERABLE y CameraX la reporta como `onInterruptionStarted`/`onInterruptionEnded`, no como
   error — por eso `CameraOverlayScreen` escucha las dos cosas. `classifyCameraIssue` (packages/core)
   traduce el `message` en texto plano de `onError` a `"disabled" | "inUse" | "unknown"`.
+  `isIgnorableCameraError` filtra antes los errores que no son una cámara rota (CameraX cancela
+  `setTorchAsync` con `OperationCanceledException: Camera is not active` si la cámara aún no está
+  activa): no se muestra aviso, solo `console.warn` en desarrollo. Por eso `torchMode` solo se pasa
+  a `<Camera>` tras encender la linterna por primera vez (cualquier valor, también `"off"`, hace que
+  vision-camera llame a `setTorchMode` al montar).
 
 ## Cámara del proyecto (issue #40)
 
 - Código de producto en `apps/mobile/src/camera/`; el spike (`/dev/camera`) usa los mismos
   componentes con las imágenes de prueba (`CameraSpikeScreen` es solo un envoltorio con los toggles
   de imagen y fps).
-  - `CameraOverlayScreen`: cámara, `OverlayCanvas`, slider de opacidad, candado, `LockedToast`,
-    `useKeepAwake`, `usePreventRemove` + `gestureEnabled` y avisos de cámara. Huecos
-    `extraControls` (se ocultan con el candado) y `overlay`.
+  - `CameraOverlayScreen`: cámara, `OverlayCanvas`, slider de opacidad, `CameraTools`,
+    `ImageAdjustSheet`, candado, `LockedToast`, `useKeepAwake`, `usePreventRemove` +
+    `gestureEnabled` y avisos de cámara. Huecos `extraControls` (se ocultan con el candado) y
+    `overlay`.
+  - `CameraTools` (issue #55): espejo H, espejo V, linterna y ajustes de imagen, bajo el slider. No
+    se oculta con el candado: linterna y ajustes siguen activos; el espejo se atenúa y, al tocarlo,
+    `LockedToast` dice «Desbloquea para usar el espejo» (`IconButton` `onDisabledPress`). El espejo
+    va por `ref` (`OverlayCanvasHandle.toggleFlip`): voltea en su sitio (la matriz voltea alrededor
+    del centro) y se guarda con la transformada vía `onSettle`. La linterna es `torchMode` de
+    `<Camera>`, solo si `device.hasTorch` (sin linterna, `setTorchMode` lanza a `onError`);
+    se apaga al desmontar.
+  - `ImageAdjustSheet`: `BottomSheet scrim={false}` (sin velo, la imagen se ve en vivo; tocar fuera
+    cierra y no llega a la imagen) con sliders de brillo y contraste, interruptor Invertir y
+    Restablecer. Brillo, contraste e invertir (0..1, animable) son shared values; `OverlayCanvas`
+    deriva en el hilo de UI la `<ColorMatrix>` de la imagen con `adjustmentColorMatrix` (core).
+    Invertir y Restablecer animan con el muelle `gentle` (saltan con reducir movimiento). Cada
+    cambio asentado (soltar, alternar, restablecer) llama a `onAdjustmentsSettle`.
   - `OverlayCanvas` + `useOverlayGestures`: la imagen no se dibuja (opacidad 0, flag `placed`) hasta
     tener tamaño de lienzo **y** dimensiones reales de la imagen. Entonces restaura la colocación
     guardada con `restoreTransform` o encaja con `fitTransform`. Un cambio posterior de lienzo mueve
@@ -135,7 +154,7 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - `useProjectCameraSession` (solo con la imagen cargada): `statusOnOpen` pasa `pending → in_progress`
   y se guarda al momento; el reloj (`startClock`/`stopClock`/`drainClock` de
   `packages/core/src/cameraSession.ts`) corre solo con la pantalla enfocada y la app en primer plano;
-  transform y opacidad se guardan 1 s después del último cambio, y al perder el foco, pasar a segundo
+  transform, opacidad y ajustes de imagen se guardan 1 s después del último cambio, y al perder el foco, pasar a segundo
   plano o desmontar se guarda en el acto. Todas las escrituras pasan por `enqueueCameraSave`
   (`storage/cameraStateQueue.ts`): cola a nivel de módulo, así un guardado lanzado al desmontar
   termina aunque la pantalla ya no exista y nunca se escriben fuera de orden.
@@ -147,7 +166,7 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   estados que `apps/desktop/src/components/`. Diferencias: el `Slider` recibe un `SharedValue`
   (el valor vive en el hilo de UI y `format` es un worklet, p. ej. `percentFormat` de
   `src/format.ts`); el `SegmentedControl` usa segmentos de igual ancho para que el indicador solo
-  se desplace; `Button` recibe `icon` como `IconName`. Variante `danger` (borrar) en las dos
+  se desplace; `Button` recibe `icon` como `IconName`. Solo en móvil (issue #55): `IconButton` `onDisabledPress` (deshabilitado pero el toque explica por qué) y `BottomSheet` `scrim={false}` (sin velo). Variante `danger` (borrar) en las dos
   apps: fondo `bg.raised`, texto y borde `danger` (contraste AA de texto en `contrast.test.ts`).
 - `apps/mobile/src/theme/`: `ThemeProvider`, `HandednessProvider` y `ReduceMotionProvider` se montan
   en `app/_layout.tsx`. Aceptan `initial` y `onChange` para que la tarea de Ajustes cargue y guarde
@@ -260,6 +279,7 @@ type Project = {
   transform: Transform;    // último ajuste de cámara
   transformViewport?: { width: number; height: number }; // lienzo de `transform`; sin él, nunca colocado
   opacity: number;         // 0..1
+  imageAdjustments?: { brightness: number; contrast: number; invert: boolean }; // -1..1; sin él, neutro
   split?: SplitConfig;
   currentTileId?: string;
   status: ProjectStatus;
@@ -308,7 +328,15 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 - Límite del solape, por eje con cortes: ancho mínimo de los `coreRect` si `cols > 1`, alto mínimo si `rows > 1`; devuelve `floor(menor / 2)`. Con 1×1, 0.
 - Misma validación que `computeTiles`. La UI lo usa como máximo del slider del borde extendido.
 
-Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone`, `radiansToDegrees`, `normalizeRotation` y los helpers internos) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones, y sin constantes externas en valores por defecto de parámetros (el plugin de worklets no las captura). `worklet.test.ts` lo comprueba en CI (también para `frameStats.ts`), porque Vitest ejecuta JS normal y esos fallos solo aparecen en el móvil.
+Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone`, `radiansToDegrees`, `normalizeRotation` y los helpers internos) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones, y sin constantes externas en valores por defecto de parámetros (el plugin de worklets no las captura). `worklet.test.ts` lo comprueba en CI (también para `frameStats.ts`, `controls.ts` e `imageAdjustments.ts`), porque Vitest ejecuta JS normal y esos fallos solo aparecen en el móvil.
+
+### `adjustmentColorMatrix(brightness, contrast, invert): number[]`
+
+- Matriz de color 4 × 5 (20 números) para `<ColorMatrix>` de Skia; worklet.
+- Por canal RGB (v en 0..1): `v' = c · (s · v + o − 0.5) + 0.5 + b`, con `s = 1 − 2 · invert`,
+  `o = invert`, `c = 1 + contrast` (pivota en el gris medio) y `b = brightness · 0.5`. Alfa intacta.
+- `brightness`/`contrast` se recortan a [-1, 1] e `invert` a [0, 1] (numérico para animarlo).
+- `isNeutralAdjustments(a)`: todo a su valor neutro (`NEUTRAL_ADJUSTMENTS`).
 
 ### `snapTransform(transform, imageSize, viewport, options?): { transform, activeGuides }`
 
@@ -430,6 +458,12 @@ existentes quedan así y se encajan con `fitTransform` la primera vez). `UPDATE_
 `transform_viewport` siempre juntos, opacidad, estado, `time_spent_ms` y `updated_at`, sin tocar
 categorías ni el resto. Antes de la primera colocación puede guardar estado y tiempo con
 `transform_viewport` a NULL.
+
+La v4 (issue #55) añade `image_adjustments` (JSON `{brightness, contrast, invert}` en TEXT). NULL =
+sin ajustes; los neutros también se guardan como NULL. Se lee con tolerancia (`ImageAdjustmentsSchema`
+ignora claves desconocidas y cada campo malo o ausente vuelve a su valor neutro; JSON corrupto →
+sin ajustes): un valor malo nunca impide abrir el proyecto, y un ajuste nuevo no exige migración.
+`UPDATE_PROJECT_CAMERA` lo guarda con el resto del estado de la cámara.
 
 ### Rutas de archivo
 
