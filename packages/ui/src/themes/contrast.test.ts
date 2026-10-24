@@ -9,7 +9,16 @@ import {
   MIN_CATEGORY_MUTED_DELTA_E,
   MIN_CATEGORY_TEXT_DELTA_E,
 } from "../categoryColors";
-import { blendOver, contrastRatio, deltaEOk, MIN_CONTRAST, type Rgba, toOklab } from "../contrast";
+import {
+  blendOver,
+  contrastRatio,
+  deltaEOk,
+  MIN_CONTRAST,
+  parseColor,
+  type Rgba,
+  toOklab,
+} from "../contrast";
+import { opacity } from "../layout";
 import { themes } from "./index";
 import type { ColorTokens } from "./types";
 
@@ -94,6 +103,19 @@ describe.each(Object.values(themes))("$name theme", (theme) => {
     });
     it("accent icon inside the pill ≥ 3", () => {
       expect(contrastRatio(c.camera.accent, pill)).toBeGreaterThanOrEqual(nonText);
+    });
+    it("fine-adjust pad icons at their idle opacity ≥ 3", () => {
+      // The whole pad (pill and glyphs) is composited at `opacity.nudgePadIdle` over the photo.
+      const a = opacity.nudgePadIdle;
+      const over = (fg: Rgba): Rgba => ({
+        r: fg.r * a + photo.r * (1 - a),
+        g: fg.g * a + photo.g * (1 - a),
+        b: fg.b * a + photo.b * (1 - a),
+        a: 1,
+      });
+      expect(contrastRatio(over(parseColor(c.camera.text)), over(pill))).toBeGreaterThanOrEqual(
+        nonText,
+      );
     });
     it("guide (core or case) ≥ 3", () => {
       const guide = Math.max(
