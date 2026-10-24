@@ -21,3 +21,13 @@ export function classifyCameraIssue(message: string): CameraIssueKind {
   }
   return "unknown";
 }
+
+/**
+ * Errors `onError` reports that are not a broken camera: CameraX cancels a pending operation
+ * (e.g. `TorchControl.setTorchAsync`) when the camera stops being active, which happens whenever
+ * the screen loses focus or the app goes to the background. They are not shown to the person.
+ */
+export function isIgnorableCameraError(error: { name?: string; message: string }): boolean {
+  const text = `${error.name ?? ""} ${error.message}`.toLowerCase();
+  return text.includes("operationcanceledexception") || text.includes("camera is not active");
+}

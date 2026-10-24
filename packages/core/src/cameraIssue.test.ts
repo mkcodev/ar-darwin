@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyCameraIssue } from "./cameraIssue";
+import { classifyCameraIssue, isIgnorableCameraError } from "./cameraIssue";
 
 describe("classifyCameraIssue", () => {
   it.each([
@@ -18,5 +18,23 @@ describe("classifyCameraIssue", () => {
 
   it("is case-insensitive", () => {
     expect(classifyCameraIssue("CAMERA IS DISABLED")).toBe("disabled");
+  });
+});
+
+describe("isIgnorableCameraError", () => {
+  it.each([
+    [{ message: "OperationCanceledException: Camera is not active in TorchControl.setTorchAsync" }],
+    [{ message: "Camera is not active" }],
+    [{ name: "OperationCanceledException", message: "cancelled" }],
+  ])("ignores %j", (error) => {
+    expect(isIgnorableCameraError(error)).toBe(true);
+  });
+
+  it.each([
+    ["Camera is disabled, probably due to a device policy!"],
+    ["Camera device is already in use!"],
+    ["Encountered a fatal Camera error!"],
+  ])("keeps showing %s", (message) => {
+    expect(isIgnorableCameraError({ message })).toBe(false);
   });
 });
