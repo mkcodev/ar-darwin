@@ -12,6 +12,7 @@ import {
   type Project,
   ProjectSchema,
   type Size,
+  type SplitConfig,
 } from "../models";
 
 /** A `projects` row as SQLite returns it: snake_case, JSON in TEXT columns, NULL for missing. */
@@ -168,6 +169,16 @@ export type CameraState = Pick<
 > & {
   transformViewport?: Size;
 };
+
+/** Positional parameters for UPDATE_PROJECT_SPLIT; `now` becomes `updated_at`. */
+export function splitParams(
+  id: string,
+  split: SplitConfig,
+  currentTileId: string | undefined,
+  now: Date,
+): SqlValue[] {
+  return [JSON.stringify(split), currentTileId ?? null, now.toISOString(), id];
+}
 
 /** Positional parameters for UPDATE_PROJECT_CAMERA; `now` becomes `updated_at`. */
 export function cameraStateParams(id: string, state: CameraState, now: Date): SqlValue[] {

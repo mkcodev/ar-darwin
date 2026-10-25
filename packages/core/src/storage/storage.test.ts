@@ -22,6 +22,7 @@ import {
   SELECT_SCHEMA_VERSION,
   SELECT_SETTING,
   UPDATE_PROJECT_CAMERA,
+  UPDATE_PROJECT_SPLIT,
   UPSERT_PROJECT,
   UPSERT_SETTING,
 } from "./queries";
@@ -32,6 +33,7 @@ import {
   projectFromRow,
   projectRowParams,
   projectToRow,
+  splitParams,
 } from "./rows";
 import { parseBooleanSetting, SETTING_KEYS, serializeBoolean } from "./settings";
 
@@ -497,6 +499,59 @@ describe("project repository SQL", () => {
       new Date("2026-10-10T12:00:00.000Z"),
     );
     expect(() => db.prepare(UPDATE_PROJECT_CAMERA).run(...params)).toThrow();
+  });
+
+  it("saves the split and the current tile in one update, without touching anything else", () => {
+    const db = openMigrated();
+    const project = newProject("p", "2026-10-10T10:00:00.000Z", {
+      categoryIds: ["animals"],
+      transform: { ...IDENTITY_TRANSFORM, x: 50, scale: 0.5 },
+      opacity: 0.4,
+      notes: "keep",
+    });
+    save(db, project);
+    const split = { rows: 3, cols: 2, overlapPx: 24, showOverlapTint: true };
+    db.prepare(UPDATE_PROJECT_SPLIT).run(
+      ...splitParams(project.id, split, "B2", new Date("2026-10-10T12:00:00.000Z")),
+    );
+    expect(load(db, project.id)).toEqual({
+      ...project,
+      split,
+      currentTileId: "B2",
+      updatedAt: "2026-10-10T12:00:00.000Z",
+    });
+  });
+
+  it("saving a split without a current tile clears the one that was stored", () => {
+    const db = openMigrated();
+    const project = newProject("p", "2026-10-10T10:00:00.000Z", { currentTileId: "A2" });
+    save(db, project);
+    const split = { rows: 2, cols: 2, overlapPx: 0, showOverlapTint: false };
+    db.prepare(UPDATE_PROJECT_SPLIT).run(
+      ...splitParams(project.id, split, undefined, new Date("2026-10-10T12:00:00.000Z")),
+    );
+    expect(load(db, project.id)?.currentTileId).toBeUndefined();
+    expect(load(db, project.id)?.split).toEqual(split);
+  });
+
+  it("the camera's save leaves the split and the current tile alone", () => {
+    const db = openMigrated();
+    const split = { rows: 2, cols: 3, overlapPx: 12, showOverlapTint: true };
+    const project = newProject("p", "2026-10-10T10:00:00.000Z", { split, currentTileId: "A3" });
+    save(db, project);
+    db.prepare(UPDATE_PROJECT_CAMERA).run(
+      ...cameraStateParams(
+        project.id,
+        {
+          transform: IDENTITY_TRANSFORM,
+          opacity: 0.5,
+          status: "in_progress",
+          timeSpentMs: 800,
+        },
+        new Date("2026-10-10T12:00:00.000Z"),
+      ),
+    );
+    expect(load(db, project.id)).toMatchObject({ split, currentTileId: "A3" });
   });
 
   it("rejects a link to a category that does not exist", () => {

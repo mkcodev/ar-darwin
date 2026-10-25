@@ -46,6 +46,17 @@ UPDATE projects SET
   updated_at = ?
 WHERE id = ?`;
 
+/**
+ * Params: splitParams(id, split, currentTileId, now). What the splitter saves: the grid and the
+ * tile last picked. Nothing the camera owns, and the camera's update leaves these two alone.
+ */
+export const UPDATE_PROJECT_SPLIT = `
+UPDATE projects SET
+  split = ?,
+  current_tile_id = ?,
+  updated_at = ?
+WHERE id = ?`;
+
 export const SELECT_PROJECTS = "SELECT * FROM projects ORDER BY updated_at DESC, id";
 
 /** Params: [id]. */
