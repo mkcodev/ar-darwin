@@ -283,6 +283,7 @@ describe("computePaperTiles invariants", () => {
       expect(last.rect.y + last.rect.height).toBeGreaterThanOrEqual(image.height - TOLERANCE);
 
       // Sample points, including both borders, each land in at least one sheet's imageRect.
+      const missed: string[] = [];
       for (let i = 0; i <= 20; i++) {
         for (let j = 0; j <= 20; j++) {
           const px = (image.width * i) / 20;
@@ -294,9 +295,10 @@ describe("computePaperTiles invariants", () => {
               py >= s.imageRect.y - TOLERANCE &&
               py <= s.imageRect.y + s.imageRect.height + TOLERANCE,
           );
-          expect(hit).toBe(true);
+          if (!hit) missed.push(`${px},${py}`);
         }
       }
+      expect(missed).toEqual([]);
     });
   });
 
