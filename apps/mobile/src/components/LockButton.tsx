@@ -1,6 +1,6 @@
 import { cameraColors, lockButton, radius, signature, space } from "@ar-darwin/ui";
 import { Canvas, Group, Path, Skia } from "@shopify/react-native-skia";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -53,8 +53,13 @@ const ICON_SIZE = lockButton.size / 2;
  * `withTiming` on the UI thread (no custom core helper needed: unlike `transform.ts`'s gesture
  * math, this is Reanimated's own timing, not bespoke worklet logic) and snaps back if the press
  * is released or cancelled before completing. Locking redraws the padlock («trazo vivo»).
+ *
+ * Memoized: its `Gesture.LongPress()` is rebuilt on every render, and RNGH swaps the handlers of a
+ * gesture that is mid-press when that happens (`updateHandlers`), so a re-render while the finger
+ * is held (the camera menu showing up, a toast) could let `onStart` slip by and the lock never
+ * engage. Its props are stable (`locked`, `onLockedChange`, `placement`); only `isLocked` changes.
  */
-export function LockButton({
+export const LockButton = memo(function LockButton({
   locked,
   isLocked,
   onLockedChange,
@@ -149,7 +154,7 @@ export function LockButton({
       </GestureDetector>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   freeHand: { position: "absolute" },
