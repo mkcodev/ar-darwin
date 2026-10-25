@@ -1,6 +1,6 @@
 import { cameraColors, lockButton, radius, signature, space } from "@ar-darwin/ui";
 import { Canvas, Group, Path, Skia } from "@shopify/react-native-skia";
-import { memo, useState } from "react";
+import { memo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -57,7 +57,9 @@ const ICON_SIZE = lockButton.size / 2;
  * fingertip so it shows around the finger, on a graphite track) fills clockwise with a plain
  * `withTiming` on the UI thread (no custom core helper needed: unlike `transform.ts`'s gesture
  * math, this is Reanimated's own timing, not bespoke worklet logic) and snaps back if the press
- * is released or cancelled before completing. Locking redraws the padlock («trazo vivo»).
+ * is released or cancelled before completing. The padlock is open and white while unlocked and
+ * closed and orange while locked; each change redraws it («trazo vivo»). When the ring closes, the
+ * haptic and that change tell the person the lock took (the ring stays full while the finger is down).
  *
  * Memoized: its `Gesture.LongPress()` is rebuilt on every render, and RNGH swaps the handlers of a
  * gesture that is mid-press when that happens (`updateHandlers`), so a re-render while the finger
@@ -76,10 +78,18 @@ export const LockButton = memo(function LockButton({
   const { reduce } = useReduceMotion();
   const insets = useSafeAreaInsets();
 
+  // The JS side owns the lock's value: `next` is worked out from this ref, written to the shared
+  // value and to the React state, and never read back. Reading `locked.value` right after writing
+  // it from JS can return the old value (the write lands on the UI thread later), which left the
+  // padlock and the gestures disagreeing: the image locked but the icon not, or the other way
+  // round, "sometimes".
+  const lockedRef = useRef(isLocked);
   const toggle = () => {
-    locked.value = !locked.value;
-    if (locked.value) setDrawKey((k) => k + 1);
-    onLockedChange(locked.value);
+    const next = !lockedRef.current;
+    lockedRef.current = next;
+    locked.value = next;
+    setDrawKey((k) => k + 1);
+    onLockedChange(next);
     playHaptic("lockToggle");
   };
 
@@ -162,7 +172,7 @@ export const LockButton = memo(function LockButton({
                 color={cameraColors.accent}
               />
               <SkiaIcon
-                name="lock"
+                name={isLocked ? "lock" : "unlock"}
                 size={ICON_SIZE}
                 x={CENTRE - ICON_SIZE / 2}
                 y={CENTRE - ICON_SIZE / 2}

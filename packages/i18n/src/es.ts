@@ -22,6 +22,7 @@ export const es = {
   },
   icons: {
     lock: "Candado",
+    unlock: "Candado abierto",
     magnet: "Imán",
     opacity: "Opacidad",
     mirrorH: "Espejo horizontal",

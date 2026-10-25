@@ -28,6 +28,12 @@ export const icons = {
     path("M8 11V8a4 4 0 0 1 8 0v3"),
     path("M12 15v2"),
   ],
+  // The same padlock with the shackle lifted: the touch lock is off.
+  unlock: [
+    { type: "rect", x: 5, y: 11, width: 14, height: 9, rx: 2 },
+    path("M8 11V8a4 4 0 0 1 7.4-2.1"),
+    path("M12 15v2"),
+  ],
   magnet: [path("M5 4h4v8a3 3 0 0 0 6 0V4h4v8a7 7 0 0 1-14 0Z"), path("M5 8h4M15 8h4")],
   opacity: [
     { type: "circle", cx: 12, cy: 12, r: 8 },

@@ -176,7 +176,7 @@ Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:
 
 ## Iconos
 
-Set propio en `packages/ui/src/icons.ts` (32 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
+Set propio en `packages/ui/src/icons.ts` (33 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
 
 Todo respeta la opción del sistema de reducir movimiento (sustituir por fundidos cortos o nada).
 

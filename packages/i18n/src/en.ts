@@ -22,6 +22,7 @@ export const en = {
   },
   icons: {
     lock: "Lock",
+    unlock: "Open padlock",
     magnet: "Magnet",
     opacity: "Opacity",
     mirrorH: "Mirror horizontally",
