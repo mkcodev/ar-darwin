@@ -12,6 +12,10 @@ export const magnetGuide = {
   tickMajor: 8,
   /** Ring drawn at the contact point when the image snaps. */
   contactRing: 44,
+  /** The pinned position's guide is dashed (on, off) so it never reads as an axis. */
+  pinDash: [8, 6],
+  /** Half length of the arms of the cross at the pinned position's center. */
+  pinCross: 10,
 } as const;
 
 export const cameraPill = {
