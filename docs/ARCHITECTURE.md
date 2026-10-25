@@ -141,7 +141,10 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     (`shown`) mientras hay un dedo puesto. Nunca se vuelve base a mitad de gesto, o la imagen se
     quedaría pegada a la guía.
     - Objetivos: centro de la imagen sobre el eje vertical y sobre el horizontal del lienzo (cada eje
-      por separado), rotación a múltiplos de 90° y la posición fijada (pin). Cada uno con histéresis:
+      por separado); rotación a múltiplos de 90° **o al ángulo con que empezó el gesto** (girar y volver
+      a como estaba); el **ancho**: los dos bordes laterales de la imagen sobre los lados del lienzo
+      (escala y x a la vez, `fitEnter` 12 / `fitExit` 20 px por borde; solo se agarra al pellizcar,
+      pero cualquier gesto la mantiene hasta que se aleje); y la posición fijada (pin). Cada uno con histéresis:
       engancha a menos de 5 px / 2° (pin: 8 px, 2 % de escala, 2°) y suelta a más de 9 px / 4° (pin:
       14 px, 4 %, 4°). Son constantes de `DEFAULT_MAGNET_OPTIONS`, fáciles de ajustar a ojo (los tests
       se derivan de ellas); `MagnetLock` es la memoria de un fotograma al siguiente.
@@ -169,7 +172,7 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
       cuando su candado pasa de suelto a enganchado durante el gesto. Si la imagen ya estaba sobre el
       objetivo al empezar (una imagen centrada, o el giro de 0°), no se ve hasta que salga y vuelva a
       entrar. Cada gesto es dueño de las suyas: ejes solo al arrastrar (sin pellizco ni giro
-      activos); ángulo solo con el giro de dos dedos; pin con cualquiera. Entran con el muelle
+      activos); ángulo solo con el giro de dos dedos; ancho solo al pellizcar (dos líneas en los laterales); pin con cualquiera. Entran con el muelle
       `snappy`, se desvanecen solas a los 400 ms (`quiet.holdMs`) aunque siga enganchada, y salen en
       `signature.guideFadeOutMs` al soltar el objetivo; con «reducir movimiento», solo fundido.
     - Interruptor en Ajustes (`AppSettingsProvider`, activo por defecto), tabla `settings` (v6). La
@@ -474,9 +477,11 @@ pregunta con qué colocación abrir. No es un worklet: corre en JS.
 - Nunca baja de `MIN_SCALE` (mismo límite que `nudge`/`fitTransform`); los espejos pasan intactos.
 - Imán (issue #70): `magnetize` (core) se aplica sobre el resultado solo para pintar y guardar al soltar; la bruta es la base del siguiente fotograma. `snapTransform` (múltiplos de 45°, bordes) lo sigue usando el playground de PC.
 
-### `magnetize(raw, prev, viewport, pin, options?): { transform, lock }` y `magnetEngaged(prev, next)`
+### `magnetize(raw, prev, context, options?): { transform, lock }` y `magnetEngaged(prev, next)`
 
-- Worklets puros. `raw` es la transformada de los dedos; `prev` el `lock` del fotograma anterior (`NO_MAGNET_LOCK` al empezar); `pin` la posición fijada ya restaurada al lienzo actual, o `null`.
+- Worklets puros. `raw` es la transformada de los dedos; `prev` el `lock` del fotograma anterior (`NO_MAGNET_LOCK` al empezar); `context` = `{ viewport, image, pin, scaling, origin }`: tamaño del lienzo y de la imagen, la posición fijada ya restaurada al lienzo actual (o `null`), si un pellizco está cambiando la escala y el giro con que empezó el gesto (o `null`).
+- Ancho: con el giro ya imantado, la caja de la imagen mide `ancho·|cos| + alto·|sin|` a escala 1; engancha si el borde izquierdo y el derecho están ambos a menos de `fitEnter` de los lados del lienzo (suelta a `fitExit`), y entonces fija la escala para que mida justo el ancho del lienzo y `x` al centro. `scaling` falso solo puede mantenerlo, no agarrarlo (arrastrar nunca cambia el tamaño).
+- Giro: el más cercano de los dos objetivos, el ángulo recto o `origin`.
 - Eje: engancha si `|centro − mitad del lienzo| < enter`; ya enganchado, sigue mientras `< exit`. Giro: distancia angular al múltiplo de 90° más cercano por el camino corto, así que vale cualquier ángulo (negativo, > 360°, ±180). Pin: posición, escala relativa y giro deben cumplirlo a la vez.
 - Los espejos pasan intactos y no cambian lo que engancha (la matriz gira antes de reflejar). La escala nunca se toca, salvo la del pin.
 - `magnetEngaged` es verdadero cuando algún flag pasa de falso a verdadero: el momento de vibrar.

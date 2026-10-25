@@ -9,6 +9,7 @@
 | Tema | Decisión | Por qué |
 | --- | --- | --- |
 | Objetivos | Centro de la imagen sobre el eje vertical y el horizontal del lienzo; rotación a múltiplos de 90° | Es lo que se usa al calcar: dejar la imagen centrada y recta. 45° y los 4 bordes se quedan en `snapTransform` (playground de PC) |
+| Ancho y ángulo de partida | Al pellizcar, los bordes laterales se enganchan a los lados del lienzo (escala y x). El ángulo con que empieza el gesto es un objetivo de giro más | Pedido tras la primera prueba: agrandar «hasta los lados» y girar y volver a como estaba. Arrastrar nunca cambia el tamaño; el ancho solo se agarra al pellizcar |
 | Histéresis | Engancha a 5 px / 2°; suelta a 9 px / 4° (constantes en `DEFAULT_MAGNET_OPTIONS`) | Sin ella, un dedo quieto en el borde del umbral hace vibrar la imagen. Los umbrales iniciales (8/16 px, 3/6°) eran demasiado agresivos |
 | Pin | Es un objetivo más: gana a los ejes si posición, escala y giro están dentro de su radio (8 px, 2 %, 2°; suelta a 14 px, 4 %, 4°) | El pin es una elección explícita y fija las cuatro magnitudes. Si los ejes compitieran, una imagen fijada cerca del centro saltaría entre pin y eje |
 | Bruta y magnetizada | Los gestos escriben la bruta; el lienzo pinta la magnetizada mientras hay un dedo; al soltar el último dedo la magnetizada pasa a bruta y se guarda | Si la magnetizada fuera la base, la imagen se quedaría pegada a la guía |

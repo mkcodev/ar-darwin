@@ -3,6 +3,7 @@ import {
   fitTransform,
   type GestureStep,
   holdDistance,
+  type MagnetContext,
   type MagnetLock,
   magnetEngaged,
   magnetize,
@@ -71,6 +72,7 @@ const NUDGE_MAX_DRIFT = touchTarget * 2;
 const HELD_AT_TOUCH = {
   enter: 0.5,
   rotationEnter: 0.5,
+  fitEnter: 0.5,
   pinEnter: 0.5,
   pinScaleEnter: 0.001,
   pinRotationEnter: 0.5,
@@ -170,9 +172,15 @@ export function useOverlayGestures({
    * gesture (never because the image already sat on it), and off when the target is let go.
    */
   const revealed = useSharedValue<MagnetLock>(NO_MAGNET_LOCK);
-  /** A two-finger rotation / a pinch is active: the axes' guides stay hidden, the angle's shows. */
+  /**
+   * A two-finger rotation / a pinch is active. The axes' guides stay hidden while either is; the
+   * angle's guide shows with the rotation, the width's with the pinch (which is also the only
+   * gesture that can grab the width).
+   */
   const rotating = useSharedValue(false);
   const pinching = useSharedValue(false);
+  /** The rotation the touches started with: a magnet target to come back to. */
+  const startRotation = useSharedValue<number | null>(null);
   /** The raw transform changed since the last settle: the end of the touches must save it. */
   const dirty = useSharedValue(false);
   /** The pinned position, a magnet target. Updated by `pinHere`; restored onto the canvas on use. */
@@ -263,9 +271,22 @@ export function useOverlayGestures({
       flipY: flipY.value,
     };
   });
+  /** Everything `magnetize` needs besides the transform. `scaling`: a pinch is changing the size. */
+  const magnetContext = (scaling: boolean): MagnetContext => {
+    "worklet";
+    return {
+      viewport: canvasSize.value,
+      image: imageSize.value,
+      pin: pinTransform(),
+      scaling,
+      origin: startRotation.value,
+    };
+  };
+
   /** Forgets everything the magnet remembers about the current touches. */
   const clearMagnet = () => {
     "worklet";
+    startRotation.value = null;
     magnet.value = null;
     lock.value = NO_MAGNET_LOCK;
     revealed.value = NO_MAGNET_LOCK;
@@ -282,7 +303,7 @@ export function useOverlayGestures({
       return;
     }
     const before = lock.value;
-    const result = magnetize(current(), before, canvasSize.value, pinTransform());
+    const result = magnetize(current(), before, magnetContext(pinching.value));
     const now = result.lock;
     lock.value = result.lock;
     magnet.value = result.transform;
@@ -295,14 +316,16 @@ export function useOverlayGestures({
     const axisX = now.axisX && (seen.axisX || (dragging && !before.axisX));
     const axisY = now.axisY && (seen.axisY || (dragging && !before.axisY));
     const angle = now.rotation && (seen.rotation || (rotating.value && !before.rotation));
+    const width = now.width && (seen.width || (pinching.value && !before.width));
     const pinned = now.pin && (seen.pin || !before.pin);
     if (
       axisX !== seen.axisX ||
       axisY !== seen.axisY ||
       angle !== seen.rotation ||
+      width !== seen.width ||
       pinned !== seen.pin
     ) {
-      revealed.value = { axisX, axisY, rotation: angle, pin: pinned };
+      revealed.value = { axisX, axisY, rotation: angle, width, pin: pinned };
     }
   };
 
@@ -311,14 +334,10 @@ export function useOverlayGestures({
     "worklet";
     const first = touches.value === 0;
     touches.value += 1;
-    if (!first || locked.value || !magnetEnabled.value) return;
-    lock.value = magnetize(
-      current(),
-      NO_MAGNET_LOCK,
-      canvasSize.value,
-      pinTransform(),
-      HELD_AT_TOUCH,
-    ).lock;
+    if (!first) return;
+    startRotation.value = rotation.value;
+    if (locked.value || !magnetEnabled.value) return;
+    lock.value = magnetize(current(), NO_MAGNET_LOCK, magnetContext(true), HELD_AT_TOUCH).lock;
   };
 
   /** The magnetized transform becomes the raw one and is saved, once. UI thread. */

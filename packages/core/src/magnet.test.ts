@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { magnetEngaged, magnetize, NO_MAGNET_LOCK, DEFAULT_MAGNET_OPTIONS as O } from "./magnet";
+import {
+  type MagnetContext,
+  magnetEngaged,
+  magnetize,
+  NO_MAGNET_LOCK,
+  DEFAULT_MAGNET_OPTIONS as O,
+} from "./magnet";
 import type { Size, Transform } from "./models";
 
 // Every threshold below comes from DEFAULT_MAGNET_OPTIONS, so tuning them by feel does not break
@@ -18,8 +24,23 @@ const at = (patch: Partial<Transform>): Transform => ({
   ...patch,
 });
 
-const run = (raw: Transform, prev = NO_MAGNET_LOCK, pin: Transform | null = null) =>
-  magnetize(raw, prev, VIEWPORT, pin);
+const IMAGE: Size = { width: 1000, height: 500 };
+
+const context = (patch: Partial<MagnetContext> = {}): MagnetContext => ({
+  viewport: VIEWPORT,
+  image: IMAGE,
+  pin: null,
+  scaling: false,
+  origin: null,
+  ...patch,
+});
+
+const run = (
+  raw: Transform,
+  prev = NO_MAGNET_LOCK,
+  pin: Transform | null = null,
+  patch: Partial<MagnetContext> = {},
+) => magnetize(raw, prev, context({ pin, ...patch }));
 
 describe("thresholds", () => {
   it("always let go farther than they grab", () => {
@@ -28,6 +49,7 @@ describe("thresholds", () => {
     expect(O.pinExit).toBeGreaterThan(O.pinEnter);
     expect(O.pinScaleExit).toBeGreaterThan(O.pinScaleEnter);
     expect(O.pinRotationExit).toBeGreaterThan(O.pinRotationEnter);
+    expect(O.fitExit).toBeGreaterThan(O.fitEnter);
   });
 });
 
@@ -72,8 +94,7 @@ describe("magnetize: axes", () => {
     const wide = magnetize(
       at({ x: 500 + O.enter - 1 }),
       NO_MAGNET_LOCK,
-      { width: 1000, height: 600 },
-      null,
+      context({ viewport: { width: 1000, height: 600 } }),
     );
     expect(wide.transform.x).toBe(500);
   });
@@ -154,7 +175,7 @@ describe("magnetize: pin", () => {
     });
     const { transform, lock } = run(raw, NO_MAGNET_LOCK, pin);
     expect(transform).toEqual({ ...pin, flipX: true });
-    expect(lock).toEqual({ axisX: false, axisY: false, rotation: false, pin: true });
+    expect(lock).toEqual({ axisX: false, axisY: false, rotation: false, width: false, pin: true });
   });
 
   it("wins over the axes and the right angles when both would apply", () => {
@@ -208,6 +229,112 @@ describe("magnetize: pin", () => {
   });
 });
 
+describe("magnetize: width fit", () => {
+  // The image is 1000 x 500 on a 400 x 800 canvas: at scale 0.4 its box is exactly 400 wide.
+  const FIT = 400 / IMAGE.width;
+  const fitted = (patch: Partial<Transform> = {}) => at({ x: 200, y: 100, scale: FIT, ...patch });
+  const pinching = { scaling: true };
+
+  it("grabs scale and x together when both side edges are close to the sides", () => {
+    const raw = fitted({ x: 200 + O.fitEnter * 0.4, scale: FIT * (1 + 0.01) });
+    const { transform, lock } = run(raw, NO_MAGNET_LOCK, null, pinching);
+    expect(lock.width).toBe(true);
+    expect(transform.scale).toBeCloseTo(FIT, 10);
+    expect(transform.x).toBe(200);
+  });
+
+  it("does not grab if only one side edge is close", () => {
+    // Same width as the canvas but shifted: one edge is O.fitEnter + 1 px off its side.
+    const raw = fitted({ x: 200 + O.fitEnter + 1 });
+    expect(run(raw, NO_MAGNET_LOCK, null, pinching).lock.width).toBe(false);
+  });
+
+  it("does not grab when the box is too far from the canvas's width", () => {
+    const raw = fitted({ scale: FIT * (1 + (O.fitEnter * 4) / 400) });
+    expect(run(raw, NO_MAGNET_LOCK, null, pinching).lock.width).toBe(false);
+  });
+
+  it("is only grabbed while scaling, not by dragging", () => {
+    const raw = fitted({ x: 200 + 1 });
+    expect(run(raw, NO_MAGNET_LOCK, null, { scaling: false }).lock.width).toBe(false);
+    expect(run(raw, NO_MAGNET_LOCK, null, { scaling: false }).transform.scale).toBe(FIT);
+  });
+
+  it("is held by a drag until the edges leave the exit threshold", () => {
+    const held = { ...NO_MAGNET_LOCK, width: true };
+    const inside = fitted({ x: 200 + O.fitExit * 0.4 });
+    expect(run(inside, held).lock.width).toBe(true);
+    expect(run(inside, held).transform.x).toBe(200);
+    const outside = fitted({ x: 200 + O.fitExit + 1 });
+    expect(run(outside, held).lock.width).toBe(false);
+    expect(run(outside, held).transform.x).toBe(outside.x);
+  });
+
+  it("measures the box of the rotated image (a quarter turn swaps width and height)", () => {
+    // Rotated 90°, the box is 500 wide at scale 1: 400 px wide at scale 0.8.
+    const raw = at({ x: 200, y: 100, scale: 0.8, rotation: 90 });
+    const { transform, lock } = run(raw, NO_MAGNET_LOCK, null, pinching);
+    expect(lock).toMatchObject({ width: true, rotation: true });
+    expect(transform.scale).toBeCloseTo(0.8, 10);
+  });
+
+  it("works with the mirror on", () => {
+    const raw = fitted({ flipX: true, flipY: true });
+    const { transform, lock } = run(raw, NO_MAGNET_LOCK, null, pinching);
+    expect(lock.width).toBe(true);
+    expect(transform).toMatchObject({ flipX: true, flipY: true });
+  });
+
+  it("is ignored when it would need a scale below the minimum", () => {
+    const tiny = magnetize(
+      fitted({ scale: 0.001 }),
+      NO_MAGNET_LOCK,
+      context({ scaling: true, image: { width: 100000, height: 100000 } }),
+    );
+    expect(tiny.lock.width).toBe(false);
+  });
+
+  it("is overridden by the pin when both would apply", () => {
+    const pin = fitted({ x: 200, y: 100 });
+    const { lock } = run(fitted({ x: 201 }), NO_MAGNET_LOCK, pin, pinching);
+    expect(lock).toMatchObject({ pin: true, width: false });
+  });
+});
+
+describe("magnetize: the angle the gesture started with", () => {
+  it("grabs it like a right angle, with its own hysteresis", () => {
+    const origin = 37;
+    const near = at({ rotation: origin + O.rotationEnter - 0.5 });
+    const grabbed = run(near, NO_MAGNET_LOCK, null, { origin });
+    expect(grabbed.lock.rotation).toBe(true);
+    expect(grabbed.transform.rotation).toBe(origin);
+    const far = at({ rotation: origin + O.rotationEnter + 0.5 });
+    expect(run(far, NO_MAGNET_LOCK, null, { origin }).lock.rotation).toBe(false);
+    expect(run(far, { ...NO_MAGNET_LOCK, rotation: true }, null, { origin }).lock.rotation).toBe(
+      true,
+    );
+  });
+
+  it("is a target only when the gesture gave one", () => {
+    expect(run(at({ rotation: 37 })).lock.rotation).toBe(false);
+  });
+
+  it("picks the nearer of the start angle and the right angle", () => {
+    const origin = 4;
+    expect(run(at({ rotation: 3 }), NO_MAGNET_LOCK, null, { origin }).transform.rotation).toBe(4);
+    expect(run(at({ rotation: 1 }), NO_MAGNET_LOCK, null, { origin }).transform.rotation).toBe(0);
+  });
+
+  it("works across the ±180° seam and with angles beyond a turn", () => {
+    expect(
+      run(at({ rotation: 179 }), NO_MAGNET_LOCK, null, { origin: -179.5 }).transform.rotation,
+    ).toBe(180);
+    expect(
+      run(at({ rotation: 721 + 20 }), NO_MAGNET_LOCK, null, { origin: 20 }).lock.rotation,
+    ).toBe(true);
+  });
+});
+
 describe("magnetEngaged", () => {
   const free = NO_MAGNET_LOCK;
 
@@ -217,9 +344,12 @@ describe("magnetEngaged", () => {
     expect(magnetEngaged(held, held)).toBe(false);
   });
 
-  it.each(["axisX", "axisY", "rotation", "pin"] as const)("is true when %s gets grabbed", (key) => {
-    expect(magnetEngaged(free, { ...free, [key]: true })).toBe(true);
-  });
+  it.each(["axisX", "axisY", "rotation", "width", "pin"] as const)(
+    "is true when %s gets grabbed",
+    (key) => {
+      expect(magnetEngaged(free, { ...free, [key]: true })).toBe(true);
+    },
+  );
 
   it("is false when something is released", () => {
     expect(magnetEngaged({ ...free, axisX: true, pin: true }, free)).toBe(false);

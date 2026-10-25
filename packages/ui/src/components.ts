@@ -26,6 +26,8 @@ export const magnetGuide = {
     /** Length of that fade. */
     fadeMs: 240,
   },
+  /** The width guides sit this far in from the canvas's sides, so they are not half off-screen. */
+  edgeInset: 2,
   /** The pinned position's guide is dashed (on, off) so it never reads as an axis. */
   pinDash: [8, 6],
   /** Half length of the arms of the cross at the pinned position's center. */

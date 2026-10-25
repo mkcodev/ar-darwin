@@ -60,6 +60,10 @@ export function MagnetGuides({
     useDerivedValue(() => lock.value.rotation),
     plan,
   );
+  const width = useGuideProgress(
+    useDerivedValue(() => lock.value.width),
+    plan,
+  );
   const pinned = useGuideProgress(
     useDerivedValue(() => lock.value.pin),
     plan,
@@ -72,6 +76,13 @@ export function MagnetGuides({
   const horizontalPath = useDerivedValue(() => {
     const { width, height } = canvasSize.value;
     return linePath(0, height / 2, width, height / 2, width / 2);
+  });
+  const sidesPath = useDerivedValue(() => {
+    const { width: w, height: h } = canvasSize.value;
+    const inset = magnetGuide.edgeInset;
+    const p = linePath(inset, 0, inset, h, h / 2);
+    p.addPath(linePath(w - inset, 0, w - inset, h, h / 2));
+    return p;
   });
   const rotationPath = useDerivedValue(() => {
     const { width, height } = canvasSize.value;
@@ -114,6 +125,7 @@ export function MagnetGuides({
       <Guide path={verticalPath} progress={axisX} />
       <Guide path={horizontalPath} progress={axisY} />
       <Guide path={rotationPath} progress={rotation} />
+      <Guide path={sidesPath} progress={width} />
       <Guide path={pinPath} progress={pinned} dashed />
     </Group>
   );
