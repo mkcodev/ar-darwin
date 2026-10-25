@@ -48,14 +48,21 @@ WHERE id = ?`;
 
 /**
  * Params: splitParams(id, split, currentTileId, now). What the splitter saves: the grid and the
- * tile last picked. Nothing the camera owns, and the camera's update leaves these two alone.
+ * tile last picked. The camera's update leaves these two alone. The placement the camera saved
+ * (position and pin) belongs to the tile it was made on, so it is cleared when the split or the
+ * tile changes, and the camera fits the new tile when it opens; saving the same two again keeps it.
+ * (SQLite evaluates every right-hand side against the old row, so `split` below is the old one.)
  */
 export const UPDATE_PROJECT_SPLIT = `
 UPDATE projects SET
-  split = ?,
-  current_tile_id = ?,
-  updated_at = ?
-WHERE id = ?`;
+  transform_viewport = CASE WHEN split IS ?1 AND current_tile_id IS ?2
+    THEN transform_viewport ELSE NULL END,
+  pinned_placement = CASE WHEN split IS ?1 AND current_tile_id IS ?2
+    THEN pinned_placement ELSE NULL END,
+  split = ?1,
+  current_tile_id = ?2,
+  updated_at = ?3
+WHERE id = ?4`;
 
 export const SELECT_PROJECTS = "SELECT * FROM projects ORDER BY updated_at DESC, id";
 

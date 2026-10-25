@@ -1,5 +1,5 @@
-import { maxOverlapPx, shortestTileSide } from "./computeTiles";
-import type { SplitConfig } from "./models";
+import { computeTiles, maxOverlapPx, shortestTileSide } from "./computeTiles";
+import type { Rect, SplitConfig } from "./models";
 
 /** Overlap the splitter opens with: enough to match one sheet against the next. */
 export const DEFAULT_OVERLAP_PERCENT = 8;
@@ -119,4 +119,41 @@ export function pickedTileId(
   currentTileId: string | undefined,
 ): string {
   return currentTileId !== undefined && isTileInGrid(config, currentTileId) ? currentTileId : "A1";
+}
+
+/** What the camera shows of a split project: one tile of the image, as the image it traces. */
+export type CameraCrop = {
+  /** The tile's final crop, in image px (extended edges included). */
+  rect: Rect;
+  /** The flush crop, in px relative to `rect`: what is outside it is the neighbour's strip. */
+  core: Rect;
+  /** Which tile this is: the picked one, or A1. */
+  tileId: string;
+};
+
+/**
+ * The part of the image the camera shows: the picked tile of the project's split (A1 while none is
+ * picked or the saved one no longer exists). `null` for a project that was never split: the camera
+ * shows the whole image. A 1×1 split is the whole image as one tile. Throws like computeTiles for
+ * an image too small for the grid.
+ */
+export function cameraCrop(
+  image: { width: number; height: number },
+  split: SplitConfig | undefined,
+  currentTileId: string | undefined,
+): CameraCrop | null {
+  if (split === undefined) return null;
+  const tileId = pickedTileId(split, currentTileId);
+  const tile = computeTiles(image, split).find((t) => t.id === tileId);
+  if (tile === undefined) return null;
+  return {
+    rect: tile.rect,
+    core: {
+      x: tile.coreRect.x - tile.rect.x,
+      y: tile.coreRect.y - tile.rect.y,
+      width: tile.coreRect.width,
+      height: tile.coreRect.height,
+    },
+    tileId,
+  };
 }

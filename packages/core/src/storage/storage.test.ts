@@ -534,6 +534,68 @@ describe("project repository SQL", () => {
     expect(load(db, project.id)?.split).toEqual(split);
   });
 
+  describe("the placement belongs to the tile it was made on", () => {
+    const split = { rows: 2, cols: 2, overlapPx: 20, showOverlapTint: true };
+    const placed = () =>
+      newProject("p", "2026-10-10T10:00:00.000Z", {
+        split,
+        currentTileId: "A1",
+        transformViewport: { width: 400, height: 800 },
+        pinnedPlacement: {
+          transform: { ...IDENTITY_TRANSFORM, x: 180, y: 360, scale: 0.3 },
+          viewport: { width: 400, height: 800 },
+        },
+      });
+    const saveSplit = (db: DatabaseSync, id: string, next: typeof split, tile: string) =>
+      db
+        .prepare(UPDATE_PROJECT_SPLIT)
+        .run(...splitParams(id, next, tile, new Date("2026-10-10T12:00:00.000Z")));
+
+    it("is cleared when another tile is picked, so the camera fits it", () => {
+      const db = openMigrated();
+      const project = placed();
+      save(db, project);
+      saveSplit(db, project.id, split, "B2");
+      const after = load(db, project.id);
+      expect(after?.transformViewport).toBeUndefined();
+      expect(after?.pinnedPlacement).toBeUndefined();
+      expect(after?.currentTileId).toBe("B2");
+      expect(after?.transform).toEqual(project.transform);
+    });
+
+    it("is cleared when the grid or the overlap change, even for the same tile", () => {
+      for (const next of [
+        { ...split, cols: 3 },
+        { ...split, overlapPx: 30 },
+      ]) {
+        const db = openMigrated();
+        const project = placed();
+        save(db, project);
+        saveSplit(db, project.id, next, "A1");
+        expect(load(db, project.id)?.transformViewport).toBeUndefined();
+        expect(load(db, project.id)?.pinnedPlacement).toBeUndefined();
+      }
+    });
+
+    it("is kept when the same split and tile are saved again", () => {
+      const db = openMigrated();
+      const project = placed();
+      save(db, project);
+      saveSplit(db, project.id, split, "A1");
+      const after = load(db, project.id);
+      expect(after?.transformViewport).toEqual(project.transformViewport);
+      expect(after?.pinnedPlacement).toEqual(project.pinnedPlacement);
+    });
+
+    it("is cleared the first time a project is split", () => {
+      const db = openMigrated();
+      const project = { ...placed(), split: undefined, currentTileId: undefined };
+      save(db, project);
+      saveSplit(db, project.id, split, "A1");
+      expect(load(db, project.id)?.transformViewport).toBeUndefined();
+    });
+  });
+
   it("the camera's save leaves the split and the current tile alone", () => {
     const db = openMigrated();
     const split = { rows: 2, cols: 3, overlapPx: 12, showOverlapTint: true };

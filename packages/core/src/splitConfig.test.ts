@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { maxOverlapPx, shortestTileSide } from "./computeTiles";
 import {
+  cameraCrop,
   configFromDraft,
   DEFAULT_OVERLAP_PERCENT,
   defaultSplitDraft,
@@ -176,5 +177,51 @@ describe("the picked tile", () => {
     expect(pickedTileId({ rows: 2, cols: 3 }, "B2")).toBe("B2");
     expect(pickedTileId({ rows: 2, cols: 3 }, undefined)).toBe("A1");
     expect(pickedTileId({ rows: 1, cols: 2 }, "B2")).toBe("A1");
+  });
+});
+
+describe("cameraCrop", () => {
+  const split = { rows: 2, cols: 2, overlapPx: 0, showOverlapTint: true };
+
+  it("is null for a project that was never split: the camera shows the whole image", () => {
+    expect(cameraCrop(IMAGE, undefined, "A1")).toBeNull();
+  });
+
+  it("is the picked tile, flush when there is no overlap", () => {
+    expect(cameraCrop(IMAGE, split, "B2")).toEqual({
+      rect: { x: 600, y: 450, width: 600, height: 450 },
+      core: { x: 0, y: 0, width: 600, height: 450 },
+      tileId: "B2",
+    });
+  });
+
+  it("takes the neighbour's strip on interior edges only, with the flush crop relative to it", () => {
+    const extended = { ...split, overlapPx: 60 };
+    // A1 touches the image border on its top and left: it grows right and down only.
+    expect(cameraCrop(IMAGE, extended, "A1")).toEqual({
+      rect: { x: 0, y: 0, width: 660, height: 510 },
+      core: { x: 0, y: 0, width: 600, height: 450 },
+      tileId: "A1",
+    });
+    // B2 touches the right and bottom borders: it grows left and up, so its flush crop is inset.
+    expect(cameraCrop(IMAGE, extended, "B2")).toEqual({
+      rect: { x: 540, y: 390, width: 660, height: 510 },
+      core: { x: 60, y: 60, width: 600, height: 450 },
+      tileId: "B2",
+    });
+  });
+
+  it("falls back to A1 while no tile is picked or the saved one is gone", () => {
+    expect(cameraCrop(IMAGE, split, undefined)?.tileId).toBe("A1");
+    expect(cameraCrop(IMAGE, { ...split, rows: 1 }, "B2")?.tileId).toBe("A1");
+  });
+
+  it("a 1×1 split is the whole image as one tile", () => {
+    const whole = { rows: 1, cols: 1, overlapPx: 0, showOverlapTint: false };
+    expect(cameraCrop(IMAGE, whole, undefined)).toEqual({
+      rect: { x: 0, y: 0, width: 1200, height: 900 },
+      core: { x: 0, y: 0, width: 1200, height: 900 },
+      tileId: "A1",
+    });
   });
 });
