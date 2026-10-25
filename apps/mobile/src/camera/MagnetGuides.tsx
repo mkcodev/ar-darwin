@@ -80,9 +80,10 @@ export function MagnetGuides({
   const sidesPath = useDerivedValue(() => {
     const { width: w, height: h } = canvasSize.value;
     const inset = magnetGuide.edgeInset;
-    const p = linePath(inset, 0, inset, h, h / 2);
+    const p = Skia.PathBuilder.Make();
+    p.addPath(linePath(inset, 0, inset, h, h / 2));
     p.addPath(linePath(w - inset, 0, w - inset, h, h / 2));
-    return p;
+    return p.detach();
   });
   const rotationPath = useDerivedValue(() => {
     const { width, height } = canvasSize.value;
@@ -94,10 +95,10 @@ export function MagnetGuides({
     return linePath(t.x - dx, t.y - dy, t.x + dx, t.y + dy, reach);
   });
   const pinPath = useDerivedValue(() => {
-    const p = Skia.Path.Make();
+    const p = Skia.PathBuilder.Make();
     const placed = pin.value;
     const image = imageSize.value;
-    if (placed === null || image.width === 0) return p;
+    if (placed === null || image.width === 0) return p.detach();
     const t = restoreTransform(placed.transform, placed.viewport, canvasSize.value);
     const radians = (t.rotation * Math.PI) / 180;
     const cos = Math.cos(radians);
@@ -117,7 +118,7 @@ export function MagnetGuides({
     p.lineTo(t.x + arm, t.y);
     p.moveTo(t.x, t.y - arm);
     p.lineTo(t.x, t.y + arm);
-    return p;
+    return p.detach();
   });
 
   return (
@@ -210,11 +211,11 @@ function useGuideProgress(active: DerivedValue<boolean>, plan: MotionPlan): Shar
  */
 function linePath(x1: number, y1: number, x2: number, y2: number, origin: number): SkPath {
   "worklet";
-  const p = Skia.Path.Make();
+  const p = Skia.PathBuilder.Make();
   p.moveTo(x1, y1);
   p.lineTo(x2, y2);
   const length = Math.hypot(x2 - x1, y2 - y1);
-  if (length === 0) return p;
+  if (length === 0) return p.detach();
   const ux = (x2 - x1) / length;
   const uy = (y2 - y1) / length;
   const first = -Math.floor(origin / magnetGuide.tickSpacing);
@@ -229,5 +230,5 @@ function linePath(x1: number, y1: number, x2: number, y2: number, origin: number
     p.moveTo(cx - uy * half, cy + ux * half);
     p.lineTo(cx + uy * half, cy - ux * half);
   }
-  return p;
+  return p.detach();
 }
