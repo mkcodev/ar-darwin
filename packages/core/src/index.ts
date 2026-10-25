@@ -14,4 +14,5 @@ export * from "./project";
 export * from "./storage/migrations";
 export * from "./storage/queries";
 export * from "./storage/rows";
+export * from "./storage/settings";
 export * from "./transform";
