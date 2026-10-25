@@ -1,6 +1,6 @@
 export * from "./cameraIssue";
 export * from "./cameraSession";
-export { computeTiles, maxOverlapPx } from "./computeTiles";
+export { computeTiles, maxOverlapPx, shortestTileSide } from "./computeTiles";
 export * from "./controls";
 export * from "./filePath";
 export * from "./frameStats";
@@ -11,7 +11,10 @@ export * from "./magnet";
 export * from "./models";
 export * from "./nudgeHold";
 export * from "./placement";
+export * from "./previewZoom";
 export * from "./project";
+export * from "./splitConfig";
+export * from "./splitPreview";
 export * from "./storage/migrations";
 export * from "./storage/queries";
 export * from "./storage/rows";

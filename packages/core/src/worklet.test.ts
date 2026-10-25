@@ -5,6 +5,7 @@ import * as frameStats from "./frameStats";
 import * as imageAdjustments from "./imageAdjustments";
 import * as magnet from "./magnet";
 import * as nudgeHold from "./nudgeHold";
+import * as previewZoom from "./previewZoom";
 import * as transform from "./transform";
 
 // apps/mobile runs these functions on Reanimated's UI thread (gesture callbacks, the fps
@@ -72,6 +73,17 @@ const modules = [
     file: "magnet.ts",
     exports: magnet as Record<string, unknown>,
     mustExport: ["magnetize", "magnetEngaged"],
+  },
+  {
+    file: "previewZoom.ts",
+    exports: previewZoom as Record<string, unknown>,
+    mustExport: [
+      "clampPreviewPan",
+      "zoomPreviewAt",
+      "panPreview",
+      "previewContentPoint",
+      "isPreviewZoomed",
+    ],
   },
 ];
 
