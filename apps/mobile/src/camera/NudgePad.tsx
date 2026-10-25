@@ -134,6 +134,13 @@ export function NudgePad({
       else onReset();
     });
 
+  // Declared before the gesture: the worklets plugin captures what a gesture callback uses when
+  // the gesture is created, so a function declared after it would be undefined inside.
+  const pin = () => {
+    setPinKey((key) => key + 1);
+    onPin();
+  };
+
   const pinTap = Gesture.Tap()
     .runOnJS(true)
     .onEnd((_event, success) => {
@@ -141,11 +148,6 @@ export function NudgePad({
       if (isLocked) onLockedPress();
       else pin();
     });
-
-  const pin = () => {
-    setPinKey((key) => key + 1);
-    onPin();
-  };
 
   const side =
     controls === "left" ? { left: insets.left + space[5] } : { right: insets.right + space[5] };
