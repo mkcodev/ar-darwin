@@ -16,6 +16,14 @@ export const en = {
     px: "{value} px",
     ratio: "{value}:1",
   },
+  startupError: {
+    title: "Couldn't open your library",
+    body: "Something went wrong while preparing your data. Nothing was deleted: your projects are still on this device. Try again; if it fails again, close the app and open it again.",
+    newerTitle: "Your data is from a newer version",
+    newerBody:
+      "This version of AR-Darwin is older than the one that saved your projects. Nothing was touched. Install the latest version of the app to continue.",
+    retry: "Try again",
+  },
   logo: {
     label: "AR-Darwin logo: Darwin's 1837 tree",
     word: "Darwin",

@@ -16,6 +16,14 @@ export const es = {
     px: "{value} px",
     ratio: "{value}:1",
   },
+  startupError: {
+    title: "No se pudo abrir tu biblioteca",
+    body: "Algo falló al preparar tus datos. No se ha borrado nada: tus proyectos siguen en el dispositivo. Inténtalo de nuevo; si vuelve a fallar, cierra la app y ábrela otra vez.",
+    newerTitle: "Tus datos son de una versión más nueva",
+    newerBody:
+      "Esta versión de AR-Darwin es más antigua que la que guardó tus proyectos. No se ha tocado nada. Instala la versión más reciente de la app para seguir.",
+    retry: "Reintentar",
+  },
   logo: {
     label: "Logotipo de AR-Darwin: el árbol de Darwin de 1837",
     word: "Darwin",
