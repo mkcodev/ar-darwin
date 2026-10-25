@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import * as controls from "./controls";
 import * as frameStats from "./frameStats";
 import * as imageAdjustments from "./imageAdjustments";
+import * as magnet from "./magnet";
 import * as nudgeHold from "./nudgeHold";
 import * as transform from "./transform";
 
@@ -66,6 +67,11 @@ const modules = [
     file: "nudgeHold.ts",
     exports: nudgeHold as Record<string, unknown>,
     mustExport: ["holdSpeed", "holdDistance", "moveWithin", "nudgeMove"],
+  },
+  {
+    file: "magnet.ts",
+    exports: magnet as Record<string, unknown>,
+    mustExport: ["magnetize", "magnetEngaged"],
   },
 ];
 

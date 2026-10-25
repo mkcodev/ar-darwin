@@ -6,6 +6,7 @@ export * from "./filePath";
 export * from "./frameStats";
 export * from "./imageAdjustments";
 export * from "./importImage";
+export * from "./magnet";
 export * from "./models";
 export * from "./nudgeHold";
 export * from "./placement";

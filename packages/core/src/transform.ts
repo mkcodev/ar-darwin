@@ -374,8 +374,8 @@ export type GestureStep = {
  * transform — see apps/mobile's `useOverlayGestures`. Scale never drops below MIN_SCALE, same
  * floor as `nudge`/`fitTransform`; flips pass through untouched.
  *
- * Phase 3 magnet: display `snapTransform` on the result while the gesture runs; store the raw
- * (unsnapped) result as the base for the next frame, same contract as `snapTransform` today.
+ * The camera's magnet (`magnetize`, magnet.ts) is applied to the result for display only; the
+ * raw (unmagnetized) result is the base for the next frame, same contract as `snapTransform`.
  */
 export function applyGesture(transform: Transform, step: GestureStep): Transform {
   "worklet";
