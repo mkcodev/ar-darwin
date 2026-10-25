@@ -141,10 +141,14 @@ export function NudgePad({
     onPin();
   };
 
-  const pinTap = Gesture.Tap()
+  // Pins on touch-down, not on release: a tap, a double tap and a long press all answer at once
+  // (a `Tap` ignores a press held past 500 ms, which read as the button doing nothing).
+  const pinPress = Gesture.LongPress()
+    .minDuration(0)
+    .maxDistance(touchTarget * 2)
+    .shouldCancelWhenOutside(false)
     .runOnJS(true)
-    .onEnd((_event, success) => {
-      if (!success) return;
+    .onBegin(() => {
       if (isLocked) onLockedPress();
       else pin();
     });
@@ -250,7 +254,7 @@ export function NudgePad({
             style={[styles.cell, place(CELLS.reset)]}
           />
         </GestureDetector>
-        <GestureDetector gesture={pinTap}>
+        <GestureDetector gesture={pinPress}>
           <Animated.View
             accessible
             accessibilityRole="button"
