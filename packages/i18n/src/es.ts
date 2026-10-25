@@ -99,8 +99,11 @@ export const es = {
       reset: "Restablecer posición",
       resetHint: "Vuelve al punto fijado, o a donde estaba la imagen al abrir la cámara",
       pin: "Fijar esta posición",
-      pinHint: "El botón del centro y la apertura de la cámara vuelven a ella",
+      pinHint:
+        "El botón del centro y la apertura de la cámara vuelven a ella. Doble toque para quitarla",
       pinned: "Posición fijada",
+      unpin: "Quitar la posición fijada",
+      unpinned: "Posición liberada",
       pad: "Flechas de ajuste fino",
       stepFine: "Paso fino: 1 px. Pulsa para paso grueso",
       stepCoarse: "Paso grueso: 10 px. Pulsa para paso fino",
@@ -153,6 +156,11 @@ export const es = {
   },
   settings: {
     title: "Ajustes",
+    magnet: {
+      label: "Imán",
+      description:
+        "La imagen se engancha a los ejes del lienzo, a los ángulos rectos y a la posición fijada, con una guía y una vibración ligera.",
+    },
   },
   projectStatus: {
     pending: "Pendiente",

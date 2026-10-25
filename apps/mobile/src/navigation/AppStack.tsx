@@ -3,6 +3,7 @@ import { SQLiteProvider } from "expo-sqlite";
 import { StatusBar } from "expo-status-bar";
 import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
+import { AppSettingsProvider } from "../settings/AppSettingsProvider";
 import { DATABASE_NAME, migrateDbIfNeeded } from "../storage/database";
 import { useTheme } from "../theme/ThemeProvider";
 import { useStackScreenOptions } from "./useStackScreenOptions";
@@ -39,7 +40,9 @@ export function AppStack() {
       <View style={[styles.root, { backgroundColor: c.bg.canvas }]}>
         {/* Renders nothing until the migrations ran; the splash is already gone by then. */}
         <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDbIfNeeded}>
-          <Stack screenOptions={screenOptions} />
+          <AppSettingsProvider>
+            <Stack screenOptions={screenOptions} />
+          </AppSettingsProvider>
         </SQLiteProvider>
       </View>
     </ThemeProvider>

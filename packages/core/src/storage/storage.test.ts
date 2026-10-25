@@ -20,8 +20,10 @@ import {
   SELECT_PROJECT_CATEGORIES,
   SELECT_PROJECTS,
   SELECT_SCHEMA_VERSION,
+  SELECT_SETTING,
   UPDATE_PROJECT_CAMERA,
   UPSERT_PROJECT,
+  UPSERT_SETTING,
 } from "./queries";
 import {
   cameraStateParams,
@@ -31,6 +33,7 @@ import {
   projectRowParams,
   projectToRow,
 } from "./rows";
+import { parseBooleanSetting, SETTING_KEYS, serializeBoolean } from "./settings";
 
 /** The same steps as apps/mobile/src/storage/database.ts, on Node's built-in SQLite. */
 function migrate(db: DatabaseSync, upTo = LATEST_SCHEMA_VERSION): DatabaseSync {
@@ -185,7 +188,7 @@ describe("migrations on SQLite", () => {
     const db = openMigrated(1);
     const project = newProject("p", "2026-10-10T10:00:00.000Z", { categoryIds: ["animals"] });
     saveLegacy(db, project);
-    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2, 3, 4, 5]);
+    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2, 3, 4, 5, 6]);
     migrate(db);
     expect(db.prepare(SELECT_SCHEMA_VERSION).get()?.user_version).toBe(LATEST_SCHEMA_VERSION);
     expect(load(db, project.id)).toEqual(project);
@@ -251,6 +254,33 @@ describe("migrations on SQLite", () => {
     const after = load(db, project.id);
     expect(after).toEqual({ ...project, transformViewport: undefined });
     expect(after?.pinnedPlacement).toBeUndefined();
+  });
+
+  it("v5 → v6 adds an empty settings table and keeps every project", () => {
+    const db = openMigrated(5);
+    const project = newProject("p", "2026-10-10T10:00:00.000Z", { categoryIds: ["objects"] });
+    save(db, project);
+    migrate(db);
+    expect(db.prepare(SELECT_SETTING).get(SETTING_KEYS.magnetEnabled)).toBeUndefined();
+    expect(load(db, project.id)).toEqual(project);
+  });
+
+  it("v6 can run twice (a crash before the version bump) and keeps stored settings", () => {
+    const db = openMigrated();
+    db.prepare(UPSERT_SETTING).run(SETTING_KEYS.magnetEnabled, "0");
+    const v6 = MIGRATIONS.find((m) => m.version === 6);
+    expect(v6).toBeDefined();
+    expect(() => db.exec(v6?.sql ?? "")).not.toThrow();
+    expect(db.prepare(SELECT_SETTING).get(SETTING_KEYS.magnetEnabled)).toEqual({ value: "0" });
+  });
+
+  it("stores a setting and replaces it on the next write", () => {
+    const db = openMigrated();
+    db.prepare(UPSERT_SETTING).run(SETTING_KEYS.magnetEnabled, serializeBoolean(false));
+    db.prepare(UPSERT_SETTING).run(SETTING_KEYS.magnetEnabled, serializeBoolean(true));
+    const row = db.prepare(SELECT_SETTING).get(SETTING_KEYS.magnetEnabled);
+    expect(parseBooleanSetting(row?.value, false)).toBe(true);
+    expect(db.prepare("SELECT COUNT(*) AS n FROM settings").get()).toEqual({ n: 1 });
   });
 
   it("enforces the CHECK constraints", () => {
@@ -401,6 +431,33 @@ describe("project repository SQL", () => {
       ...state,
       updatedAt: "2026-10-10T12:00:00.000Z",
     });
+  });
+
+  it("saving a camera state without a pin removes the pin that was stored", () => {
+    const db = openMigrated();
+    const pinned = newProject("p", "2026-10-10T10:00:00.000Z", {
+      pinnedPlacement: {
+        transform: { ...IDENTITY_TRANSFORM, x: 180, y: 360, scale: 0.3 },
+        viewport: { width: 400, height: 800 },
+      },
+    });
+    save(db, pinned);
+    expect(load(db, pinned.id)?.pinnedPlacement).toBeDefined();
+    db.prepare(UPDATE_PROJECT_CAMERA).run(
+      ...cameraStateParams(
+        pinned.id,
+        {
+          transform: pinned.transform,
+          opacity: pinned.opacity,
+          pinnedPlacement: undefined,
+          status: "in_progress",
+          timeSpentMs: 0,
+        },
+        new Date("2026-10-10T12:00:00.000Z"),
+      ),
+    );
+    expect(load(db, pinned.id)?.pinnedPlacement).toBeUndefined();
+    expect(db.prepare(SELECT_PROJECT).get(pinned.id)).toMatchObject({ pinned_placement: null });
   });
 
   it("saves status and time before the first placement, leaving the project unplaced", () => {

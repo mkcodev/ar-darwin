@@ -3,6 +3,11 @@ import {
   fitTransform,
   type GestureStep,
   holdDistance,
+  type MagnetContext,
+  type MagnetLock,
+  magnetEngaged,
+  magnetize,
+  NO_MAGNET_LOCK,
   NUDGE_HOLD,
   type NudgeDirection,
   nudge,
@@ -19,6 +24,7 @@ import { Gesture } from "react-native-gesture-handler";
 import {
   type SharedValue,
   useAnimatedReaction,
+  useDerivedValue,
   useFrameCallback,
   useReducedMotion,
   useSharedValue,
@@ -38,6 +44,8 @@ type Options = {
   canvasSize: SharedValue<Size>;
   /** Touch lock (#19): while true, every gesture below is a no-op and the image stays put. */
   locked: SharedValue<boolean>;
+  /** The magnet (Settings): while false, gestures write the raw transform and nothing snaps. */
+  magnetEnabled: SharedValue<boolean>;
   /** Where the image was left last time; `null`/absent fits it with `fitTransform`. Read once. */
   initial?: OverlayPlacement | null;
   /**
@@ -49,12 +57,26 @@ type Options = {
   onNudgeBlocked?: () => void;
   /** The position pinned as home: the reset button goes back to it. Read once. */
   pin?: OverlayPlacement | null;
-  /** The current position was pinned (JS thread). */
-  onPinChange?: (placement: OverlayPlacement) => void;
+  /** The current position was pinned, or `null` when the pin was removed (JS thread). */
+  onPinChange?: (placement: OverlayPlacement | null) => void;
 };
 
 /** The finger may drift this far from an arrow before the hold ends: the hold is not a drag. */
 const NUDGE_MAX_DRIFT = touchTarget * 2;
+
+/**
+ * A finger resting on an image that already sits on a target must not count as grabbing it: at
+ * the start of a gesture only a target the image is practically on (this close) is taken as held,
+ * so the first move does not vibrate. Px, degrees and a scale ratio.
+ */
+const HELD_AT_TOUCH = {
+  enter: 0.5,
+  rotationEnter: 0.5,
+  fitEnter: 0.5,
+  pinEnter: 0.5,
+  pinScaleEnter: 0.001,
+  pinRotationEnter: 0.5,
+};
 
 const NO_STEP: GestureStep = {
   changeX: 0,
@@ -67,8 +89,17 @@ const NO_STEP: GestureStep = {
 
 /**
  * Drag, pinch and rotate the overlay image with two fingers at once, all on the UI thread.
- * Double tap resets to `fitTransform`. No magnet here yet: see the comment in the pinch and
- * rotation handlers for exactly where `snapTransform` will go.
+ * Double tap resets to `fitTransform`.
+ *
+ * Magnet: the gestures keep writing the RAW transform (x, y, scale, rotation: what the fingers
+ * made), and after each step `magnetize` (core) turns it into the MAGNETIZED one, kept in `magnet`.
+ * The canvas paints `shown` (the magnetized while a finger is down, else the raw) and the raw is
+ * never overwritten by the magnet mid-gesture, or the image would stick to the guide. When the
+ * last finger lifts (`touches` back to 0) the magnetized becomes the raw and is settled (saved):
+ * once, whichever of pan, pinch and rotation ended last. Fine adjust, reset, mirror and the
+ * placement write the raw directly and never snap; the pad ignores presses while a finger is on
+ * the canvas, so the raw never has two writers. The haptic fires from the gesture step that grabs
+ * something (`magnetEngaged`), never per frame, and not for a target the image already sat on.
  *
  * Placement: nothing is placed (`placed` stays false, so the caller hides the image) until both
  * the canvas and the image have real sizes. Then `initial` is restored onto this canvas with
@@ -106,6 +137,7 @@ export function useOverlayGestures({
   imageSize,
   canvasSize,
   locked,
+  magnetEnabled,
   initial,
   onSettle,
   onNudgeBlocked,
@@ -129,6 +161,30 @@ export function useOverlayGestures({
   const placedImage = useSharedValue<Size>({ width: 0, height: 0 });
   /** Raw (un-dead-zoned) rotation accumulated since the current two-finger gesture began. */
   const rotationAccum = useSharedValue(0);
+  /** Fingers' gestures in progress (pan, pinch and rotation each count while they are active). */
+  const touches = useSharedValue(0);
+  /** The magnetized transform while a finger is down and the magnet has run; else null. */
+  const magnet = useSharedValue<Transform | null>(null);
+  /** What the magnetized transform is held on: the hysteresis memory of `magnetize`. */
+  const lock = useSharedValue<MagnetLock>(NO_MAGNET_LOCK);
+  /**
+   * The guides worth drawing: a flag turns on only when its target gets grabbed during the
+   * gesture (never because the image already sat on it), and off when the target is let go.
+   */
+  const revealed = useSharedValue<MagnetLock>(NO_MAGNET_LOCK);
+  /**
+   * A two-finger rotation / a pinch is active. The axes' guides stay hidden while either is; the
+   * angle's guide shows with the rotation, the width's with the pinch (which is also the only
+   * gesture that can grab the width).
+   */
+  const rotating = useSharedValue(false);
+  const pinching = useSharedValue(false);
+  /** The rotation the touches started with: a magnet target to come back to. */
+  const startRotation = useSharedValue<number | null>(null);
+  /** The raw transform changed since the last settle: the end of the touches must save it. */
+  const dirty = useSharedValue(false);
+  /** The pinned position, a magnet target. Updated by `pinHere`; restored onto the canvas on use. */
+  const pinPlacement = useSharedValue<OverlayPlacement | null>(pin ?? null);
 
   // Stable JS-thread callback for the worklets, always calling the latest `onSettle`.
   const onSettleRef = useRef(onSettle);
@@ -189,6 +245,140 @@ export function useOverlayGestures({
     });
   };
 
+  /** The pinned position on the current canvas, or null. */
+  const pinTransform = (): Transform | null => {
+    "worklet";
+    const placed = pinPlacement.value;
+    if (placed === null) return null;
+    return restoreTransform(placed.transform, placed.viewport, canvasSize.value);
+  };
+
+  /**
+   * What the canvas paints: the magnetized transform while a finger is down, else the raw.
+   * Reads the raw shared values right here and not through `current()`: a derived value only
+   * re-runs for the shared values its own body names, and going through a helper left it stuck
+   * on its first value (scale 1 at the origin: the photo at natural size) until the first drag.
+   */
+  const shown = useDerivedValue<Transform>(() => {
+    const snapped = magnet.value;
+    if (snapped !== null) return snapped;
+    return {
+      x: x.value,
+      y: y.value,
+      scale: scale.value,
+      rotation: rotation.value,
+      flipX: flipX.value,
+      flipY: flipY.value,
+    };
+  });
+  /** Everything `magnetize` needs besides the transform. `scaling`: a pinch is changing the size. */
+  const magnetContext = (scaling: boolean): MagnetContext => {
+    "worklet";
+    return {
+      viewport: canvasSize.value,
+      image: imageSize.value,
+      pin: pinTransform(),
+      scaling,
+      origin: startRotation.value,
+    };
+  };
+
+  /** Forgets everything the magnet remembers about the current touches. */
+  const clearMagnet = () => {
+    "worklet";
+    startRotation.value = null;
+    magnet.value = null;
+    lock.value = NO_MAGNET_LOCK;
+    revealed.value = NO_MAGNET_LOCK;
+    rotating.value = false;
+    pinching.value = false;
+  };
+
+  /** A gesture step just wrote the raw transform: magnetize it and vibrate if it grabbed. */
+  const applyMagnet = () => {
+    "worklet";
+    dirty.value = true;
+    if (!magnetEnabled.value) {
+      magnet.value = null;
+      return;
+    }
+    const before = lock.value;
+    const result = magnetize(current(), before, magnetContext(pinching.value));
+    const now = result.lock;
+    lock.value = result.lock;
+    magnet.value = result.transform;
+    if (magnetEngaged(before, now)) scheduleOnRN(playHaptic, "guideSnap");
+
+    // Which guides to draw. A target already held when the touch began (or reached by a gesture
+    // that does not own its guide) stays quiet until it is let go and grabbed again.
+    const seen = revealed.value;
+    const dragging = !rotating.value && !pinching.value;
+    const axisX = now.axisX && (seen.axisX || (dragging && !before.axisX));
+    const axisY = now.axisY && (seen.axisY || (dragging && !before.axisY));
+    const angle = now.rotation && (seen.rotation || (rotating.value && !before.rotation));
+    const width = now.width && (seen.width || (pinching.value && !before.width));
+    const pinned = now.pin && (seen.pin || !before.pin);
+    if (
+      axisX !== seen.axisX ||
+      axisY !== seen.axisY ||
+      angle !== seen.rotation ||
+      width !== seen.width ||
+      pinned !== seen.pin
+    ) {
+      revealed.value = { axisX, axisY, rotation: angle, width, pin: pinned };
+    }
+  };
+
+  /** A pan, pinch or rotation began. The first one records what the image already sits on. */
+  const beginTouch = () => {
+    "worklet";
+    const first = touches.value === 0;
+    touches.value += 1;
+    if (!first) return;
+    startRotation.value = rotation.value;
+    if (locked.value || !magnetEnabled.value) return;
+    lock.value = magnetize(current(), NO_MAGNET_LOCK, magnetContext(true), HELD_AT_TOUCH).lock;
+  };
+
+  /** The magnetized transform becomes the raw one and is saved, once. UI thread. */
+  const commitMagnet = () => {
+    "worklet";
+    const result = magnet.value;
+    if (result !== null) write(result);
+    clearMagnet();
+    if (!dirty.value) return;
+    dirty.value = false;
+    emitSettle();
+  };
+
+  /** A pan, pinch or rotation ended (or was cancelled). The last one commits. */
+  const endTouch = () => {
+    "worklet";
+    touches.value = Math.max(0, touches.value - 1);
+    if (touches.value === 0) commitMagnet();
+  };
+
+  /**
+   * Ends every touch from the JS thread, keeping what is painted: the screen lost focus, the app
+   * went to the background (the finger's release would never arrive) or the camera unmounts.
+   * Gestures that finish later find nothing left to commit.
+   */
+  const releaseTouches = () => {
+    const result = magnet.value;
+    touches.value = 0;
+    if (result !== null) write(result);
+    clearMagnet();
+    if (!dirty.value) return;
+    dirty.value = false;
+    const canvas = canvasSize.value;
+    settle({
+      transform: result ?? current(),
+      viewport: { width: canvas.width, height: canvas.height },
+    });
+  };
+  const releaseTouchesRef = useRef(releaseTouches);
+  releaseTouchesRef.current = releaseTouches;
+
   // Repetition of a held arrow. Only active while one is down (started and stopped from JS, once
   // per press): until the stop lands `nudgeHeld` is already null, so late frames write nothing.
   const frame = useFrameCallback((info) => {
@@ -200,6 +390,8 @@ export function useOverlayGestures({
       emitSettle();
       return;
     }
+    // A finger on the canvas owns the raw transform: the hold waits until it lifts.
+    if (touches.value > 0) return;
     if (nudgeStartMs.value < 0) {
       nudgeStartMs.value = info.timestamp;
       return;
@@ -222,10 +414,12 @@ export function useOverlayGestures({
     frameRef.current.setActive(active);
   }, []);
 
-  // Nothing keeps running when the camera screen goes away mid-hold.
+  // Nothing keeps running when the camera screen goes away mid-hold or mid-drag: the hold stops
+  // and the touches end, saving what was painted.
   useEffect(
     () => () => {
       nudgeHeld.value = null;
+      releaseTouchesRef.current();
     },
     [nudgeHeld],
   );
@@ -266,23 +460,27 @@ export function useOverlayGestures({
     },
   );
 
+  // Each gesture counts itself in `beginTouch` and out in `endTouch` (`onFinalize` runs after every
+  // `onBegin`, however the gesture ends); the last one out commits the magnetized transform.
   const pan = Gesture.Pan()
     .averageTouches(true)
+    .onBegin(beginTouch)
     .onChange((e) => {
       if (locked.value) return;
       const next = applyGesture(current(), { ...NO_STEP, changeX: e.changeX, changeY: e.changeY });
       x.value = next.x;
       y.value = next.y;
+      applyMagnet();
     })
-    .onEnd(() => {
-      if (!locked.value) emitSettle();
-    });
+    .onFinalize(endTouch);
 
   const pinch = Gesture.Pinch()
+    .onBegin(beginTouch)
+    .onStart(() => {
+      pinching.value = true;
+    })
     .onChange((e) => {
       if (locked.value) return;
-      // Magnet (next task): compute `snapTransform` on this result for display, and only write it
-      // here (the stored base for next frame) once the gesture ends.
       const next = applyGesture(current(), {
         ...NO_STEP,
         scaleChange: e.scaleChange,
@@ -292,21 +490,24 @@ export function useOverlayGestures({
       x.value = next.x;
       y.value = next.y;
       scale.value = next.scale;
+      applyMagnet();
     })
-    .onEnd(() => {
-      if (!locked.value) emitSettle();
+    .onFinalize(() => {
+      pinching.value = false;
+      endTouch();
     });
 
   const rotate = Gesture.Rotation()
+    .onBegin(beginTouch)
     .onStart(() => {
       rotationAccum.value = 0;
+      rotating.value = true;
     })
     .onChange((e) => {
       if (locked.value) return;
       const before = rotationDeadZone(rotationAccum.value);
       rotationAccum.value += radiansToDegrees(e.rotationChange);
       const after = rotationDeadZone(rotationAccum.value);
-      // Magnet (next task): same note as pinch above.
       const next = applyGesture(current(), {
         ...NO_STEP,
         rotationChange: after - before,
@@ -316,16 +517,20 @@ export function useOverlayGestures({
       x.value = next.x;
       y.value = next.y;
       rotation.value = next.rotation;
+      applyMagnet();
     })
-    .onEnd(() => {
-      if (!locked.value) emitSettle();
+    .onFinalize(() => {
+      rotating.value = false;
+      endTouch();
     });
 
   /** Springs (or jumps, with reduced motion) to `base`, keeping the mirror, and settles once. */
   const resetTo = (base: Transform) => {
     if (locked.value || !placed.value) return;
-    // A hold in progress must not fight the spring.
+    // A hold in progress must not fight the spring, nor a magnetized frame hide it.
     nudgeHeld.value = null;
+    clearMagnet();
+    dirty.value = false;
     const target = nudge(current(), "reset", "fine", { base });
     const canvas = canvasSize.value;
     settle({ transform: target, viewport: { width: canvas.width, height: canvas.height } });
@@ -364,6 +569,16 @@ export function useOverlayGestures({
     );
   };
 
+  /** Removes the pin: reset goes back to where the camera opened and the magnet forgets it. */
+  const unpinHere = (): boolean => {
+    if (locked.value || !placed.value) return false;
+    pinRef.current = null;
+    pinPlacement.value = null;
+    onPinChangeRef.current?.(null);
+    playHaptic("nudgeStep");
+    return true;
+  };
+
   /** Pins the current position (x, y, scale, rotation) as home. False if nothing was pinned. */
   const pinHere = (): boolean => {
     if (locked.value || !placed.value) return false;
@@ -373,6 +588,7 @@ export function useOverlayGestures({
       viewport: { width: canvas.width, height: canvas.height },
     };
     pinRef.current = placement;
+    pinPlacement.value = placement;
     onPinChangeRef.current?.(placement);
     playHaptic("pinSet");
     return true;
@@ -392,7 +608,8 @@ export function useOverlayGestures({
           scheduleOnRN(nudgeBlocked);
           return;
         }
-        if (!placed.value) return;
+        // A finger on the canvas owns the raw transform: this press is ignored, not queued.
+        if (touches.value > 0 || !placed.value) return;
         nudgeHeld.value = dir;
         nudgeStartMs.value = -1;
         nudgeApplied.value = 0;
@@ -430,7 +647,7 @@ export function useOverlayGestures({
       nudgeBlocked();
       return;
     }
-    if (!placed.value) return;
+    if (touches.value > 0 || !placed.value) return;
     const canvas = canvasSize.value;
     const moved = nudgeMove(current(), dir, NUDGE_HOLD.tapPx, canvas);
     x.value = moved.transform.x;
@@ -467,19 +684,18 @@ export function useOverlayGestures({
 
   return {
     gesture,
-    x,
-    y,
-    scale,
-    rotation,
-    flipX,
-    flipY,
+    shown,
+    revealed,
+    pinPlacement,
     placed,
     toggleFlip,
     nudgeGestures,
     nudgeHeld,
     nudgeTap,
     nudgeStop,
+    releaseTouches,
     resetToHome,
     pinHere,
+    unpinHere,
   };
 }

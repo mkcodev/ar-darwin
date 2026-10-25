@@ -101,6 +101,12 @@ ${seedCategories}
     version: 5,
     sql: "ALTER TABLE projects ADD COLUMN pinned_placement TEXT;",
   },
+  {
+    // App-wide preferences as key → value text (see settings.ts); a missing key = its default.
+    // IF NOT EXISTS: running it twice (a crash before the version bump) must not fail.
+    version: 6,
+    sql: "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL);",
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;

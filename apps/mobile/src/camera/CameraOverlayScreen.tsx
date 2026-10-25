@@ -6,7 +6,7 @@ import { useKeepAwake } from "expo-keep-awake";
 import { Stack, useIsFocused } from "expo-router";
 import { usePreventRemove } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { AppState, StyleSheet, Text, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,6 +15,7 @@ import { LockButton } from "../components/LockButton";
 import { Slider } from "../components/Slider";
 import { percentFormat } from "../format";
 import { t } from "../i18n";
+import { useAppSettings } from "../settings/AppSettingsProvider";
 import { CameraIssueNotice } from "./CameraIssueNotice";
 import { CameraPermissionGate } from "./CameraPermissionGate";
 import { CameraTools } from "./CameraTools";
@@ -43,7 +44,7 @@ type CameraOverlayScreenProps = {
   /** The position pinned as home, if any. Read once. */
   initialPin?: OverlayPlacement | null;
   /** The position was pinned (or re-pinned). */
-  onPinChange?: (placement: OverlayPlacement) => void;
+  onPinChange?: (placement: OverlayPlacement | null) => void;
   /** Extra controls under the slider; hidden (keeping their space) while locked. */
   extraControls?: ReactNode;
   /** Drawn over everything, also while locked (e.g. the spike's fps meter). */
@@ -85,6 +86,11 @@ export function CameraOverlayScreen({
   const insets = useSafeAreaInsets();
   const imageOpacity = useSharedValue<number>(initialOpacity);
   const locked = useSharedValue(false);
+  const { magnetEnabled } = useAppSettings();
+  const magnetOn = useSharedValue(magnetEnabled);
+  useEffect(() => {
+    magnetOn.value = magnetEnabled;
+  }, [magnetEnabled, magnetOn]);
   const [isLocked, setIsLocked] = useState(false);
   const [issue, setIssue] = useState<CameraIssueKind | null>(null);
   const [cameraKey, setCameraKey] = useState(0);
@@ -117,17 +123,22 @@ export function CameraOverlayScreen({
 
   useKeepAwake();
 
-  // A fine-adjust arrow held down must not keep moving the image when the screen loses focus or
-  // the app goes to the background (a locked phone): its release would never reach us.
+  // A fine-adjust arrow held down, or a finger dragging the image, must not keep acting when the
+  // screen loses focus or the app goes to the background (a locked phone): the release would never
+  // reach us. Both end here, keeping what is painted (and not leaving the image stuck on a guide).
+  const endInteractions = useCallback(() => {
+    canvas.current?.nudgeStop();
+    canvas.current?.releaseTouches();
+  }, []);
   useEffect(() => {
-    if (!isFocused) canvas.current?.nudgeStop();
-  }, [isFocused]);
+    if (!isFocused) endInteractions();
+  }, [isFocused, endInteractions]);
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
-      if (state !== "active") canvas.current?.nudgeStop();
+      if (state !== "active") endInteractions();
     });
     return () => subscription.remove();
-  }, []);
+  }, [endInteractions]);
 
   // While locked, going back must not leave the camera (#19): block the screen's removal and
   // nudge the person towards the lock instead. A raw `BackHandler` listener wasn't enough — the
@@ -173,6 +184,7 @@ export function CameraOverlayScreen({
                 image={image}
                 opacity={imageOpacity}
                 locked={locked}
+                magnetEnabled={magnetOn}
                 initial={initialPlacement}
                 onSettle={onPlacementSettle}
                 adjustments={adjustments}
@@ -183,6 +195,7 @@ export function CameraOverlayScreen({
                 initialPin={initialPin}
                 onPinChange={onPinChange}
                 onPinned={() => showToast(t("camera.nudge.pinned"))}
+                onUnpinned={() => showToast(t("camera.nudge.unpinned"))}
               />
               {/* The slider and the tools stay usable while locked (opacity, torch and image
                   adjustments are tuned while drawing; the mirror dims); the extra controls hide

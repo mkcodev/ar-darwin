@@ -17,6 +17,8 @@ import {
   useDerivedValue,
   useSharedValue,
 } from "react-native-reanimated";
+import { useReduceMotion } from "../theme/ReduceMotionProvider";
+import { MagnetGuides } from "./MagnetGuides";
 import { NudgePad } from "./NudgePad";
 import {
   type FlipAxis,
@@ -37,6 +39,8 @@ export type OverlayCanvasHandle = {
   toggleFlip: (axis: FlipAxis) => Flips | null;
   /** Ends a fine-adjust hold in progress (focus lost, app in the background), keeping its result. */
   nudgeStop: () => void;
+  /** Ends the touches in progress, keeping what is painted (focus lost, app in the background). */
+  releaseTouches: () => void;
 };
 
 type OverlayCanvasProps = {
@@ -46,6 +50,8 @@ type OverlayCanvasProps = {
   opacity: SharedValue<number>;
   /** Touch lock (#19), shared with `LockButton` and forwarded to `useOverlayGestures`. */
   locked: SharedValue<boolean>;
+  /** The magnet (Settings), shared with the screen: false = gestures never snap. */
+  magnetEnabled: SharedValue<boolean>;
   /** Where the image was left last time; absent fits it. Read once, on the first placement. */
   initial?: OverlayPlacement | null;
   /** Transform settled (placed, gesture ended, reset, mirrored): never per frame. */
@@ -62,9 +68,11 @@ type OverlayCanvasProps = {
   /** The position pinned as home, if any. Read once. */
   initialPin?: OverlayPlacement | null;
   /** The current position was pinned (JS thread). */
-  onPinChange?: (placement: OverlayPlacement) => void;
+  onPinChange?: (placement: OverlayPlacement | null) => void;
   /** The pin button just pinned the position: the screen confirms it. */
   onPinned: () => void;
+  /** The pin button was double tapped and the pin removed: the screen confirms it. */
+  onUnpinned: () => void;
   ref?: Ref<OverlayCanvasHandle>;
 };
 
@@ -77,6 +85,8 @@ const ZERO_SIZE: Size = { width: 0, height: 0 };
  * image stays invisible until it is placed, so it never flashes at the top-left corner.
  * Brightness, contrast and invert are a `<ColorMatrix>` on the image, derived on the UI thread
  * from `adjustments` (`adjustmentColorMatrix`, core). The mirror buttons go through `ref`.
+ * The magnet (`useOverlayGestures`) snaps what is painted (`shown`) while a finger is down and
+ * `MagnetGuides` draws its guides in the same canvas, over the image.
  * The fine-adjust pad (`NudgePad`) is a sibling of the gesture detector, not inside it, so touches
  * on it never reach the drag and pinch gestures.
  *
@@ -89,6 +99,7 @@ export function OverlayCanvas({
   image,
   opacity,
   locked,
+  magnetEnabled,
   initial,
   onSettle,
   adjustments,
@@ -99,8 +110,10 @@ export function OverlayCanvas({
   initialPin,
   onPinChange,
   onPinned,
+  onUnpinned,
   ref,
 }: OverlayCanvasProps) {
+  const { reduce } = useReduceMotion();
   const [pinned, setPinned] = useState(initialPin != null);
   const canvasSize = useSharedValue<Size>(ZERO_SIZE);
   const imageSize = useSharedValue<Size>(ZERO_SIZE);
@@ -111,24 +124,24 @@ export function OverlayCanvas({
 
   const {
     gesture,
-    x,
-    y,
-    scale,
-    rotation,
-    flipX,
-    flipY,
+    shown,
+    revealed,
+    pinPlacement,
     placed,
     toggleFlip,
     nudgeGestures,
     nudgeHeld,
     nudgeTap,
     nudgeStop,
+    releaseTouches,
     resetToHome,
     pinHere,
+    unpinHere,
   } = useOverlayGestures({
     imageSize,
     canvasSize,
     locked,
+    magnetEnabled,
     initial,
     onSettle,
     onNudgeBlocked,
@@ -136,7 +149,11 @@ export function OverlayCanvas({
     onPinChange,
   });
 
-  useImperativeHandle(ref, () => ({ toggleFlip, nudgeStop }), [toggleFlip, nudgeStop]);
+  useImperativeHandle(ref, () => ({ toggleFlip, nudgeStop, releaseTouches }), [
+    toggleFlip,
+    nudgeStop,
+    releaseTouches,
+  ]);
 
   // Closing the pad (the adjustments sheet opens, the button is toggled) releases a held arrow.
   useEffect(() => {
@@ -151,10 +168,11 @@ export function OverlayCanvas({
   const matrix = useDerivedValue(() => {
     const img = imageSize.value;
     if (img.width === 0) return Skia.Matrix();
+    const t = shown.value;
     return Skia.Matrix()
-      .translate(x.value, y.value)
-      .rotate((rotation.value * Math.PI) / 180)
-      .scale(scale.value * (flipX.value ? -1 : 1), scale.value * (flipY.value ? -1 : 1))
+      .translate(t.x, t.y)
+      .rotate((t.rotation * Math.PI) / 180)
+      .scale(t.scale * (t.flipX ? -1 : 1), t.scale * (t.flipY ? -1 : 1))
       .translate(-img.width / 2, -img.height / 2);
   });
 
@@ -179,6 +197,14 @@ export function OverlayCanvas({
                 colorMatrix={colorMatrix}
               />
             )}
+            <MagnetGuides
+              lock={revealed}
+              shown={shown}
+              canvasSize={canvasSize}
+              imageSize={imageSize}
+              pin={pinPlacement}
+              reduce={reduce}
+            />
           </Canvas>
         </View>
       </GestureDetector>
@@ -196,6 +222,11 @@ export function OverlayCanvas({
             if (!pinHere()) return;
             setPinned(true);
             onPinned();
+          }}
+          onUnpin={() => {
+            if (!unpinHere()) return;
+            setPinned(false);
+            onUnpinned();
           }}
           onLockedPress={onNudgeBlocked}
         />

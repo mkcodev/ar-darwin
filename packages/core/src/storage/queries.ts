@@ -76,4 +76,12 @@ export const INSERT_PROJECT_CATEGORY =
 
 export const SELECT_CATEGORIES = "SELECT * FROM categories ORDER BY sort_order, id";
 
+/** Params: [key]. */
+export const SELECT_SETTING = "SELECT value FROM settings WHERE key = ?";
+
+/** Params: [key, value]. */
+export const UPSERT_SETTING = `
+INSERT INTO settings (key, value) VALUES (?, ?)
+ON CONFLICT (key) DO UPDATE SET value = excluded.value`;
+
 export const SELECT_SCHEMA_VERSION = "PRAGMA user_version";

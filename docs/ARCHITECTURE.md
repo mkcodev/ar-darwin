@@ -134,6 +134,49 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     volteos se conservan y la matriz Skia los aplica. `onSettle` avisa en el hilo JS (vía
     `scheduleOnRN`) tras colocar, al cambiar el lienzo, al terminar cada gesto y tras el reset; nunca
     por fotograma.
+  - **Imán** (issue #70, `magnetize` en `packages/core/src/magnet.ts`, `MagnetGuides`): dos
+    transformadas. La **bruta** (`x`/`y`/`scale`/`rotation`) es la que producen los dedos; los gestos
+    la siguen escribiendo y es la base del siguiente fotograma. La **magnetizada** (`magnet`) se calcula
+    tras cada paso con `magnetize(bruta, candado previo, lienzo, pin)` y es la que pinta el lienzo
+    (`shown`) mientras hay un dedo puesto. Nunca se vuelve base a mitad de gesto, o la imagen se
+    quedaría pegada a la guía.
+    - Objetivos: centro de la imagen sobre el eje vertical y sobre el horizontal del lienzo (cada eje
+      por separado); rotación a múltiplos de 90° **o al ángulo con que empezó el gesto** (girar y volver
+      a como estaba); el **ancho**: los dos bordes laterales de la imagen sobre los lados del lienzo
+      (escala y x a la vez, `fitEnter` 12 / `fitExit` 20 px por borde; solo se agarra al pellizcar,
+      pero cualquier gesto la mantiene hasta que se aleje); y la posición fijada (pin). Cada uno con histéresis:
+      engancha a menos de 5 px / 2° (pin: 8 px, 2 % de escala, 2°) y suelta a más de 9 px / 4° (pin:
+      14 px, 4 %, 4°). Son constantes de `DEFAULT_MAGNET_OPTIONS`, fáciles de ajustar a ojo (los tests
+      se derivan de ellas); `MagnetLock` es la memoria de un fotograma al siguiente.
+    - **Prioridad: el pin gana.** Si posición, escala y giro están dentro de su radio, la imagen se
+      engancha entera al pin y los ejes y el giro quedan libres (sin sus guías). Si no, ejes y giro.
+      El pin es una elección explícita y fija las cuatro magnitudes a la vez; con los ejes
+      compitiendo, una imagen fijada cerca del centro saltaría entre pin y eje.
+    - Contador `touches`: pan, pinch y rotación suman en `onBegin` y restan en `onFinalize`. Al llegar
+      a 0 (soltó el último dedo) la magnetizada pasa a bruta y se guarda **una sola vez**
+      (`commitMagnet` → `emitSettle`), sea cual sea el gesto que acabe el último. Perder el foco, pasar
+      a segundo plano o desmontar llama a `releaseTouches` (conserva lo pintado).
+    - Háptica `guideSnap` desde el paso del gesto, solo cuando `magnetEngaged(antes, ahora)` (algo pasa
+      de suelto a enganchado); nunca por fotograma, y tampoco al tocar una imagen que ya está sobre un
+      objetivo (al empezar se anota en silencio qué sostiene: `HELD_AT_TOUCH`). Sin vibración al
+      soltar: no es un logro, duplicaría vibraciones y en iOS la cámara la silencia. Salir del pin y
+      caer a la vez en un eje puede dar una segunda vibración seguida.
+    - Ajuste fino, reset, espejo y colocación escriben la bruta y no enganchan. El panel ignora las
+      pulsaciones mientras hay un dedo en el lienzo (`touches > 0`; una flecha ya mantenida espera a
+      que se levante), para que la bruta no tenga dos escritores.
+    - Guías (`MagnetGuides`, en el mismo `<Canvas>`, sobre la imagen y bajo los controles): líneas de
+      eje con doble trazo (`camera.guideCase` bajo `camera.guide`) y marcas cada 20 px; recta por el
+      centro de la imagen para el ángulo recto; contorno discontinuo con cruz para el pin
+      (`magnetGuide.pinDash`). Discretas: trazo fino y opacidad baja (`magnetGuide.quiet`).
+    - **Cuándo se ven** (`revealed` en `useOverlayGestures`, distinto de `lock`): una guía aparece solo
+      cuando su candado pasa de suelto a enganchado durante el gesto. Si la imagen ya estaba sobre el
+      objetivo al empezar (una imagen centrada, o el giro de 0°), no se ve hasta que salga y vuelva a
+      entrar. Cada gesto es dueño de las suyas: ejes solo al arrastrar (sin pellizco ni giro
+      activos); ángulo solo con el giro de dos dedos; ancho solo al pellizcar (dos líneas en los laterales); pin con cualquiera. Entran con el muelle
+      `snappy`, se desvanecen solas a los 400 ms (`quiet.holdMs`) aunque siga enganchada, y salen en
+      `signature.guideFadeOutMs` al soltar el objetivo; con «reducir movimiento», solo fundido.
+    - Interruptor en Ajustes (`AppSettingsProvider`, activo por defecto), tabla `settings` (v6). La
+      lectura no retrasa la cámara; un cambio de la persona antes de que acabe la lectura gana.
   - `NudgePad` (issue #68): cruz de 4 flechas y reset, en la esquina del lado de la mano libre,
     justo encima de los controles (altura medida con `onLayout`). Se abre con el botón «Ajuste fino»
     de `CameraTools` y se cierra sola al abrir la hoja de ajustes. Lo dibuja un solo `<Canvas>` de
@@ -152,14 +195,14 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
       entonces deja de escribir hasta soltar). Con el candado puesto bajo el dedo, se para en seco.
     - Se guarda una sola vez, al soltar (`emitSettle` → `onPlacementSettle` con su debounce). Perder
       el foco o pasar a segundo plano llama a `OverlayCanvasHandle.nudgeStop` (conserva lo movido);
-      al desmontar solo se anula la flecha activa.
+      al desmontar se anula la flecha activa y se terminan los toques (`releaseTouches`).
     - Reset (`resetToHome`): vuelve al pin si lo hay; si no, a la posición con que se abrió la cámara
       (`restoreTransform` de la colocación guardada); si tampoco, encaja con `fitTransform`; muelle
       `gentle`, salto con «reducir movimiento»; conserva los espejos. El doble toque sigue encajando.
     - Pin (`pinHere`, issue #68): disco en la esquina superior derecha de la cruz. Un toque guarda la
       posición actual (x, y, escala y giro, con su lienzo) como `pinnedPlacement`: háptica `pinSet`,
       aviso «Posición fijada» (el mismo `LockedToast`) y el icono pasa a acento con «trazo vivo».
-      Volver a pulsar lo reemplaza; no se puede quitar. Con el candado puesto, el toque muestra el
+      Volver a pulsar lo reemplaza; un doble toque (dos toques a menos de `signature.doubleTapMs`, 350 ms, sobre un pin ya existente) lo quita (`unpinHere`: `onPinChange(null)` guarda NULL, el reset vuelve a la posición de apertura, el imán lo olvida, aviso «Posición liberada», háptica `nudgeStep`); el lector de pantalla tiene la acción «Quitar la posición fijada». Con el candado puesto, el toque muestra el
       aviso del candado. Se guarda por `onPinChange` → `useProjectCameraSession` (mismo debounce).
     - Al abrir la cámara (`ProjectCameraScreen`): si hay pin y `samePlacement(última, pin)` es falso,
       antes de montar la cámara se muestra un `CameraNotice` «¿Dónde colocamos la imagen?» con
@@ -432,7 +475,16 @@ pregunta con qué colocación abrir. No es un worklet: corre en JS.
 - Escala y rota alrededor de `focalX/Y`: el punto bajo los dedos no se mueve. Pensada para una llamada por tipo de gesto y fotograma (arrastrar solo con `changeX/Y`, pellizcar solo con `scaleChange`, rotar solo con `rotationChange`), cada una aplicando su propia contribución sobre la misma transformada — ver `useOverlayGestures` en apps/mobile.
 - Por qué por fotograma y no acumulado desde el inicio: `translationX/Y`, `scale` y `rotation` de react-native-gesture-handler se acumulan desde que cada gesto por separado empieza a estar activo, y eso no encaja cuando arrastrar sigue mientras entra un segundo dedo (pellizcar y rotar sí se reinician). `onChange` da en cambio `changeX/Y`, `scaleChange` y `rotationChange` ya relativos al fotograma anterior, así que cada gesto puede escribir directamente sobre `x`/`y`/`scale`/`rotation` sin tener que volver a basar nada.
 - Nunca baja de `MIN_SCALE` (mismo límite que `nudge`/`fitTransform`); los espejos pasan intactos.
-- Imán (fase 3, pendiente): se mostrará `snapTransform` sobre el resultado mientras el gesto está activo, y solo se guardará el resultado sin imantar como base del siguiente fotograma — mismo contrato que `snapTransform` hoy.
+- Imán (issue #70): `magnetize` (core) se aplica sobre el resultado solo para pintar y guardar al soltar; la bruta es la base del siguiente fotograma. `snapTransform` (múltiplos de 45°, bordes) lo sigue usando el playground de PC.
+
+### `magnetize(raw, prev, context, options?): { transform, lock }` y `magnetEngaged(prev, next)`
+
+- Worklets puros. `raw` es la transformada de los dedos; `prev` el `lock` del fotograma anterior (`NO_MAGNET_LOCK` al empezar); `context` = `{ viewport, image, pin, scaling, origin }`: tamaño del lienzo y de la imagen, la posición fijada ya restaurada al lienzo actual (o `null`), si un pellizco está cambiando la escala y el giro con que empezó el gesto (o `null`).
+- Ancho: con el giro ya imantado, la caja de la imagen mide `ancho·|cos| + alto·|sin|` a escala 1; engancha si el borde izquierdo y el derecho están ambos a menos de `fitEnter` de los lados del lienzo (suelta a `fitExit`), y entonces fija la escala para que mida justo el ancho del lienzo y `x` al centro. `scaling` falso solo puede mantenerlo, no agarrarlo (arrastrar nunca cambia el tamaño).
+- Giro: el más cercano de los dos objetivos, el ángulo recto o `origin`.
+- Eje: engancha si `|centro − mitad del lienzo| < enter`; ya enganchado, sigue mientras `< exit`. Giro: distancia angular al múltiplo de 90° más cercano por el camino corto, así que vale cualquier ángulo (negativo, > 360°, ±180). Pin: posición, escala relativa y giro deben cumplirlo a la vez.
+- Los espejos pasan intactos y no cambian lo que engancha (la matriz gira antes de reflejar). La escala nunca se toca, salvo la del pin.
+- `magnetEngaged` es verdadero cuando algún flag pasa de falso a verdadero: el momento de vibrar.
 
 ### Importar (`importImage.ts`)
 
@@ -514,6 +566,8 @@ sin ajustes; los neutros también se guardan como NULL. Se lee con tolerancia (`
 ignora claves desconocidas y cada campo malo o ausente vuelve a su valor neutro; JSON corrupto →
 sin ajustes): un valor malo nunca impide abrir el proyecto, y un ajuste nuevo no exige migración.
 `UPDATE_PROJECT_CAMERA` lo guarda con el resto del estado de la cámara.
+
+La v6 (issue #70) crea la tabla `settings` (`key TEXT PRIMARY KEY`, `value TEXT`) con `CREATE TABLE IF NOT EXISTS`, para que repetirla tras un fallo antes de subir `user_version` no falle. Guarda las preferencias de la app como texto (`magnet_enabled` = `"1"`/`"0"`); una clave ausente vale su valor por defecto, y un valor corrupto también (`parseBooleanSetting`): nunca impide abrir la cámara.
 
 La v5 (issue #68) añade `pinned_placement` (JSON `{transform, viewport}` en TEXT): la posición que la
 persona fija con el pin del panel de ajuste fino. NULL = sin pin. Se lee con tolerancia, como los

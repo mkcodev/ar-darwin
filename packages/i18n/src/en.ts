@@ -99,8 +99,10 @@ export const en = {
       reset: "Reset position",
       resetHint: "Back to the pinned spot, or to where the image was when the camera opened",
       pin: "Pin this position",
-      pinHint: "The middle button and opening the camera go back to it",
+      pinHint: "The middle button and opening the camera go back to it. Double tap to remove it",
       pinned: "Position pinned",
+      unpin: "Remove the pinned position",
+      unpinned: "Position unpinned",
       pad: "Fine adjust arrows",
       stepFine: "Fine step: 1 px. Press for coarse step",
       stepCoarse: "Coarse step: 10 px. Press for fine step",
@@ -153,6 +155,11 @@ export const en = {
   },
   settings: {
     title: "Settings",
+    magnet: {
+      label: "Magnet",
+      description:
+        "The image snaps to the canvas axes, to right angles and to the pinned position, with a guide and a light vibration.",
+    },
   },
   projectStatus: {
     pending: "To do",
