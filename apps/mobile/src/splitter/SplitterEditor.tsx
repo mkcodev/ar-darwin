@@ -31,7 +31,7 @@ type Frame = { width: number; height: number };
  * The splitter with its image decoded: live preview, summary and controls. Every control edits the
  * draft; the preview, the summary and the saved split all come from it. A tap on a tile picks it
  * (A1 until one is), and the button under the controls, «Calcar B2», stores it and opens the camera
- * (with the whole image for now: cropping per tile comes with the camera's minimap).
+ * on that tile.
  */
 export function SplitterEditor({ project, image }: SplitterEditorProps) {
   const { theme } = useTheme();
