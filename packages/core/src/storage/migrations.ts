@@ -96,6 +96,11 @@ ${seedCategories}
     version: 4,
     sql: "ALTER TABLE projects ADD COLUMN image_adjustments TEXT;",
   },
+  {
+    // Position pinned as home (JSON {transform, viewport}); NULL = no pin.
+    version: 5,
+    sql: "ALTER TABLE projects ADD COLUMN pinned_placement TEXT;",
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;

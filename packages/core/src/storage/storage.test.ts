@@ -185,7 +185,7 @@ describe("migrations on SQLite", () => {
     const db = openMigrated(1);
     const project = newProject("p", "2026-10-10T10:00:00.000Z", { categoryIds: ["animals"] });
     saveLegacy(db, project);
-    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2, 3, 4]);
+    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2, 3, 4, 5]);
     migrate(db);
     expect(db.prepare(SELECT_SCHEMA_VERSION).get()?.user_version).toBe(LATEST_SCHEMA_VERSION);
     expect(load(db, project.id)).toEqual(project);
@@ -237,6 +237,20 @@ describe("migrations on SQLite", () => {
     const after = load(db, project.id);
     expect(after).toEqual(project);
     expect(after?.imageAdjustments).toBeUndefined();
+  });
+
+  it("v4 → v5 keeps every project, with no pin", () => {
+    const db = openMigrated(4);
+    const project = newProject("p", "2026-10-10T10:00:00.000Z", {
+      transformViewport: { width: 400, height: 800 },
+      categoryIds: ["objects"],
+    });
+    saveLegacy(db, project);
+    migrate(db);
+    expect(db.prepare(SELECT_PROJECT).get(project.id)).toMatchObject({ pinned_placement: null });
+    const after = load(db, project.id);
+    expect(after).toEqual({ ...project, transformViewport: undefined });
+    expect(after?.pinnedPlacement).toBeUndefined();
   });
 
   it("enforces the CHECK constraints", () => {
@@ -291,6 +305,22 @@ describe("project repository SQL", () => {
     expect(load(db, adjusted.id)).toEqual(adjusted);
     expect(db.prepare(SELECT_PROJECT).get(neutral.id)).toMatchObject({ image_adjustments: null });
     expect(load(db, neutral.id)?.imageAdjustments).toBeUndefined();
+  });
+
+  it("round-trips a pinned placement and stores no pin as NULL", () => {
+    const db = openMigrated();
+    const pinned = newProject("pinned", "2026-10-10T10:00:00.000Z", {
+      pinnedPlacement: {
+        transform: { ...IDENTITY_TRANSFORM, x: 150, y: 320, scale: 0.35, rotation: -12 },
+        viewport: { width: 411.4, height: 890 },
+      },
+    });
+    const loose = newProject("loose", "2026-10-10T10:00:00.000Z");
+    save(db, pinned);
+    save(db, loose);
+    expect(load(db, pinned.id)).toEqual(pinned);
+    expect(db.prepare(SELECT_PROJECT).get(loose.id)).toMatchObject({ pinned_placement: null });
+    expect(load(db, loose.id)?.pinnedPlacement).toBeUndefined();
   });
 
   it("round-trips a minimal project", () => {
@@ -356,6 +386,10 @@ describe("project repository SQL", () => {
       transformViewport: { width: 400, height: 800 },
       opacity: 0.3,
       imageAdjustments: { brightness: 0.1, contrast: -0.4, invert: false },
+      pinnedPlacement: {
+        transform: { ...IDENTITY_TRANSFORM, x: 180, y: 360, scale: 0.3, rotation: 5 },
+        viewport: { width: 400, height: 800 },
+      },
       status: "in_progress" as const,
       timeSpentMs: 12345,
     };
@@ -423,6 +457,21 @@ describe("projectFromRow", () => {
     expect(() => projectFromRow({ ...row, opacity: "high" }, [])).toThrow(/^projectFromRow:/);
     expect(() => projectFromRow({ ...row, transform: '{"x":0}' }, [])).toThrow(/^projectFromRow:/);
     expect(() => projectFromRow(null, [])).toThrow(/^projectFromRow:/);
+  });
+
+  it("loads a corrupt or invalid pin as no pin, without throwing", () => {
+    const pin = (text: string) => projectFromRow({ ...row, pinned_placement: text }, []);
+    expect(pin("{oops").pinnedPlacement).toBeUndefined();
+    expect(pin("42").pinnedPlacement).toBeUndefined();
+    expect(pin('{"transform":{"x":1}}').pinnedPlacement).toBeUndefined();
+    expect(
+      pin(
+        JSON.stringify({
+          transform: { x: 1, y: 2, scale: 0.5, rotation: 0, flipX: false, flipY: false },
+          viewport: { width: 400, height: 800 },
+        }),
+      ).pinnedPlacement,
+    ).toMatchObject({ viewport: { width: 400, height: 800 } });
   });
 
   it("loads corrupt, partial or neutral image adjustments without throwing", () => {
