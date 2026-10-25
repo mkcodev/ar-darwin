@@ -324,6 +324,42 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - Iconos: `SkiaIcon` es un elemento Skia (va dentro de un `<Canvas>`), un `Path` por trazo para
   recortar cada uno con `end` en el «trazo vivo»; `Icon` lo envuelve en su propio `<Canvas>`.
 
+## Pantalla del divisor (issue #76)
+
+- Ruta `/project/[id]/split`, abierta con «Dividir» en la hoja de acciones del proyecto. Carga el
+  proyecto como la cámara; `SplitterScreen` decodifica la imagen con `useProjectImage` y monta
+  `SplitterEditor` cuando está lista (si falta, aviso y volver). Todo vive en `apps/mobile/src/splitter/`.
+- **Borrador en %.** `useSplitterDraft` edita un `SplitDraft` de core (filas, columnas,
+  `edges: "flush" | "extended"`, `overlapPercent`, tinte) y de él sale el `SplitConfig` que se dibuja y
+  se guarda (`configFromDraft`). El grosor se muestra en % del lado más corto de un trozo en los ejes
+  con corte (`shortestTileSide`; el máximo es siempre 50 %, el tope de `maxOverlapPx`) y se guarda en
+  px de imagen. Al cambiar filas o columnas se conserva el %, no los px; en al ras o en 1×1 el % se
+  recuerda para cuando vuelva. «Extendidos» al reabrir es `overlapPx > 0`. Por defecto, 2×2 con bordes
+  extendidos al 8 % y tinte activo.
+- **Guardado.** `UPDATE_PROJECT_SPLIT` (`split`, `current_tile_id`, `updated_at`; sin migración) es
+  aparte de `UPDATE_PROJECT_CAMERA`: ninguna pantalla pisa lo de la otra. `enqueueSplitSave` usa la misma
+  cola que `enqueueCameraSave` (las dos escriben la misma fila). Los cambios se guardan tras 400 ms de
+  calma y al salir; abrir la pantalla y salir sin tocar nada no escribe. Tocar un trozo guarda
+  `currentTileId` en el acto.
+- **Vista previa.** Un solo `Canvas` Skia con la geometría de `splitPreviewLayout` (core): el factor de
+  escala encaja la imagen con los trozos *ya separados* en el marco (hueco `splitter.tileGap` más el doble
+  del solape), así la separación nunca se sale. Cada `SplitTile` recorta la imagen, tiñe la zona extendida
+  (anillo `rect − coreRect`, `guide.tint`) y dibuja el corte original discontinuo sobre los lados
+  extendidos. Los nombres (`TileTag`) son pastillas oscuras con los colores de la cámara, texto real sobre
+  el Canvas: los toques los gestiona la vista previa (`pointerEvents="none"`) y un lector de pantalla abre
+  el trozo con su acción «activate».
+- **Separación.** Al cambiar filas, columnas o modo, cada trozo vuelve a unirse y se separa con el muelle
+  `gentle`, `stagger` ms después del anterior (un `SharedValue` por trozo, hasta 100). Con «reducir
+  movimiento» aparecen ya separados con un fundido corto. Cambiar el grosor no la repite.
+- **Zoom.** Pellizco y arrastre (`useSplitPreviewGestures`, matemática de worklets en
+  `packages/core/src/previewZoom.ts`) entre 1× y `splitter.maxZoom`; se queda al soltar y aparece un botón
+  de restablecer mientras haya zoom. Cambiar filas, columnas o modo lo restablece. Un toque abre el trozo
+  al instante, con o sin zoom (`previewContentPoint` deshace el zoom y `tileAtPoint` busca el trozo). El
+  slider del grosor mueve un `SharedValue`; a React solo llega cada % entero.
+- Tocar un trozo marca `currentTileId`, vibra (`tileChange`) y abre la cámara con la imagen **entera**:
+  el recorte por trozo llega con «Minimapa y Siguiente trozo». La cabecera deja un hueco
+  (`SplitterHeader`, `modeSwitcher`) para el selector «Manual | Folios» de «Divisor: tamaño real».
+
 ## Navegación (Expo Router, issue #34)
 
 - Un solo navegador: el native-stack raíz (`src/navigation/AppStack.tsx`, montado por
@@ -333,8 +369,9 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - `AppStack` también monta `SQLiteProvider` sobre una vista con `bg.canvas`, la barra de estado del
   tema y el `ThemeProvider` de React Navigation con los colores de `packages/ui`: ningún fotograma en
   blanco entre la splash, las migraciones y la primera pantalla.
-- Rutas hoy: `/` Biblioteca, `/project/[id]/camera` cámara del proyecto, `/settings` Ajustes,
-  `/dev/design` y `/dev/camera` (solo desarrollo o `spikesEnabled`). Cada tarea añade la suya (ficha del proyecto, cámara, divisor, onboarding).
+- Rutas hoy: `/` Biblioteca, `/project/[id]/camera` cámara del proyecto, `/project/[id]/split`
+  divisor, `/settings` Ajustes, `/dev/design` y `/dev/camera` (solo desarrollo o `spikesEnabled`).
+  Cada tarea añade la suya (ficha del proyecto, onboarding).
   Typed routes activas (`experiments.typedRoutes`): `router.push` y `href` comprueban la ruta.
 - Cabeceras:
   - Principales (Biblioteca; Retos más adelante): `headerShown: false`, `LargeTitle` (titular en
@@ -468,7 +505,23 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 - Límite del solape, por eje con cortes: ancho mínimo de los `coreRect` si `cols > 1`, alto mínimo si `rows > 1`; devuelve `floor(menor / 2)`. Con 1×1, 0.
 - Misma validación que `computeTiles`. La UI lo usa como máximo del slider del borde extendido.
 
-Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone`, `radiansToDegrees`, `normalizeRotation` y los helpers internos) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones, y sin constantes externas en valores por defecto de parámetros (el plugin de worklets no las captura). `worklet.test.ts` lo comprueba en CI (también para `frameStats.ts`, `controls.ts` e `imageAdjustments.ts`), porque Vitest ejecuta JS normal y esos fallos solo aparecen en el móvil.
+### `shortestTileSide(image, rows, cols): number`
+
+- El lado más corto de un trozo, medido igual que `maxOverlapPx` (solo en los ejes con corte; 0 con 1×1).
+  Es la base del grosor en %: `maxOverlapPx` es su mitad redondeada hacia abajo.
+
+### Divisor de la UI (`splitConfig.ts`, `splitPreview.ts`, `previewZoom.ts`)
+
+- `splitConfig.ts`: `overlapPxForPercent` / `overlapPercent` (px de imagen ↔ % del lado más corto, tope
+  `maxOverlapPx`), `SplitDraft` con `defaultSplitDraft`, `draftFromConfig` y `configFromDraft`,
+  `SPLIT_PRESETS` (1×2, 2×2, 2×3, 3×3, 4×4), `sheetCount` y `hasCuts`.
+- `splitPreview.ts`: `splitPreviewLayout(image, config, frame, tileGap)` devuelve la escala, el origen y,
+  por trozo, `rect`/`coreRect` en px de pantalla con los trozos unidos y el `offset` al separarse;
+  `tileAtPoint` y `separatedCenter`. Lanza como `computeTiles` si la división no es válida.
+- `previewZoom.ts` (worklets): `zoomPreviewAt`, `panPreview`, `clampPreviewPan`, `previewContentPoint`,
+  `isPreviewZoomed`.
+
+Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone`, `radiansToDegrees`, `normalizeRotation` y los helpers internos) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones, y sin constantes externas en valores por defecto de parámetros (el plugin de worklets no las captura). `worklet.test.ts` lo comprueba en CI (también para `frameStats.ts`, `controls.ts`, `imageAdjustments.ts` y `previewZoom.ts`), porque Vitest ejecuta JS normal y esos fallos solo aparecen en el móvil.
 
 ### `adjustmentColorMatrix(brightness, contrast, invert): number[]`
 
