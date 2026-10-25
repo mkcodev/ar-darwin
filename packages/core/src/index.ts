@@ -5,6 +5,7 @@ export * from "./controls";
 export * from "./filePath";
 export * from "./frameStats";
 export * from "./imageAdjustments";
+export * from "./imageHit";
 export * from "./importImage";
 export * from "./magnet";
 export * from "./models";

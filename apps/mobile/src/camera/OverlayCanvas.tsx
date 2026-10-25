@@ -1,4 +1,11 @@
-import { adjustmentColorMatrix, type Size } from "@ar-darwin/core";
+import {
+  adjustmentColorMatrix,
+  type Size,
+  type TapState,
+  tapEnd,
+  tapMove,
+  tapStart,
+} from "@ar-darwin/core";
 import {
   Canvas,
   ColorMatrix,
@@ -8,8 +15,8 @@ import {
   Skia,
   type SkMatrix,
 } from "@shopify/react-native-skia";
-import { type Ref, useEffect, useImperativeHandle, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { type Ref, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { type GestureResponderEvent, StyleSheet, View } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
 import {
   type DerivedValue,
@@ -75,6 +82,11 @@ type OverlayCanvasProps = {
   onUnpinned: () => void;
   /** A finger is on the image (or the touches were released): the camera menu stays shown. */
   onTouchingChange?: (touching: boolean) => void;
+  /**
+   * A tap that stayed put (one finger, no drift) landed on the canvas, not on a control: `onImage`
+   * says whether it was on the image or on the empty part of the screen.
+   */
+  onCanvasTap?: (onImage: boolean) => void;
   /** An arrow of the fine-adjust pad is held down (or released): the camera menu stays shown. */
   onNudgeHoldChange?: (held: boolean) => void;
   /** The camera menu is idle: the fine-adjust pad retreats with it. */
@@ -118,6 +130,7 @@ export function OverlayCanvas({
   onPinned,
   onUnpinned,
   onTouchingChange,
+  onCanvasTap,
   onNudgeHoldChange,
   menuRetreated,
   ref,
@@ -137,6 +150,7 @@ export function OverlayCanvas({
     revealed,
     pinPlacement,
     placed,
+    imageContainsPoint,
     toggleFlip,
     nudgeGestures,
     nudgeHeld,
@@ -171,6 +185,31 @@ export function OverlayCanvas({
     if (!nudgeOpen) nudgeStop();
   }, [nudgeOpen, nudgeStop]);
 
+  // Taps on the canvas, told apart from drags and pinches by core's tap tracker. These are React
+  // Native's raw touch events on the canvas' own view, so touches on the pills and the pad (their
+  // siblings) never get here; RNGH cancels them (`onTouchCancel`) when a drag takes over.
+  const tap = useRef<TapState | null>(null);
+  const touchHandlers = {
+    onTouchStart: (e: GestureResponderEvent) => {
+      const { locationX, locationY, touches } = e.nativeEvent;
+      tap.current = tapStart(tap.current, locationX, locationY, touches.length);
+    },
+    onTouchMove: (e: GestureResponderEvent) => {
+      const { locationX, locationY, touches } = e.nativeEvent;
+      tap.current = tapMove(tap.current, locationX, locationY, touches.length);
+    },
+    onTouchEnd: (e: GestureResponderEvent) => {
+      const ended = tapEnd(tap.current, e.nativeEvent.touches.length);
+      tap.current = ended.state;
+      if (!ended.tapped) return;
+      const { locationX, locationY } = e.nativeEvent;
+      onCanvasTap?.(imageContainsPoint(locationX, locationY));
+    },
+    onTouchCancel: () => {
+      tap.current = null;
+    },
+  };
+
   const { brightness, contrast, invert } = adjustments;
   const colorMatrix = useDerivedValue(() =>
     adjustmentColorMatrix(brightness.value, contrast.value, invert.value),
@@ -198,6 +237,7 @@ export function OverlayCanvas({
             const { width, height } = e.nativeEvent.layout;
             canvasSize.value = { width, height };
           }}
+          {...touchHandlers}
         >
           <Canvas style={StyleSheet.absoluteFill}>
             {image && (

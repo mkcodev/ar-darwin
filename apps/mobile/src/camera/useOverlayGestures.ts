@@ -12,6 +12,7 @@ import {
   type NudgeDirection,
   nudge,
   nudgeMove,
+  pointInImage,
   radiansToDegrees,
   restoreTransform,
   rotationDeadZone,
@@ -709,12 +710,22 @@ export function useOverlayGestures({
     return { flipX: transform.flipX, flipY: transform.flipY };
   };
 
+  /**
+   * Whether a canvas point (px) is on the image as it sits now (JS thread, at the end of a tap: no
+   * finger is moving it). `false` until the image is placed.
+   */
+  const imageContainsPoint = (px: number, py: number): boolean => {
+    if (!placed.value) return false;
+    return pointInImage({ x: px, y: py }, current(), imageSize.value);
+  };
+
   return {
     gesture,
     shown,
     revealed,
     pinPlacement,
     placed,
+    imageContainsPoint,
     toggleFlip,
     nudgeGestures,
     nudgeHeld,
