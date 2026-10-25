@@ -59,6 +59,12 @@ type Options = {
   pin?: OverlayPlacement | null;
   /** The current position was pinned, or `null` when the pin was removed (JS thread). */
   onPinChange?: (placement: OverlayPlacement | null) => void;
+  /**
+   * A finger came onto the image (`true`, the first of pan, pinch and rotation) or the last one
+   * left, or the touches were released from JS (`false`). Once per touch, never per frame (JS
+   * thread): the camera menu stays shown while the image is being touched.
+   */
+  onTouchingChange?: (touching: boolean) => void;
 };
 
 /** The finger may drift this far from an arrow before the hold ends: the hold is not a drag. */
@@ -143,6 +149,7 @@ export function useOverlayGestures({
   onNudgeBlocked,
   pin,
   onPinChange,
+  onTouchingChange,
 }: Options) {
   const reduce = useReducedMotion();
 
@@ -197,6 +204,11 @@ export function useOverlayGestures({
   onNudgeBlockedRef.current = onNudgeBlocked;
   const nudgeBlocked = useCallback(() => {
     onNudgeBlockedRef.current?.();
+  }, []);
+  const onTouchingChangeRef = useRef(onTouchingChange);
+  onTouchingChangeRef.current = onTouchingChange;
+  const touchingChange = useCallback((touching: boolean) => {
+    onTouchingChangeRef.current?.(touching);
   }, []);
   /** Read once, like `initialPlacement`: where the reset goes back to when nothing is pinned. */
   const openingRef = useRef(initial ?? null);
@@ -335,6 +347,7 @@ export function useOverlayGestures({
     const first = touches.value === 0;
     touches.value += 1;
     if (!first) return;
+    scheduleOnRN(touchingChange, true);
     startRotation.value = rotation.value;
     if (locked.value || !magnetEnabled.value) return;
     lock.value = magnetize(current(), NO_MAGNET_LOCK, magnetContext(true), HELD_AT_TOUCH).lock;
@@ -355,7 +368,10 @@ export function useOverlayGestures({
   const endTouch = () => {
     "worklet";
     touches.value = Math.max(0, touches.value - 1);
-    if (touches.value === 0) commitMagnet();
+    if (touches.value === 0) {
+      scheduleOnRN(touchingChange, false);
+      commitMagnet();
+    }
   };
 
   /**
@@ -366,6 +382,7 @@ export function useOverlayGestures({
   const releaseTouches = () => {
     const result = magnet.value;
     touches.value = 0;
+    touchingChange(false);
     if (result !== null) write(result);
     clearMagnet();
     if (!dirty.value) return;

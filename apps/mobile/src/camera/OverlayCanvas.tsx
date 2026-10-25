@@ -73,6 +73,8 @@ type OverlayCanvasProps = {
   onPinned: () => void;
   /** The pin button was double tapped and the pin removed: the screen confirms it. */
   onUnpinned: () => void;
+  /** A finger is on the image (or the touches were released): the camera menu stays shown. */
+  onTouchingChange?: (touching: boolean) => void;
   ref?: Ref<OverlayCanvasHandle>;
 };
 
@@ -111,6 +113,7 @@ export function OverlayCanvas({
   onPinChange,
   onPinned,
   onUnpinned,
+  onTouchingChange,
   ref,
 }: OverlayCanvasProps) {
   const { reduce } = useReduceMotion();
@@ -147,6 +150,7 @@ export function OverlayCanvas({
     onNudgeBlocked,
     pin: initialPin,
     onPinChange,
+    onTouchingChange,
   });
 
   useImperativeHandle(ref, () => ({ toggleFlip, nudgeStop, releaseTouches }), [
