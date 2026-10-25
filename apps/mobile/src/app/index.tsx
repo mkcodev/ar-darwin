@@ -80,6 +80,10 @@ export default function Library() {
   const openCamera = (project: Project) => {
     router.push({ pathname: "/project/[id]/camera", params: { id: project.id } });
   };
+  const openSplitter = (project: Project) => {
+    setActionsFor(null);
+    router.push({ pathname: "/project/[id]/split", params: { id: project.id } });
+  };
   const pickSource = (source: ImportSource) => {
     setImportOpen(false);
     importFrom(source);
@@ -176,6 +180,7 @@ export default function Library() {
         project={actionsFor}
         initialStep={actionsStep}
         onClose={() => setActionsFor(null)}
+        onSplit={openSplitter}
         onDelete={deleteProject}
       />
     </View>
