@@ -183,6 +183,14 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     deriva en el hilo de UI la `<ColorMatrix>` de la imagen con `adjustmentColorMatrix` (core).
     Invertir y Restablecer animan con el muelle `gentle` (saltan con reducir movimiento). Cada
     cambio asentado (soltar, alternar, restablecer) llama a `onAdjustmentsSettle`.
+  - **Trozo de un proyecto dividido.** `cameraCrop` (core) da el recorte del trozo elegido
+    (`rect` en px de imagen y `core` relativo a él); `ProjectCameraScreen` se lo pasa a `OverlayCanvas`
+    (`crop`), que lo trata como «la imagen»: `imageSize` es el tamaño del recorte, así que encaje,
+    gestos, imán, pin y reset no cambian. Se dibuja la imagen desplazada y recortada, y el anillo entre el
+    recorte y el recorte al ras (la franja que el trozo toma del vecino) se tiñe con `camera.guideTint`.
+    Un proyecto dividido muestra siempre su trozo actual, también desde la biblioteca; sin división, la
+    imagen entera. La posición y el pin guardados son del trozo en que se hicieron: `UPDATE_PROJECT_SPLIT`
+    los borra si cambian la división o el trozo (sin migración), y la cámara encaja el trozo nuevo.
   - `OverlayCanvas` + `useOverlayGestures`: la imagen no se dibuja (opacidad 0, flag `placed`) hasta
     tener tamaño de lienzo **y** dimensiones reales de la imagen. Entonces restaura la colocación
     guardada con `restoreTransform` o encaja con `fitTransform`. Un cambio posterior de lienzo mueve
@@ -359,8 +367,9 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   slider del grosor mueve un `SharedValue`; a React solo llega cada % entero.
 - **Elegir y calcar.** Tocar un trozo lo elige (`currentTileId`, se guarda en el acto, vibra con
   `tileChange` y queda con borde de acento); mientras no haya ninguno, o si el guardado ya no existe en
-  la rejilla, el elegido es A1 (`pickedTileId`). El botón fijo «Calcar B2», al pie de la pantalla, guarda y
-  abre la cámara con la imagen **entera**: el recorte por trozo llega con «Minimapa y Siguiente trozo». La cabecera deja un hueco
+  la rejilla, el elegido es A1 (`pickedTileId`). El botón fijo «Calcar B2», al pie de la pantalla, espera
+  a que el guardado haya terminado (la cámara carga el proyecto al abrirse) y abre la cámara con **ese
+  trozo**. La cabecera deja un hueco
   (`SplitterHeader`, `modeSwitcher`) para el selector «Manual | Folios» de «Divisor: tamaño real».
 
 ## Navegación (Expo Router, issue #34)

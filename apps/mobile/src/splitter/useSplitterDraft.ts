@@ -20,8 +20,11 @@ export type SplitterDraft = {
   config: SplitConfig;
   currentTileId: string | undefined;
   update: (patch: Partial<SplitDraft>) => void;
-  /** Marks the tile and stores it at once: the camera opens right after. */
-  pickTile: (id: string) => void;
+  /**
+   * Marks the tile and stores it at once. Resolves when the write has landed, so the camera, which
+   * loads the project as it opens, never reads the previous tile.
+   */
+  pickTile: (id: string) => Promise<void>;
 };
 
 /**
@@ -43,11 +46,11 @@ export function useSplitterDraft(project: Project, image: ImageSize): SplitterDr
   latest.current = { config, currentTileId };
   const lastSaved = useRef(JSON.stringify(latest.current));
 
-  const flush = useCallback(() => {
+  const flush = useCallback((): Promise<void> => {
     const pending = JSON.stringify(latest.current);
-    if (pending === lastSaved.current) return;
+    if (pending === lastSaved.current) return Promise.resolve();
     lastSaved.current = pending;
-    enqueueSplitSave(db, project.id, latest.current.config, latest.current.currentTileId);
+    return enqueueSplitSave(db, project.id, latest.current.config, latest.current.currentTileId);
   }, [db, project.id]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: a change of either value is the trigger
@@ -57,7 +60,12 @@ export function useSplitterDraft(project: Project, image: ImageSize): SplitterDr
   }, [config, currentTileId, flush]);
 
   // The screen going away stores what is pending.
-  useEffect(() => flush, [flush]);
+  useEffect(
+    () => () => {
+      void flush();
+    },
+    [flush],
+  );
 
   const update = useCallback((patch: Partial<SplitDraft>) => {
     // The same values again (a slider re-reporting its percent) must not count as an edit.
@@ -73,7 +81,7 @@ export function useSplitterDraft(project: Project, image: ImageSize): SplitterDr
     (id: string) => {
       latest.current = { ...latest.current, currentTileId: id };
       setCurrentTileId(id);
-      flush();
+      return flush();
     },
     [flush],
   );

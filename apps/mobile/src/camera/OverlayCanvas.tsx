@@ -1,21 +1,24 @@
 import {
   adjustmentColorMatrix,
+  type CameraCrop,
   type Size,
   type TapState,
   tapEnd,
   tapMove,
   tapStart,
 } from "@ar-darwin/core";
+import { cameraColors } from "@ar-darwin/ui";
 import {
   Canvas,
   ColorMatrix,
   Group,
   Image,
+  Path,
   type SkImage,
   Skia,
   type SkMatrix,
 } from "@shopify/react-native-skia";
-import { type Ref, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { type Ref, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { type GestureResponderEvent, StyleSheet, View } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
 import {
@@ -53,6 +56,11 @@ export type OverlayCanvasHandle = {
 type OverlayCanvasProps = {
   /** The image over the camera, already decoded; `null` while it loads. */
   image: SkImage | null;
+  /**
+   * Show only this part of the image (a tile of a split project), as if it were the whole image:
+   * placement, gestures, magnet and pin all work on its size. Keep it referentially stable.
+   */
+  crop?: CameraCrop | null;
   /** 0–1, shared with the opacity slider. */
   opacity: SharedValue<number>;
   /** Touch lock (#19), shared with `LockButton` and forwarded to `useOverlayGestures`. */
@@ -115,6 +123,7 @@ const ZERO_SIZE: Size = { width: 0, height: 0 };
  */
 export function OverlayCanvas({
   image,
+  crop,
   opacity,
   locked,
   magnetEnabled,
@@ -141,8 +150,10 @@ export function OverlayCanvas({
   const imageSize = useSharedValue<Size>(ZERO_SIZE);
 
   useEffect(() => {
-    imageSize.value = image ? { width: image.width(), height: image.height() } : ZERO_SIZE;
-  }, [image, imageSize]);
+    if (!image) imageSize.value = ZERO_SIZE;
+    else if (crop) imageSize.value = { width: crop.rect.width, height: crop.rect.height };
+    else imageSize.value = { width: image.width(), height: image.height() };
+  }, [image, crop, imageSize]);
 
   const {
     gesture,
@@ -243,6 +254,7 @@ export function OverlayCanvas({
             {image && (
               <ImageLayer
                 image={image}
+                crop={crop ?? null}
                 matrix={matrix}
                 opacity={shownOpacity}
                 colorMatrix={colorMatrix}
@@ -289,17 +301,49 @@ export function OverlayCanvas({
 
 type ImageLayerProps = {
   image: SkImage;
+  crop: CameraCrop | null;
   matrix: DerivedValue<SkMatrix>;
   opacity: DerivedValue<number>;
   colorMatrix: DerivedValue<number[]>;
 };
 
-function ImageLayer({ image, matrix, opacity, colorMatrix }: ImageLayerProps) {
+/**
+ * The image, or one tile of it. A tile is drawn in its own coordinates (0,0 to its size): the
+ * image is shifted by the tile's origin and clipped to it, and the strip it took from its
+ * neighbours (the ring between its crop and its flush crop) is tinted blue, so it is clear which
+ * part is already drawn on the next sheet. Both move with the image: they share its matrix.
+ */
+function ImageLayer({ image, crop, matrix, opacity, colorMatrix }: ImageLayerProps) {
+  const tile = useMemo(() => {
+    if (crop === null) return null;
+    const { rect, core } = crop;
+    const clip = Skia.XYWHRect(0, 0, rect.width, rect.height);
+    const extended =
+      core.x > 0 ||
+      core.y > 0 ||
+      core.x + core.width < rect.width ||
+      core.y + core.height < rect.height;
+    if (!extended) return { clip, ring: null };
+    const ring = Skia.PathBuilder.Make();
+    ring.addRect(clip);
+    ring.addRect(Skia.XYWHRect(core.x, core.y, core.width, core.height));
+    return { clip, ring: ring.detach() };
+  }, [crop]);
+
   return (
     <Group matrix={matrix} opacity={opacity}>
-      <Image image={image} x={0} y={0} width={image.width()} height={image.height()}>
-        <ColorMatrix matrix={colorMatrix} />
-      </Image>
+      <Group clip={tile?.clip}>
+        <Image
+          image={image}
+          x={crop ? -crop.rect.x : 0}
+          y={crop ? -crop.rect.y : 0}
+          width={image.width()}
+          height={image.height()}
+        >
+          <ColorMatrix matrix={colorMatrix} />
+        </Image>
+        {tile?.ring && <Path path={tile.ring} fillType="evenOdd" color={cameraColors.guideTint} />}
+      </Group>
     </Group>
   );
 }

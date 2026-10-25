@@ -69,10 +69,11 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
     playHaptic("tileChange");
     pickTile(id);
   };
-  const start = () => {
+  const start = async () => {
     if (opening.current) return;
     opening.current = true;
-    pickTile(picked);
+    // The camera loads the project as it opens: let the write of the tile land first.
+    await pickTile(picked);
     router.push({ pathname: "/project/[id]/camera", params: { id: project.id } });
   };
 
