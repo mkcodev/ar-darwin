@@ -30,6 +30,7 @@ export const en = {
     adjust: "Image adjustments",
     nudge: "Fine adjust",
     pin: "Pin position",
+    swapSides: "Swap sides",
     arrowUp: "Up",
     arrowDown: "Down",
     arrowLeft: "Left",
@@ -86,6 +87,7 @@ export const en = {
       tools: "Tools",
       nudge: "Fine adjust",
       tiles: "Tiles",
+      swapSides: "Move the menu to the other side",
     },
     nudge: {
       moveUp: "Move up",
