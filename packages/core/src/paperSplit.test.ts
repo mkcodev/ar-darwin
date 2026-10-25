@@ -461,3 +461,26 @@ describe("computePaperTiles errors", () => {
     expect(result.rows).toBe(1);
   });
 });
+
+describe("computePaperTiles input limits", () => {
+  it("rejects a width so large that sheet maths would overflow, instead of returning NaN", () => {
+    expect(() =>
+      computePaperTiles({ width: 100, height: 100 }, config("A4", "portrait", 1e308)),
+    ).toThrow(/^computePaperTiles: invalid input/);
+    expect(() =>
+      computePaperTiles({ width: 100, height: 100 }, config("A4", "portrait", 100_001)),
+    ).toThrow(/^computePaperTiles: invalid input/);
+  });
+
+  it("names less overlap as a way out when there is overlap", () => {
+    expect(() =>
+      computePaperTiles({ width: 1000, height: 100 }, config("A4", "portrait", 500, 100)),
+    ).toThrow(/less overlap/);
+  });
+
+  it("does not offer less overlap when there is none", () => {
+    expect(() =>
+      computePaperTiles({ width: 1000, height: 100 }, config("A4", "portrait", 500, 0)),
+    ).toThrow(/^(?!.*less overlap)/s);
+  });
+});

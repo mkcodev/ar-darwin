@@ -18,7 +18,8 @@ export const PaperSplitConfigSchema = z.object({
   paper: PaperSizeSchema,
   orientation: OrientationSchema,
   /** Final width of the whole drawing, across all sheets, in cm. Height follows the image. */
-  widthCm: z.number().positive(),
+  /** Final drawing width in cm; capped at a kilometre, far above anything that fits 10 sheets. */
+  widthCm: z.number().positive().max(100_000),
   /** Strip shared by neighbouring sheets, in mm. 0 = sheets touch. */
   overlapMm: z.number().nonnegative(),
 });
@@ -76,7 +77,7 @@ function sheetSizeMm(
 }
 
 /** Sheets needed along one axis so that n sheets, `overlap` apart, cover `total`. */
-function sheetCount(total: number, sheet: number, overlap: number): number {
+function axisSheetCount(total: number, sheet: number, overlap: number): number {
   const step = sheet - overlap;
   const extra = (total - sheet) / step;
   if (extra <= FIT_EPSILON) return 1;
@@ -113,8 +114,16 @@ function tooManySheetsError(
   const byWidth = spanMm(MAX_SPLIT, sheet.width, overlap);
   const byHeight = (spanMm(MAX_SPLIT, sheet.height, overlap) * image.width) / image.height;
   const maxWidthCm = Math.floor(Math.min(byWidth, byHeight)) / 10;
+  const advice =
+    maxWidthCm > 0
+      ? `Use a width of at most ${maxWidthCm} cm`
+      : "No width fits an image this elongated on this paper";
+  const options =
+    overlap > 0
+      ? "less overlap, a bigger sheet or another orientation"
+      : "a bigger sheet or another orientation";
   return new Error(
-    `computePaperTiles: ${config.widthCm} cm wide needs ${needed} ${axis} of ${config.paper} ${config.orientation}, but the limit is ${MAX_SPLIT}. Use a width of at most ${maxWidthCm} cm, a bigger sheet or another orientation`,
+    `computePaperTiles: ${config.widthCm} cm wide needs ${needed} ${axis} of ${config.paper} ${config.orientation}, but the limit is ${MAX_SPLIT}. ${advice}, ${options}`,
   );
 }
 
@@ -150,8 +159,8 @@ export function computePaperTiles(
   const pxPerMm = size.width / imageWidthMm;
   const imageMm = { width: imageWidthMm, height: size.height * mmPerPx };
 
-  const cols = sheetCount(imageMm.width, sheet.width, overlap);
-  const rows = sheetCount(imageMm.height, sheet.height, overlap);
+  const cols = axisSheetCount(imageMm.width, sheet.width, overlap);
+  const rows = axisSheetCount(imageMm.height, sheet.height, overlap);
   if (cols > MAX_SPLIT) {
     throw tooManySheetsError("columns", cols, parsed, size, sheet, overlap);
   }
