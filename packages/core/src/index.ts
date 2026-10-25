@@ -10,6 +10,7 @@ export * from "./importImage";
 export * from "./magnet";
 export * from "./models";
 export * from "./nudgeHold";
+export * from "./paperSplit";
 export * from "./placement";
 export * from "./project";
 export * from "./storage/migrations";
