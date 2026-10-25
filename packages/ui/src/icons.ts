@@ -45,6 +45,11 @@ export const icons = {
   ],
   // Four arrows from one point: the fine-adjust pad's button.
   nudge: [path("M12 3v18M3 12h18"), path("M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3")],
+  // A map pin: the position the fine-adjust pad pins as home.
+  pin: [
+    path("M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10Z"),
+    { type: "circle", cx: 12, cy: 11, r: 2.2 },
+  ],
   arrowUp: [path("M12 19V5M6 11l6-6 6 6")],
   arrowDown: [path("M12 5v14M6 13l6 6 6-6")],
   arrowLeft: [path("M19 12H5M11 6l-6 6 6 6")],
