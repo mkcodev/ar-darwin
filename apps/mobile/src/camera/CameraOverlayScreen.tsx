@@ -65,7 +65,7 @@ type CameraOverlayScreenProps = {
  * camera preview, overlay (`OverlayCanvas`), opacity slider, tools (`CameraTools`: mirror, torch,
  * image adjustments in `ImageAdjustSheet`), touch lock, keep-awake and the camera's error notices.
  * The slider and the tools are floating pills that retreat after `signature.menuIdleMs` without
- * touches (`useMenuIdle`); the lock and the fine-adjust pad stay where they are.
+ * touches (`useMenuIdle`), and so does the fine-adjust pad; the lock stays where it is.
  * The torch is vision-camera's `torchMode`, only passed when the device has one (setting it on a
  * device without a torch throws into `onError`) and only once it was turned on: any value, even
  * `"off"`, makes vision-camera call `setTorchMode` as soon as the camera mounts, and CameraX
@@ -117,16 +117,18 @@ export function CameraOverlayScreen({
   const [nudgeOpen, setNudgeOpen] = useState(false);
   /** Height of the bottom pill: the fine-adjust pad sits right above it. */
   const [controlsHeight, setControlsHeight] = useState(0);
-  /** A finger is on the image / on the slider: the menu stays shown until it lifts. */
+  /** A finger is on the image / on the slider / holding a fine-adjust arrow: the menu stays shown. */
   const [touching, setTouching] = useState(false);
   const [sliderActive, setSliderActive] = useState(false);
-  // The menu retreats after `signature.menuIdleMs` without touches. It never hides while a finger
-  // is on the image or the slider, nor while the fine-adjust pad or the adjustments sheet is open.
+  const [nudgeHolding, setNudgeHolding] = useState(false);
+  // The menu (rail, bottom bar and the fine-adjust pad) retreats after `signature.menuIdleMs`
+  // without touches. It never hides while a finger is on the image or the slider, an arrow is held
+  // or the adjustments sheet is open. The pad being open does not keep it shown: it hides too.
   const {
     idle: menuIdle,
     wake: wakeMenu,
     reset: resetMenu,
-  } = useMenuIdle(signature.menuIdleMs, touching || sliderActive || nudgeOpen || adjustOpen);
+  } = useMenuIdle(signature.menuIdleMs, touching || sliderActive || nudgeHolding || adjustOpen);
   const adjustments = {
     brightness: useSharedValue(initialAdjustments?.brightness ?? 0),
     contrast: useSharedValue(initialAdjustments?.contrast ?? 0),
@@ -153,6 +155,7 @@ export function CameraOverlayScreen({
     canvas.current?.nudgeStop();
     canvas.current?.releaseTouches();
     setSliderActive(false);
+    setNudgeHolding(false);
     resetMenu();
   }, [resetMenu]);
   useEffect(() => {
@@ -179,6 +182,7 @@ export function CameraOverlayScreen({
   const retry = () => {
     setIssue(null);
     setSliderActive(false);
+    setNudgeHolding(false);
     setCameraKey((key) => key + 1);
   };
 
@@ -225,6 +229,8 @@ export function CameraOverlayScreen({
                 onPinned={() => showToast(t("camera.nudge.pinned"))}
                 onUnpinned={() => showToast(t("camera.nudge.unpinned"))}
                 onTouchingChange={setTouching}
+                onNudgeHoldChange={setNudgeHolding}
+                menuRetreated={menuIdle}
               />
               {/* The menu: a tool rail under the lock and a slim bar with the opacity slider,
                   both retreating when idle (`menuIdle`). The slider and the tools stay usable

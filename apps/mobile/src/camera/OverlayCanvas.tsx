@@ -75,6 +75,10 @@ type OverlayCanvasProps = {
   onUnpinned: () => void;
   /** A finger is on the image (or the touches were released): the camera menu stays shown. */
   onTouchingChange?: (touching: boolean) => void;
+  /** An arrow of the fine-adjust pad is held down (or released): the camera menu stays shown. */
+  onNudgeHoldChange?: (held: boolean) => void;
+  /** The camera menu is idle: the fine-adjust pad retreats with it. */
+  menuRetreated: boolean;
   ref?: Ref<OverlayCanvasHandle>;
 };
 
@@ -114,6 +118,8 @@ export function OverlayCanvas({
   onPinned,
   onUnpinned,
   onTouchingChange,
+  onNudgeHoldChange,
+  menuRetreated,
   ref,
 }: OverlayCanvasProps) {
   const { reduce } = useReduceMotion();
@@ -151,6 +157,7 @@ export function OverlayCanvas({
     pin: initialPin,
     onPinChange,
     onTouchingChange,
+    onNudgeHoldChange,
   });
 
   useImperativeHandle(ref, () => ({ toggleFlip, nudgeStop, releaseTouches }), [
@@ -233,6 +240,7 @@ export function OverlayCanvas({
             onUnpinned();
           }}
           onLockedPress={onNudgeBlocked}
+          retreated={menuRetreated}
         />
       )}
     </>

@@ -65,6 +65,11 @@ type Options = {
    * thread): the camera menu stays shown while the image is being touched.
    */
   onTouchingChange?: (touching: boolean) => void;
+  /**
+   * A fine-adjust arrow is held down (`true`) or the hold ended (`false`). Once per press (JS
+   * thread): the camera menu stays shown while an arrow is held.
+   */
+  onNudgeHoldChange?: (held: boolean) => void;
 };
 
 /** The finger may drift this far from an arrow before the hold ends: the hold is not a drag. */
@@ -150,6 +155,7 @@ export function useOverlayGestures({
   pin,
   onPinChange,
   onTouchingChange,
+  onNudgeHoldChange,
 }: Options) {
   const reduce = useReducedMotion();
 
@@ -210,6 +216,8 @@ export function useOverlayGestures({
   const touchingChange = useCallback((touching: boolean) => {
     onTouchingChangeRef.current?.(touching);
   }, []);
+  const onNudgeHoldChangeRef = useRef(onNudgeHoldChange);
+  onNudgeHoldChangeRef.current = onNudgeHoldChange;
   /** Read once, like `initialPlacement`: where the reset goes back to when nothing is pinned. */
   const openingRef = useRef(initial ?? null);
   /** The pinned position: the reset's first choice. Replaced by `pinHere`. */
@@ -429,6 +437,7 @@ export function useOverlayGestures({
   frameRef.current = frame;
   const setFrameActive = useCallback((active: boolean) => {
     frameRef.current.setActive(active);
+    onNudgeHoldChangeRef.current?.(active);
   }, []);
 
   // Nothing keeps running when the camera screen goes away mid-hold or mid-drag: the hold stops
@@ -681,6 +690,7 @@ export function useOverlayGestures({
     if (nudgeHeld.value === null) return;
     nudgeHeld.value = null;
     frameRef.current.setActive(false);
+    onNudgeHoldChangeRef.current?.(false);
     const canvas = canvasSize.value;
     settle({ transform: current(), viewport: { width: canvas.width, height: canvas.height } });
   };
