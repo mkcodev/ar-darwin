@@ -31,25 +31,30 @@ type LockButtonProps = {
   placement?: "freeHand" | "free";
 };
 
-const RING_RECT = Skia.XYWHRect(
-  lockButton.ringWidth / 2,
-  lockButton.ringWidth / 2,
-  lockButton.size - lockButton.ringWidth,
-  lockButton.size - lockButton.ringWidth,
+const CENTRE = lockButton.ringSize / 2;
+/** The disc is centred in the bigger ring frame: the frame sticks out this far on every side. */
+const RING_OVERHANG = (lockButton.ringSize - lockButton.size) / 2;
+/** The progress arc runs down the middle of the graphite track, inside the frame's edge. */
+const ARC_RADIUS = CENTRE - lockButton.ringTrackPad - lockButton.ringWidth / 2;
+const ARC_RECT = Skia.XYWHRect(
+  CENTRE - ARC_RADIUS,
+  CENTRE - ARC_RADIUS,
+  ARC_RADIUS * 2,
+  ARC_RADIUS * 2,
 );
+const TRACK_WIDTH = lockButton.ringWidth + lockButton.ringTrackPad * 2;
 
-/** Static background disc (fill + edge), built once with Skia 2.6's immutable path factories. */
-const DISC = Skia.Path.Circle(
-  lockButton.size / 2,
-  lockButton.size / 2,
-  (lockButton.size - lockButton.edgeWidth) / 2,
-);
+/** Static shapes, built once with Skia 2.6's immutable path factories. */
+const DISC = Skia.Path.Circle(CENTRE, CENTRE, (lockButton.size - lockButton.edgeWidth) / 2);
+const TRACK = Skia.Path.Circle(CENTRE, CENTRE, ARC_RADIUS);
+const TRACK_EDGE = Skia.Path.Circle(CENTRE, CENTRE, CENTRE - lockButton.edgeWidth / 2);
 
 const ICON_SIZE = lockButton.size / 2;
 
 /**
  * Touch-lock button (#19): ignores every touch except a 1 s long press (`signature.lockHoldMs`),
- * which flips `locked` and confirms it with a haptic. The ring fills clockwise with a plain
+ * which flips `locked` and confirms it with a haptic. The ring (`lockButton.ringSize`, wider than a
+ * fingertip so it shows around the finger, on a graphite track) fills clockwise with a plain
  * `withTiming` on the UI thread (no custom core helper needed: unlike `transform.ts`'s gesture
  * math, this is Reanimated's own timing, not bespoke worklet logic) and snaps back if the press
  * is released or cancelled before completing. Locking redraws the padlock («trazo vivo»).
@@ -93,18 +98,21 @@ export const LockButton = memo(function LockButton({
 
   const ringPath = useDerivedValue(() =>
     Skia.PathBuilder.Make()
-      .addArc(RING_RECT, -90, 360 * progress.value)
+      .addArc(ARC_RECT, -90, 360 * progress.value)
       .detach(),
   );
+  // The graphite track is only there while the ring fills, so the lock at rest is the plain disc.
+  const trackOpacity = useDerivedValue(() => (progress.value > 0 ? 1 : 0));
 
+  // The frame is bigger than the disc: it starts `RING_OVERHANG` earlier so the disc stays put.
   const place =
     placement === "freeHand"
       ? [
           styles.freeHand,
-          { top: insets.top + space[5] },
+          { top: insets.top + space[5] - RING_OVERHANG },
           controls === "left"
-            ? { left: insets.left + space[5] }
-            : { right: insets.right + space[5] },
+            ? { left: insets.left + space[5] - RING_OVERHANG }
+            : { right: insets.right + space[5] - RING_OVERHANG },
         ]
       : null;
 
@@ -125,6 +133,20 @@ export const LockButton = memo(function LockButton({
         >
           <Canvas style={StyleSheet.absoluteFill}>
             <Group>
+              <Group opacity={trackOpacity}>
+                <Path
+                  path={TRACK}
+                  style="stroke"
+                  strokeWidth={TRACK_WIDTH}
+                  color={cameraColors.pillSolid}
+                />
+                <Path
+                  path={TRACK_EDGE}
+                  style="stroke"
+                  strokeWidth={lockButton.edgeWidth}
+                  color={cameraColors.pillEdge}
+                />
+              </Group>
               <Path path={DISC} color={cameraColors.pillSolid} />
               <Path
                 path={DISC}
@@ -142,8 +164,8 @@ export const LockButton = memo(function LockButton({
               <SkiaIcon
                 name="lock"
                 size={ICON_SIZE}
-                x={(lockButton.size - ICON_SIZE) / 2}
-                y={(lockButton.size - ICON_SIZE) / 2}
+                x={CENTRE - ICON_SIZE / 2}
+                y={CENTRE - ICON_SIZE / 2}
                 color={isLocked ? cameraColors.accent : cameraColors.text}
                 drawKey={drawKey}
                 reduce={reduce}
@@ -159,8 +181,8 @@ export const LockButton = memo(function LockButton({
 const styles = StyleSheet.create({
   freeHand: { position: "absolute" },
   frame: {
-    width: lockButton.size,
-    height: lockButton.size,
+    width: lockButton.ringSize,
+    height: lockButton.ringSize,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
