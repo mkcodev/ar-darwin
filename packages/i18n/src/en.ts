@@ -191,6 +191,7 @@ export const en = {
     separate: "Separate",
     join: "Join",
     title: "Splitter",
+    edges: "Edges",
     preview: "Splitter preview",
     tint: "Tint the extended edges",
     thinner: "Less overlap",

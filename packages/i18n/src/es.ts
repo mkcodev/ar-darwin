@@ -192,6 +192,7 @@ export const es = {
     separate: "Separar",
     join: "Juntar",
     title: "Divisor",
+    edges: "Bordes",
     preview: "Vista previa del divisor",
     tint: "Tintar los bordes extendidos",
     thinner: "Menos solape",
