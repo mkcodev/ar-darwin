@@ -153,10 +153,18 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     - Se guarda una sola vez, al soltar (`emitSettle` → `onPlacementSettle` con su debounce). Perder
       el foco o pasar a segundo plano llama a `OverlayCanvasHandle.nudgeStop` (conserva lo movido);
       al desmontar solo se anula la flecha activa.
-    - Reset (`resetToOpening`): vuelve a la posición con que se abrió la cámara
-      (`restoreTransform` de la colocación guardada) o, si no había, encaja con `fitTransform`;
-      muelle `gentle`, salto con «reducir movimiento»; conserva los espejos. El doble toque sigue
-      encajando.
+    - Reset (`resetToHome`): vuelve al pin si lo hay; si no, a la posición con que se abrió la cámara
+      (`restoreTransform` de la colocación guardada); si tampoco, encaja con `fitTransform`; muelle
+      `gentle`, salto con «reducir movimiento»; conserva los espejos. El doble toque sigue encajando.
+    - Pin (`pinHere`, issue #68): disco en la esquina superior derecha de la cruz. Un toque guarda la
+      posición actual (x, y, escala y giro, con su lienzo) como `pinnedPlacement`: háptica `pinSet`,
+      aviso «Posición fijada» (el mismo `LockedToast`) y el icono pasa a acento con «trazo vivo».
+      Volver a pulsar lo reemplaza; no se puede quitar. Con el candado puesto, el toque muestra el
+      aviso del candado. Se guarda por `onPinChange` → `useProjectCameraSession` (mismo debounce).
+    - Al abrir la cámara (`ProjectCameraScreen`): si hay pin y `samePlacement(última, pin)` es falso,
+      antes de montar la cámara se muestra un `CameraNotice` «¿Dónde colocamos la imagen?» con
+      «Donde la dejé» / «En el punto fijado». Con el pin, la imagen entra con su posición, tamaño y
+      giro, y con los espejos con que se dejó. Sin pin, o si coinciden, entra directo.
     - Lector de pantalla: cada flecha expone «activar» (`nudgeTap`, un paso de 1 px que se guarda
       al momento).
   - `CameraNotice`: aviso a pantalla completa sobre el fondo de cámara (lo usan los errores de cámara
@@ -303,6 +311,7 @@ type Project = {
   sourceUri: string;       // ruta guardada: relativa a documentos o asset (ver «Rutas de archivo»)
   transform: Transform;    // último ajuste de cámara
   transformViewport?: { width: number; height: number }; // lienzo de `transform`; sin él, nunca colocado
+  pinnedPlacement?: { transform: Transform; viewport: { width: number; height: number } }; // posición fijada con el pin; sin él, sin pin
   opacity: number;         // 0..1
   imageAdjustments?: { brightness: number; contrast: number; invert: boolean }; // -1..1; sin él, neutro
   split?: SplitConfig;
@@ -390,6 +399,13 @@ Lógica del panel de flechas de la cámara móvil (issue #68). Todas son worklet
 - `holdSpeed(heldMs)` y `holdDistance(heldMs)`: velocidad y distancia acumulada **de la repetición** (sin el toque). `holdDistance` es la integral de la velocidad, así que un fotograma mueve `holdDistance(ahora) - holdDistance(anterior)`: mismo resultado a 60 y 120 Hz, y un fotograma perdido se recupera en vez de frenar la imagen.
 - `moveWithin(value, delta, min, max)`: como `stepValue` pero un valor que ya está fuera del rango puede volver hacia dentro sin saltar, y nunca se empuja más fuera. `hitLimit` es verdadero si el resultado queda en el límite hacia el que va (o más allá).
 - `nudgeMove(transform, direction, distance, viewport)`: mueve en **ejes de pantalla** (`x`/`y` son el centro de la imagen en el lienzo, así que da igual la rotación, la escala o el espejo) y mantiene el centro dentro del lienzo. Escala, rotación y espejos pasan intactos. Un imán futuro puede reutilizar la curva y `moveWithin` (son unidimensionales).
+
+### `samePlacement(a, b): boolean` (`placement.ts`)
+
+Compara dos colocaciones (`Placement` = `transform` + `viewport`): mueve `b` al lienzo de `a` con
+`restoreTransform` y compara x/y (0,5 px), escala (0,1 %) y giro (0,1°, cerca de ±180° cuenta como
+cercano) con `SAME_PLACEMENT`. Ignora los espejos. La cámara del proyecto lo usa para decidir si
+pregunta con qué colocación abrir. No es un worklet: corre en JS.
 
 ### `fitTransform(imageSize, viewport): Transform`
 
@@ -498,6 +514,12 @@ sin ajustes; los neutros también se guardan como NULL. Se lee con tolerancia (`
 ignora claves desconocidas y cada campo malo o ausente vuelve a su valor neutro; JSON corrupto →
 sin ajustes): un valor malo nunca impide abrir el proyecto, y un ajuste nuevo no exige migración.
 `UPDATE_PROJECT_CAMERA` lo guarda con el resto del estado de la cámara.
+
+La v5 (issue #68) añade `pinned_placement` (JSON `{transform, viewport}` en TEXT): la posición que la
+persona fija con el pin del panel de ajuste fino. NULL = sin pin. Se lee con tolerancia, como los
+ajustes: JSON corrupto o con forma inválida → sin pin, y nunca impide abrir el proyecto. Los espejos
+guardados dentro del `transform` se ignoran al usarlo. `UPDATE_PROJECT_CAMERA` lo guarda con el resto
+del estado de la cámara (`cameraStateParams` lleva el pin entre `transform_viewport` y la opacidad).
 
 ### Rutas de archivo
 
