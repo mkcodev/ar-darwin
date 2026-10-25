@@ -134,7 +134,8 @@ Momentos de firma:
 - Racha de Retos: el contador avanza con muelle.
 - Pulsación «tinta que empapa» en los botones (≤ 180 ms).
 - Etiquetas de estado que llegan torcidas 6° y se enderezan.
-- Menú de la cámara que se retira 8 px y se desvanece tras 3 s sin tocar; sigue siendo alcanzable con teclado (el foco lo despierta).
+- Menú de la cámara que se retira 8 px y se desvanece tras 3 s sin tocar; sigue siendo alcanzable con teclado (el foco lo despierta). En el móvil lo despierta solo un toque quieto (no un arrastre, pellizco o giro de la imagen), no se oculta con el lector de pantalla activo, y arrastra consigo la cruz de ajuste fino; el candado no se retira.
+- Candado: al mantenerlo pulsado, un anillo de 72 dp (más ancho que la yema) se rellena en sentido horario sobre una pista grafito, para que se vea alrededor del dedo cuánto falta.
 
 ## Cabeceras
 
@@ -175,7 +176,7 @@ Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:
 
 ## Iconos
 
-Set propio en `packages/ui/src/icons.ts` (31 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
+Set propio en `packages/ui/src/icons.ts` (33 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
 
 Todo respeta la opción del sistema de reducir movimiento (sustituir por fundidos cortos o nada).
 

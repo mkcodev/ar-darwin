@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isCategoryColorKey } from "./categoryColors";
+import { lockButton } from "./components";
 import { haptics } from "./haptics";
 import { icons, isIconName } from "./icons";
 import { controlsSide, radius, space, touchTarget } from "./layout";
@@ -25,6 +26,12 @@ describe("spacing and shape", () => {
   it("sheets use 24 px corners and targets are 48 px", () => {
     expect(radius.sheet).toBe(24);
     expect(touchTarget).toBe(48);
+  });
+  it("the lock's progress ring is wider than the disc and a fingertip, and its track fits inside", () => {
+    expect(lockButton.ringSize).toBeGreaterThan(lockButton.size);
+    expect(lockButton.ringSize).toBeGreaterThanOrEqual(72);
+    const outerArcEdge = lockButton.ringSize / 2 - lockButton.ringTrackPad;
+    expect(outerArcEdge).toBeGreaterThan(lockButton.size / 2);
   });
 });
 
@@ -137,8 +144,8 @@ describe("spring sampling", () => {
 });
 
 describe("haptics, icons and handedness", () => {
-  it("has the 31 icons of the set", () => {
-    expect(Object.keys(icons)).toHaveLength(31);
+  it("has the 33 icons of the set", () => {
+    expect(Object.keys(icons)).toHaveLength(33);
   });
   it("narrows stored icon names", () => {
     expect(isIconName("animal")).toBe(true);

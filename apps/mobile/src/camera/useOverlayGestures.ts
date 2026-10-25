@@ -12,6 +12,7 @@ import {
   type NudgeDirection,
   nudge,
   nudgeMove,
+  pointInImage,
   radiansToDegrees,
   restoreTransform,
   rotationDeadZone,
@@ -59,6 +60,17 @@ type Options = {
   pin?: OverlayPlacement | null;
   /** The current position was pinned, or `null` when the pin was removed (JS thread). */
   onPinChange?: (placement: OverlayPlacement | null) => void;
+  /**
+   * A finger came onto the image (`true`, the first of pan, pinch and rotation) or the last one
+   * left, or the touches were released from JS (`false`). Once per touch, never per frame (JS
+   * thread): the camera menu stays shown while the image is being touched.
+   */
+  onTouchingChange?: (touching: boolean) => void;
+  /**
+   * A fine-adjust arrow is held down (`true`) or the hold ended (`false`). Once per press (JS
+   * thread): the camera menu stays shown while an arrow is held.
+   */
+  onNudgeHoldChange?: (held: boolean) => void;
 };
 
 /** The finger may drift this far from an arrow before the hold ends: the hold is not a drag. */
@@ -143,6 +155,8 @@ export function useOverlayGestures({
   onNudgeBlocked,
   pin,
   onPinChange,
+  onTouchingChange,
+  onNudgeHoldChange,
 }: Options) {
   const reduce = useReducedMotion();
 
@@ -198,6 +212,13 @@ export function useOverlayGestures({
   const nudgeBlocked = useCallback(() => {
     onNudgeBlockedRef.current?.();
   }, []);
+  const onTouchingChangeRef = useRef(onTouchingChange);
+  onTouchingChangeRef.current = onTouchingChange;
+  const touchingChange = useCallback((touching: boolean) => {
+    onTouchingChangeRef.current?.(touching);
+  }, []);
+  const onNudgeHoldChangeRef = useRef(onNudgeHoldChange);
+  onNudgeHoldChangeRef.current = onNudgeHoldChange;
   /** Read once, like `initialPlacement`: where the reset goes back to when nothing is pinned. */
   const openingRef = useRef(initial ?? null);
   /** The pinned position: the reset's first choice. Replaced by `pinHere`. */
@@ -335,6 +356,7 @@ export function useOverlayGestures({
     const first = touches.value === 0;
     touches.value += 1;
     if (!first) return;
+    scheduleOnRN(touchingChange, true);
     startRotation.value = rotation.value;
     if (locked.value || !magnetEnabled.value) return;
     lock.value = magnetize(current(), NO_MAGNET_LOCK, magnetContext(true), HELD_AT_TOUCH).lock;
@@ -355,7 +377,10 @@ export function useOverlayGestures({
   const endTouch = () => {
     "worklet";
     touches.value = Math.max(0, touches.value - 1);
-    if (touches.value === 0) commitMagnet();
+    if (touches.value === 0) {
+      scheduleOnRN(touchingChange, false);
+      commitMagnet();
+    }
   };
 
   /**
@@ -366,6 +391,7 @@ export function useOverlayGestures({
   const releaseTouches = () => {
     const result = magnet.value;
     touches.value = 0;
+    touchingChange(false);
     if (result !== null) write(result);
     clearMagnet();
     if (!dirty.value) return;
@@ -412,6 +438,7 @@ export function useOverlayGestures({
   frameRef.current = frame;
   const setFrameActive = useCallback((active: boolean) => {
     frameRef.current.setActive(active);
+    onNudgeHoldChangeRef.current?.(active);
   }, []);
 
   // Nothing keeps running when the camera screen goes away mid-hold or mid-drag: the hold stops
@@ -664,6 +691,7 @@ export function useOverlayGestures({
     if (nudgeHeld.value === null) return;
     nudgeHeld.value = null;
     frameRef.current.setActive(false);
+    onNudgeHoldChangeRef.current?.(false);
     const canvas = canvasSize.value;
     settle({ transform: current(), viewport: { width: canvas.width, height: canvas.height } });
   };
@@ -682,12 +710,22 @@ export function useOverlayGestures({
     return { flipX: transform.flipX, flipY: transform.flipY };
   };
 
+  /**
+   * Whether a canvas point (px) is on the image as it sits now (JS thread, at the end of a tap: no
+   * finger is moving it). `false` until the image is placed.
+   */
+  const imageContainsPoint = (px: number, py: number): boolean => {
+    if (!placed.value) return false;
+    return pointInImage({ x: px, y: py }, current(), imageSize.value);
+  };
+
   return {
     gesture,
     shown,
     revealed,
     pinPlacement,
     placed,
+    imageContainsPoint,
     toggleFlip,
     nudgeGestures,
     nudgeHeld,

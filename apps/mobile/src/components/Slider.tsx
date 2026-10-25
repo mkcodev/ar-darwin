@@ -25,6 +25,8 @@ type SliderProps = {
   format: (value: number) => string;
   /** Called on the JS thread when a drag or tap ends, to store the value. */
   onChangeEnd?: (value: number) => void;
+  /** A finger came onto the slider (`true`) or left it (`false`), on the JS thread, once each. */
+  onActiveChange?: (active: boolean) => void;
   /** Hides the visible label (it stays as the accessible name). */
   compact?: boolean;
   tone?: "theme" | "camera";
@@ -48,6 +50,7 @@ export function Slider({
   step = 1,
   format,
   onChangeEnd,
+  onActiveChange,
   compact,
   tone = "theme",
 }: SliderProps) {
@@ -80,6 +83,12 @@ export function Slider({
     onChangeEnd?.(v);
   };
 
+  // Declared before the gestures: the worklets plugin captures what a callback uses when the
+  // gesture is created.
+  const activeChange = (active: boolean) => {
+    onActiveChange?.(active);
+  };
+
   const jump = Gesture.Tap().onEnd((e) => {
     value.value = valueFromTrack(e.x, width.value, min, max, step);
     scheduleOnRN(settle, value.value);
@@ -87,10 +96,16 @@ export function Slider({
   const drag = Gesture.Pan()
     .activeOffsetX([-space[2], space[2]])
     .failOffsetY([-space[2], space[2]])
+    .onBegin(() => {
+      scheduleOnRN(activeChange, true);
+    })
     .onUpdate((e) => {
       value.value = valueFromTrack(e.x, width.value, min, max, step);
     })
-    .onEnd(() => scheduleOnRN(settle, value.value));
+    .onEnd(() => scheduleOnRN(settle, value.value))
+    .onFinalize(() => {
+      scheduleOnRN(activeChange, false);
+    });
 
   const fillStyle = useAnimatedStyle(() => ({
     transform: [{ scaleX: fractionOfRange(value.value, min, max) }],

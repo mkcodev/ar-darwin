@@ -1,10 +1,13 @@
-import { space } from "@ar-darwin/ui";
-import { StyleSheet, View } from "react-native";
+import { lockButton, space } from "@ar-darwin/ui";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FloatingPill } from "../components/FloatingPill";
 import { IconButton } from "../components/IconButton";
 import { t } from "../i18n";
 import type { FlipAxis, Flips } from "./useOverlayGestures";
 
 type CameraToolsProps = {
+  /** The menu is idle: the rail retreats towards its edge and stops taking touches. */
+  retreated: boolean;
   flips: Flips;
   /** Touch lock: the mirror buttons dim and explain the lock instead of flipping. */
   isLocked: boolean;
@@ -19,14 +22,19 @@ type CameraToolsProps = {
   onToggleNudge: () => void;
   adjustOpen: boolean;
   onOpenAdjust: () => void;
+  /** Moves the menu (and the fine-adjust pad) to the other side: the drawing hand changes. */
+  onSwapSides: () => void;
 };
 
 /**
- * The camera's tool row: mirror H/V, torch, the fine-adjust pad and image adjustments. It stays
- * while locked (torch, adjustments and opening the pad still work; the mirror would move the
- * image, so it is dimmed), so nothing around it moves when the lock engages.
+ * The camera's tool rail: mirror H/V, torch, the fine-adjust pad, image adjustments and the
+ * button that moves the menu to the other side, in a
+ * vertical pill on the free hand's side, under the lock. It stays while locked (torch,
+ * adjustments and opening the pad still work; the mirror would move the image, so it is dimmed),
+ * so nothing around it moves when the lock engages. It retreats with the rest of the menu.
  */
 export function CameraTools({
+  retreated,
   flips,
   isLocked,
   onFlip,
@@ -37,9 +45,17 @@ export function CameraTools({
   onToggleNudge,
   adjustOpen,
   onOpenAdjust,
+  onSwapSides,
 }: CameraToolsProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.row}>
+    <FloatingPill
+      retreated={retreated}
+      placement="freeHand"
+      direction="column"
+      label={t("camera.menu.tools")}
+      style={{ top: insets.top + space[5] + lockButton.size + space[4] }}
+    >
       <IconButton
         icon="mirrorH"
         label={t("camera.mirrorH")}
@@ -81,10 +97,13 @@ export function CameraTools({
         pressed={adjustOpen}
         onPress={onOpenAdjust}
       />
-    </View>
+      {/* Last in the rail. It does not move the image, so the lock leaves it active. */}
+      <IconButton
+        icon="swapSides"
+        label={t("camera.menu.swapSides")}
+        tone="camera"
+        onPress={onSwapSides}
+      />
+    </FloatingPill>
   );
 }
-
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", justifyContent: "center", gap: space[3] },
-});

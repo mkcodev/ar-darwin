@@ -97,4 +97,11 @@ export const lockButton = {
   size: 56,
   edgeWidth: 1,
   ringWidth: 3,
+  /**
+   * Outer diameter of the progress ring, graphite track included: wider than a fingertip, so it
+   * shows around the finger holding the lock. The disc stays `size`, centred inside it.
+   */
+  ringSize: 72,
+  /** Graphite track around the progress arc: the accent never sits straight on the photo. */
+  ringTrackPad: 2,
 } as const;

@@ -1,4 +1,4 @@
-import type { NudgeDirection } from "@ar-darwin/core";
+import type { NudgeDirection, RetreatEdge } from "@ar-darwin/core";
 import {
   cameraColors,
   duration,
@@ -23,6 +23,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SkiaIcon } from "../components/SkiaIcon";
+import { useRetreat } from "../components/useRetreat";
 import { t } from "../i18n";
 import { useHandedness } from "../theme/HandednessProvider";
 import { useReduceMotion } from "../theme/ReduceMotionProvider";
@@ -51,6 +52,8 @@ type NudgePadProps = {
   onUnpin: () => void;
   /** An arrow or reset was tapped while locked. */
   onLockedPress: () => void;
+  /** The camera menu is idle: the pad retreats towards its edge and stops taking touches. */
+  retreated: boolean;
 };
 
 type Cell = { col: number; row: number };
@@ -93,10 +96,14 @@ const ARROWS: { dir: NudgeDirection; glyph: IconName; label: ArrowLabel }[] = [
 
 /**
  * The fine-adjust cross (arrows, reset and the pin), drawn with one Skia `<Canvas>` for all the
- * discs and glyphs. It sits on the free hand's side, a sibling of the overlay's own gesture detector, so
+ * discs and glyphs. It sits on the drawing hand's side, opposite to the tool rail, above the bottom
+ * pill, a sibling of the overlay's own gesture detector, so
  * touches on a disc never start a drag, while a finger anywhere else still drags and pinches.
  * Translucent while idle so it covers less of the drawing; solid while an arrow is held; dimmed
- * while locked (a tap then explains the lock instead of moving anything).
+ * while locked (a tap then explains the lock instead of moving anything). The cells never carry
+ * `accessibilityState.disabled`: on Android that disables the view and RNGH then skips it as a touch
+ * target, so with the lock on a tap on the pad fell through to the canvas below (and toggled the
+ * camera menu). The lock is told to screen readers through the hint instead.
  */
 export function NudgePad({
   gestures,
@@ -110,6 +117,7 @@ export function NudgePad({
   onPin,
   onUnpin,
   onLockedPress,
+  retreated,
 }: NudgePadProps) {
   const [pinKey, setPinKey] = useState(0);
   /** The last touch on the pin button, and whether a pin existed before it. */
@@ -174,8 +182,13 @@ export function NudgePad({
       else pin();
     });
 
+  // The drawing hand's side, opposite to the tool rail (which sits under the free hand).
   const side =
-    controls === "left" ? { left: insets.left + space[5] } : { right: insets.right + space[5] };
+    controls === "left" ? { right: insets.right + space[5] } : { left: insets.left + space[5] };
+  const edge: RetreatEdge = controls === "left" ? "right" : "left";
+  // Its own layer: the frame carries the mount/unmount fade (a layout animation, which must not
+  // share a view with an animated opacity), this one the menu's retreat, `pad` the idle opacity.
+  const retreatStyle = useRetreat(retreated, edge);
 
   return (
     <Animated.View
@@ -185,117 +198,121 @@ export function NudgePad({
       style={[styles.frame, side, { bottom }]}
     >
       <Animated.View
-        pointerEvents="box-none"
-        accessibilityRole="toolbar"
-        accessibilityLabel={t("camera.nudge.pad")}
-        style={[styles.pad, padStyle]}
+        pointerEvents={retreated ? "none" : "box-none"}
+        style={[styles.pad, retreatStyle]}
       >
-        <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-          {(Object.keys(CELLS) as (keyof typeof CELLS)[]).map((key) => {
-            const { cx, cy } = centre(CELLS[key]);
-            const r = CELL / 2;
-            return <Circle key={`disc-${key}`} cx={cx} cy={cy} r={r} color={cameraColors.pill} />;
-          })}
-          {(Object.keys(CELLS) as (keyof typeof CELLS)[]).map((key) => {
-            const { cx, cy } = centre(CELLS[key]);
-            return (
-              <Circle
-                key={`edge-${key}`}
-                cx={cx}
-                cy={cy}
-                r={CELL / 2 - 0.5}
-                style="stroke"
-                strokeWidth={1}
-                color={cameraColors.pillEdge}
-              />
-            );
-          })}
-          {ARROWS.map(({ dir }) => {
-            const { cx, cy } = centre(CELLS[dir]);
-            return (
-              <Circle
-                key={`fill-${dir}`}
-                cx={cx}
-                cy={cy}
-                r={CELL / 2}
-                color={cameraColors.accent}
-                opacity={fills[dir]}
-              />
-            );
-          })}
-          {[
-            ...ARROWS.map(({ dir, glyph }) => ({ key: dir, glyph, cell: CELLS[dir] })),
-            { key: "reset", glyph: "reset" as const, cell: CELLS.reset },
-            { key: "pin", glyph: "pin" as const, cell: CELLS.pin },
-          ].map(({ key, glyph, cell }) => {
-            const { left, top } = place(cell);
-            return (
-              <SkiaIcon
-                key={`glyph-${key}`}
-                name={glyph}
-                size={icon.size}
-                x={left + (CELL - icon.size) / 2}
-                y={top + (CELL - icon.size) / 2}
-                color={key === "pin" && pinned ? cameraColors.accent : cameraColors.text}
-                drawKey={key === "pin" ? pinKey : 0}
-                reduce={reduce}
-              />
-            );
-          })}
-        </Canvas>
+        <Animated.View
+          pointerEvents="box-none"
+          accessibilityRole="toolbar"
+          accessibilityLabel={t("camera.nudge.pad")}
+          style={[styles.pad, padStyle]}
+        >
+          <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+            {(Object.keys(CELLS) as (keyof typeof CELLS)[]).map((key) => {
+              const { cx, cy } = centre(CELLS[key]);
+              const r = CELL / 2;
+              return <Circle key={`disc-${key}`} cx={cx} cy={cy} r={r} color={cameraColors.pill} />;
+            })}
+            {(Object.keys(CELLS) as (keyof typeof CELLS)[]).map((key) => {
+              const { cx, cy } = centre(CELLS[key]);
+              return (
+                <Circle
+                  key={`edge-${key}`}
+                  cx={cx}
+                  cy={cy}
+                  r={CELL / 2 - 0.5}
+                  style="stroke"
+                  strokeWidth={1}
+                  color={cameraColors.pillEdge}
+                />
+              );
+            })}
+            {ARROWS.map(({ dir }) => {
+              const { cx, cy } = centre(CELLS[dir]);
+              return (
+                <Circle
+                  key={`fill-${dir}`}
+                  cx={cx}
+                  cy={cy}
+                  r={CELL / 2}
+                  color={cameraColors.accent}
+                  opacity={fills[dir]}
+                />
+              );
+            })}
+            {[
+              ...ARROWS.map(({ dir, glyph }) => ({ key: dir, glyph, cell: CELLS[dir] })),
+              { key: "reset", glyph: "reset" as const, cell: CELLS.reset },
+              { key: "pin", glyph: "pin" as const, cell: CELLS.pin },
+            ].map(({ key, glyph, cell }) => {
+              const { left, top } = place(cell);
+              return (
+                <SkiaIcon
+                  key={`glyph-${key}`}
+                  name={glyph}
+                  size={icon.size}
+                  x={left + (CELL - icon.size) / 2}
+                  y={top + (CELL - icon.size) / 2}
+                  color={key === "pin" && pinned ? cameraColors.accent : cameraColors.text}
+                  drawKey={key === "pin" ? pinKey : 0}
+                  reduce={reduce}
+                />
+              );
+            })}
+          </Canvas>
 
-        {ARROWS.map(({ dir, label }) => (
-          <GestureDetector key={dir} gesture={gestures[dir]}>
+          {ARROWS.map(({ dir, label }) => (
+            <GestureDetector key={dir} gesture={gestures[dir]}>
+              <Animated.View
+                accessible
+                accessibilityRole="button"
+                accessibilityLabel={t(label)}
+                accessibilityHint={isLocked ? t("camera.unlockToNudge") : undefined}
+                accessibilityActions={[{ name: "activate" }]}
+                onAccessibilityAction={(event) => {
+                  if (event.nativeEvent.actionName === "activate") onStep(dir);
+                }}
+                style={[styles.cell, place(CELLS[dir])]}
+              />
+            </GestureDetector>
+          ))}
+          <GestureDetector gesture={resetTap}>
             <Animated.View
               accessible
               accessibilityRole="button"
-              accessibilityLabel={t(label)}
-              accessibilityState={{ disabled: isLocked }}
+              accessibilityLabel={t("camera.nudge.reset")}
+              accessibilityHint={isLocked ? t("camera.unlockToNudge") : t("camera.nudge.resetHint")}
               accessibilityActions={[{ name: "activate" }]}
               onAccessibilityAction={(event) => {
-                if (event.nativeEvent.actionName === "activate") onStep(dir);
+                if (event.nativeEvent.actionName !== "activate") return;
+                if (isLocked) onLockedPress();
+                else onReset();
               }}
-              style={[styles.cell, place(CELLS[dir])]}
+              style={[styles.cell, place(CELLS.reset)]}
             />
           </GestureDetector>
-        ))}
-        <GestureDetector gesture={resetTap}>
-          <Animated.View
-            accessible
-            accessibilityRole="button"
-            accessibilityLabel={t("camera.nudge.reset")}
-            accessibilityHint={t("camera.nudge.resetHint")}
-            accessibilityState={{ disabled: isLocked }}
-            accessibilityActions={[{ name: "activate" }]}
-            onAccessibilityAction={(event) => {
-              if (event.nativeEvent.actionName !== "activate") return;
-              if (isLocked) onLockedPress();
-              else onReset();
-            }}
-            style={[styles.cell, place(CELLS.reset)]}
-          />
-        </GestureDetector>
-        <GestureDetector gesture={pinPress}>
-          <Animated.View
-            accessible
-            accessibilityRole="button"
-            accessibilityLabel={t("camera.nudge.pin")}
-            accessibilityHint={t("camera.nudge.pinHint")}
-            accessibilityState={{ disabled: isLocked, selected: pinned }}
-            accessibilityActions={[
-              { name: "activate" },
-              ...(pinned ? [{ name: "unpin", label: t("camera.nudge.unpin") }] : []),
-            ]}
-            onAccessibilityAction={(event) => {
-              const action = event.nativeEvent.actionName;
-              if (action !== "activate" && action !== "unpin") return;
-              if (isLocked) onLockedPress();
-              else if (action === "unpin") unpinFromReader();
-              else pin();
-            }}
-            style={[styles.cell, place(CELLS.pin)]}
-          />
-        </GestureDetector>
+          <GestureDetector gesture={pinPress}>
+            <Animated.View
+              accessible
+              accessibilityRole="button"
+              accessibilityLabel={t("camera.nudge.pin")}
+              accessibilityHint={isLocked ? t("camera.unlockToNudge") : t("camera.nudge.pinHint")}
+              accessibilityState={{ selected: pinned }}
+              accessibilityActions={[
+                { name: "activate" },
+                ...(pinned ? [{ name: "unpin", label: t("camera.nudge.unpin") }] : []),
+              ]}
+              onAccessibilityAction={(event) => {
+                const action = event.nativeEvent.actionName;
+                if (action !== "activate" && action !== "unpin") return;
+                if (isLocked) onLockedPress();
+                else if (action === "unpin") unpinFromReader();
+                else pin();
+              }}
+              style={[styles.cell, place(CELLS.pin)]}
+            />
+          </GestureDetector>
+        </Animated.View>
       </Animated.View>
     </Animated.View>
   );

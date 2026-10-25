@@ -1,13 +1,12 @@
-import { type RetreatEdge, retreatOffset } from "@ar-darwin/core";
-import { cameraPill, duration, radius, signature, spring } from "@ar-darwin/ui";
-import { type ReactNode, useEffect } from "react";
+import type { RetreatEdge } from "@ar-darwin/core";
+import { cameraPill, radius } from "@ar-darwin/ui";
+import type { ReactNode } from "react";
 import { type StyleProp, StyleSheet, type ViewStyle } from "react-native";
-import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useHandedness } from "../theme/HandednessProvider";
-import { animateFade, animateMove, springPlan } from "../theme/motion";
-import { useReduceMotion } from "../theme/ReduceMotionProvider";
 import { useTheme } from "../theme/ThemeProvider";
+import { useRetreat } from "./useRetreat";
 
 type FloatingPillProps = {
   children: ReactNode;
@@ -27,7 +26,7 @@ type FloatingPillProps = {
 
 /**
  * Camera control pill: dark fill with a paper edge (dark in both themes). It gets out of the way
- * when `retreated` (the 3 s idle timer belongs to the camera menu, not to this component) and
+ * when `retreated` (the 3 s idle timer is `useMenuIdle`, in the camera, not in this component) and
  * returns with the `gentle` spring. Reduced motion: it only fades. While retreated, touches pass
  * through, but it stays in the screen reader's tree so the controls are never lost.
  */
@@ -41,29 +40,11 @@ export function FloatingPill({
   style,
 }: FloatingPillProps) {
   const { theme } = useTheme();
-  const { reduce } = useReduceMotion();
   const { controls } = useHandedness();
   const insets = useSafeAreaInsets();
   const c = theme.color.camera;
-  const plan = springPlan(spring.gentle, reduce);
   const edge: RetreatEdge = towards ?? (placement === "freeHand" ? controls : "down");
-  const progress = useSharedValue(retreated ? 1 : 0);
-  const fade = useSharedValue(retreated ? 0 : 1);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: animate when `retreated` flips
-  useEffect(() => {
-    progress.value =
-      plan.mode === "full" ? animateMove(retreated ? 1 : 0, plan) : retreated ? 1 : 0;
-    fade.value = animateFade(retreated ? 0 : 1, plan, duration.medium.ms);
-  }, [retreated]);
-
-  const moveStyle = useAnimatedStyle(() => {
-    const offset = retreatOffset(edge, signature.menuRetreatPx * progress.value);
-    return {
-      opacity: fade.value,
-      transform: [{ translateX: offset.x }, { translateY: offset.y }],
-    };
-  });
+  const moveStyle = useRetreat(retreated, edge);
 
   const side =
     placement === "freeHand"

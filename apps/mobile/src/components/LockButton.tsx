@@ -1,6 +1,6 @@
 import { cameraColors, lockButton, radius, signature, space } from "@ar-darwin/ui";
 import { Canvas, Group, Path, Skia } from "@shopify/react-native-skia";
-import { useState } from "react";
+import { memo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -31,30 +31,42 @@ type LockButtonProps = {
   placement?: "freeHand" | "free";
 };
 
-const RING_RECT = Skia.XYWHRect(
-  lockButton.ringWidth / 2,
-  lockButton.ringWidth / 2,
-  lockButton.size - lockButton.ringWidth,
-  lockButton.size - lockButton.ringWidth,
+const CENTRE = lockButton.ringSize / 2;
+/** The disc is centred in the bigger ring frame: the frame sticks out this far on every side. */
+const RING_OVERHANG = (lockButton.ringSize - lockButton.size) / 2;
+/** The progress arc runs down the middle of the graphite track, inside the frame's edge. */
+const ARC_RADIUS = CENTRE - lockButton.ringTrackPad - lockButton.ringWidth / 2;
+const ARC_RECT = Skia.XYWHRect(
+  CENTRE - ARC_RADIUS,
+  CENTRE - ARC_RADIUS,
+  ARC_RADIUS * 2,
+  ARC_RADIUS * 2,
 );
+const TRACK_WIDTH = lockButton.ringWidth + lockButton.ringTrackPad * 2;
 
-/** Static background disc (fill + edge), built once with Skia 2.6's immutable path factories. */
-const DISC = Skia.Path.Circle(
-  lockButton.size / 2,
-  lockButton.size / 2,
-  (lockButton.size - lockButton.edgeWidth) / 2,
-);
+/** Static shapes, built once with Skia 2.6's immutable path factories. */
+const DISC = Skia.Path.Circle(CENTRE, CENTRE, (lockButton.size - lockButton.edgeWidth) / 2);
+const TRACK = Skia.Path.Circle(CENTRE, CENTRE, ARC_RADIUS);
+const TRACK_EDGE = Skia.Path.Circle(CENTRE, CENTRE, CENTRE - lockButton.edgeWidth / 2);
 
 const ICON_SIZE = lockButton.size / 2;
 
 /**
  * Touch-lock button (#19): ignores every touch except a 1 s long press (`signature.lockHoldMs`),
- * which flips `locked` and confirms it with a haptic. The ring fills clockwise with a plain
+ * which flips `locked` and confirms it with a haptic. The ring (`lockButton.ringSize`, wider than a
+ * fingertip so it shows around the finger, on a graphite track) fills clockwise with a plain
  * `withTiming` on the UI thread (no custom core helper needed: unlike `transform.ts`'s gesture
  * math, this is Reanimated's own timing, not bespoke worklet logic) and snaps back if the press
- * is released or cancelled before completing. Locking redraws the padlock («trazo vivo»).
+ * is released or cancelled before completing. The padlock is open and white while unlocked and
+ * closed and orange while locked; each change redraws it («trazo vivo»). When the ring closes, the
+ * haptic and that change tell the person the lock took (the ring stays full while the finger is down).
+ *
+ * Memoized: its `Gesture.LongPress()` is rebuilt on every render, and RNGH swaps the handlers of a
+ * gesture that is mid-press when that happens (`updateHandlers`), so a re-render while the finger
+ * is held (the camera menu showing up, a toast) could let `onStart` slip by and the lock never
+ * engage. Its props are stable (`locked`, `onLockedChange`, `placement`); only `isLocked` changes.
  */
-export function LockButton({
+export const LockButton = memo(function LockButton({
   locked,
   isLocked,
   onLockedChange,
@@ -66,10 +78,18 @@ export function LockButton({
   const { reduce } = useReduceMotion();
   const insets = useSafeAreaInsets();
 
+  // The JS side owns the lock's value: `next` is worked out from this ref, written to the shared
+  // value and to the React state, and never read back. Reading `locked.value` right after writing
+  // it from JS can return the old value (the write lands on the UI thread later), which left the
+  // padlock and the gestures disagreeing: the image locked but the icon not, or the other way
+  // round, "sometimes".
+  const lockedRef = useRef(isLocked);
   const toggle = () => {
-    locked.value = !locked.value;
-    if (locked.value) setDrawKey((k) => k + 1);
-    onLockedChange(locked.value);
+    const next = !lockedRef.current;
+    lockedRef.current = next;
+    locked.value = next;
+    setDrawKey((k) => k + 1);
+    onLockedChange(next);
     playHaptic("lockToggle");
   };
 
@@ -88,18 +108,21 @@ export function LockButton({
 
   const ringPath = useDerivedValue(() =>
     Skia.PathBuilder.Make()
-      .addArc(RING_RECT, -90, 360 * progress.value)
+      .addArc(ARC_RECT, -90, 360 * progress.value)
       .detach(),
   );
+  // The graphite track is only there while the ring fills, so the lock at rest is the plain disc.
+  const trackOpacity = useDerivedValue(() => (progress.value > 0 ? 1 : 0));
 
+  // The frame is bigger than the disc: it starts `RING_OVERHANG` earlier so the disc stays put.
   const place =
     placement === "freeHand"
       ? [
           styles.freeHand,
-          { top: insets.top + space[5] },
+          { top: insets.top + space[5] - RING_OVERHANG },
           controls === "left"
-            ? { left: insets.left + space[5] }
-            : { right: insets.right + space[5] },
+            ? { left: insets.left + space[5] - RING_OVERHANG }
+            : { right: insets.right + space[5] - RING_OVERHANG },
         ]
       : null;
 
@@ -120,6 +143,20 @@ export function LockButton({
         >
           <Canvas style={StyleSheet.absoluteFill}>
             <Group>
+              <Group opacity={trackOpacity}>
+                <Path
+                  path={TRACK}
+                  style="stroke"
+                  strokeWidth={TRACK_WIDTH}
+                  color={cameraColors.pillSolid}
+                />
+                <Path
+                  path={TRACK_EDGE}
+                  style="stroke"
+                  strokeWidth={lockButton.edgeWidth}
+                  color={cameraColors.pillEdge}
+                />
+              </Group>
               <Path path={DISC} color={cameraColors.pillSolid} />
               <Path
                 path={DISC}
@@ -135,10 +172,10 @@ export function LockButton({
                 color={cameraColors.accent}
               />
               <SkiaIcon
-                name="lock"
+                name={isLocked ? "lock" : "unlock"}
                 size={ICON_SIZE}
-                x={(lockButton.size - ICON_SIZE) / 2}
-                y={(lockButton.size - ICON_SIZE) / 2}
+                x={CENTRE - ICON_SIZE / 2}
+                y={CENTRE - ICON_SIZE / 2}
                 color={isLocked ? cameraColors.accent : cameraColors.text}
                 drawKey={drawKey}
                 reduce={reduce}
@@ -149,13 +186,13 @@ export function LockButton({
       </GestureDetector>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   freeHand: { position: "absolute" },
   frame: {
-    width: lockButton.size,
-    height: lockButton.size,
+    width: lockButton.ringSize,
+    height: lockButton.ringSize,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",

@@ -28,6 +28,12 @@ export const icons = {
     path("M8 11V8a4 4 0 0 1 8 0v3"),
     path("M12 15v2"),
   ],
+  // The same padlock with the shackle lifted: the touch lock is off.
+  unlock: [
+    { type: "rect", x: 5, y: 11, width: 14, height: 9, rx: 2 },
+    path("M8 11V8a4 4 0 0 1 7.4-2.1"),
+    path("M12 15v2"),
+  ],
   magnet: [path("M5 4h4v8a3 3 0 0 0 6 0V4h4v8a7 7 0 0 1-14 0Z"), path("M5 8h4M15 8h4")],
   opacity: [
     { type: "circle", cx: 12, cy: 12, r: 8 },
@@ -50,6 +56,8 @@ export const icons = {
     path("M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10Z"),
     { type: "circle", cx: 12, cy: 11, r: 2.2 },
   ],
+  // Two arrows crossing in opposite directions: the camera menu goes to the other side.
+  swapSides: [path("M4 8h14M14 4l4 4-4 4"), path("M20 16H6M10 12l-4 4 4 4")],
   arrowUp: [path("M12 19V5M6 11l6-6 6 6")],
   arrowDown: [path("M12 5v14M6 13l6 6 6-6")],
   arrowLeft: [path("M19 12H5M11 6l-6 6 6 6")],
