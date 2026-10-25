@@ -153,6 +153,11 @@ export const es = {
   },
   settings: {
     title: "Ajustes",
+    magnet: {
+      label: "Imán",
+      description:
+        "La imagen se engancha a los ejes del lienzo, a los ángulos rectos y a la posición fijada, con una guía y una vibración ligera.",
+    },
   },
   projectStatus: {
     pending: "Pendiente",

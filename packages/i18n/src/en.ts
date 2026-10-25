@@ -153,6 +153,11 @@ export const en = {
   },
   settings: {
     title: "Settings",
+    magnet: {
+      label: "Magnet",
+      description:
+        "The image snaps to the canvas axes, to right angles and to the pinned position, with a guide and a light vibration.",
+    },
   },
   projectStatus: {
     pending: "To do",
