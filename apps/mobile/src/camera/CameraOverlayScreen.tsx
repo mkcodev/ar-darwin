@@ -1,5 +1,12 @@
 import type { CameraIssueKind, ImageAdjustments } from "@ar-darwin/core";
-import { classifyCameraIssue, isIgnorableCameraError } from "@ar-darwin/core";
+import {
+  classifyCameraIssue,
+  isIgnorableCameraError,
+  type TapState,
+  tapEnd,
+  tapMove,
+  tapStart,
+} from "@ar-darwin/core";
 import {
   cameraBackdropColor,
   cameraColors,
@@ -14,7 +21,7 @@ import { Stack, useIsFocused } from "expo-router";
 import { usePreventRemove } from "expo-router/react-navigation";
 import { StatusBar } from "expo-status-bar";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { AppState, StyleSheet, Text, View } from "react-native";
+import { AppState, type GestureResponderEvent, StyleSheet, Text, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, useCameraDevice } from "react-native-vision-camera";
@@ -127,8 +134,35 @@ export function CameraOverlayScreen({
   const {
     idle: menuIdle,
     wake: wakeMenu,
+    poke: pokeMenu,
     reset: resetMenu,
   } = useMenuIdle(signature.menuIdleMs, touching || sliderActive || nudgeHolding || adjustOpen);
+
+  // A hidden menu comes back only with a tap that stays put (one finger, no drift): dragging,
+  // pinching or rotating the image while everything is hidden wakes nothing. Any touch restarts
+  // the countdown of a shown menu. React Native's raw touch events bubble from every child, so the
+  // screen's root sees them all; RNGH cancels them (`onTouchCancel`) once a drag takes over. The
+  // state change comes when the finger lifts, never when it lands, so nothing re-renders mid-press.
+  const tap = useRef<TapState | null>(null);
+  const touchHandlers = {
+    onTouchStart: (e: GestureResponderEvent) => {
+      const { pageX, pageY, touches } = e.nativeEvent;
+      pokeMenu();
+      tap.current = tapStart(tap.current, pageX, pageY, touches.length);
+    },
+    onTouchMove: (e: GestureResponderEvent) => {
+      const { pageX, pageY, touches } = e.nativeEvent;
+      tap.current = tapMove(tap.current, pageX, pageY, touches.length);
+    },
+    onTouchEnd: (e: GestureResponderEvent) => {
+      const ended = tapEnd(tap.current, e.nativeEvent.touches.length);
+      tap.current = ended.state;
+      if (ended.tapped) wakeMenu();
+    },
+    onTouchCancel: () => {
+      tap.current = null;
+    },
+  };
   const adjustments = {
     brightness: useSharedValue(initialAdjustments?.brightness ?? 0),
     contrast: useSharedValue(initialAdjustments?.contrast ?? 0),
@@ -156,6 +190,7 @@ export function CameraOverlayScreen({
     canvas.current?.releaseTouches();
     setSliderActive(false);
     setNudgeHolding(false);
+    tap.current = null;
     resetMenu();
   }, [resetMenu]);
   useEffect(() => {
@@ -187,7 +222,7 @@ export function CameraOverlayScreen({
   };
 
   return (
-    <View style={[styles.frame, { backgroundColor: cameraBackdropColor }]} onTouchStart={wakeMenu}>
+    <View style={[styles.frame, { backgroundColor: cameraBackdropColor }]} {...touchHandlers}>
       <StatusBar style="light" />
       <Stack.Screen options={{ gestureEnabled: !isLocked }} />
       <CameraPermissionGate>
