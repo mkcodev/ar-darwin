@@ -10,7 +10,6 @@ import {
   useSharedValue,
 } from "react-native-reanimated";
 import { animateFade, animateMove, type MotionPlan, springPlan } from "../theme/motion";
-import { useReduceMotion } from "../theme/ReduceMotionProvider";
 import type { OverlayPlacement } from "./useOverlayGestures";
 
 type MagnetGuidesProps = {
@@ -21,6 +20,8 @@ type MagnetGuidesProps = {
   canvasSize: SharedValue<Size>;
   imageSize: SharedValue<Size>;
   pin: SharedValue<OverlayPlacement | null>;
+  /** «Reduce motion», read outside the Skia canvas: React context does not reach inside it. */
+  reduce: boolean;
 };
 
 /**
@@ -32,8 +33,14 @@ type MagnetGuidesProps = {
  * `signature.guideFadeOutMs`; with «reduce motion» it only fades, in 120 ms. Everything runs on the
  * UI thread: the shared values drive the paths and strokes, React renders it once.
  */
-export function MagnetGuides({ lock, shown, canvasSize, imageSize, pin }: MagnetGuidesProps) {
-  const { reduce } = useReduceMotion();
+export function MagnetGuides({
+  lock,
+  shown,
+  canvasSize,
+  imageSize,
+  pin,
+  reduce,
+}: MagnetGuidesProps) {
   const plan = useMemo(() => springPlan(spring.snappy, reduce), [reduce]);
 
   const axisX = useGuideProgress(

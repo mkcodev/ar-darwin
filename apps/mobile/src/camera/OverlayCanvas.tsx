@@ -17,6 +17,7 @@ import {
   useDerivedValue,
   useSharedValue,
 } from "react-native-reanimated";
+import { useReduceMotion } from "../theme/ReduceMotionProvider";
 import { MagnetGuides } from "./MagnetGuides";
 import { NudgePad } from "./NudgePad";
 import {
@@ -109,6 +110,7 @@ export function OverlayCanvas({
   onPinned,
   ref,
 }: OverlayCanvasProps) {
+  const { reduce } = useReduceMotion();
   const [pinned, setPinned] = useState(initialPin != null);
   const canvasSize = useSharedValue<Size>(ZERO_SIZE);
   const imageSize = useSharedValue<Size>(ZERO_SIZE);
@@ -197,6 +199,7 @@ export function OverlayCanvas({
               canvasSize={canvasSize}
               imageSize={imageSize}
               pin={pinPlacement}
+              reduce={reduce}
             />
           </Canvas>
         </View>
