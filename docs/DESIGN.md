@@ -129,7 +129,7 @@ Tokens (`packages/ui/src/motion.ts`); cada uno lleva su versión reducida:
 Momentos de firma:
 
 - Trazo que se dibuja: logo, iconos al activarse y estados vacíos.
-- Guía del imán: aparece con un pequeño rebote y vibración ligera al encajar.
+- Guía del imán: aparece con un pequeño rebote y vibración ligera al encajar (solo al encajar moviendo; no al soltar ni al tocar una imagen ya encajada). La guía del pin es discontinua, con una cruz en su centro, para no confundirla con un eje.
 - Divisor: los trozos se separan escalonados (unos 40 ms entre cada uno).
 - Racha de Retos: el contador avanza con muelle.
 - Pulsación «tinta que empapa» en los botones (≤ 180 ms).
