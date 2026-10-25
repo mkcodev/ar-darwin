@@ -11,6 +11,9 @@ export type HapticLevel =
 export const haptics = {
   /** The image lands on a magnet guide (the guide list goes from empty to not empty). */
   guideSnap: { kind: "impact", style: "light" },
+  /** The fine-adjust pad pins the current position as home. A light impact was too faint on
+   *  Android, where it is a plain vibration. */
+  pinSet: { kind: "notification", type: "success" },
   /** Lock or unlock position and touches. */
   lockToggle: { kind: "impact", style: "medium" },
   /** Next tile in the camera, or a tile picked in the splitter. */

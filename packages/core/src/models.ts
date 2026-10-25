@@ -50,6 +50,13 @@ export const IDENTITY_TRANSFORM: Transform = {
   flipY: false,
 };
 
+/** A transform with the canvas its x/y are px of: a place the image can be put back to. */
+export const PlacementSchema = z.object({
+  transform: TransformSchema,
+  viewport: ViewportSchema,
+});
+export type Placement = z.infer<typeof PlacementSchema>;
+
 export const MAX_SPLIT = 10;
 
 export const SplitConfigSchema = z.object({
@@ -92,6 +99,11 @@ export const ProjectSchema = z.object({
    * the camera fits the image on open. Saved together with `transform`, always.
    */
   transformViewport: ViewportSchema.optional(),
+  /**
+   * Position the person pinned as home: the camera's reset goes back to it, and opening the
+   * camera offers it. Absent = no pin. Its flips are ignored (the mirror buttons own those).
+   */
+  pinnedPlacement: PlacementSchema.optional(),
   /** Overlay image opacity, 0..1. */
   opacity: z.number().min(0).max(1),
   /** Brightness, contrast and invert of the overlay image. Absent = NEUTRAL_ADJUSTMENTS. */

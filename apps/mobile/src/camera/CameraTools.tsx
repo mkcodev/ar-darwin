@@ -14,14 +14,17 @@ type CameraToolsProps = {
   /** `null` when the camera has no torch: its button isn't shown. */
   torchOn: boolean | null;
   onTorchChange: (on: boolean) => void;
+  /** The fine-adjust pad is showing. */
+  nudgeOpen: boolean;
+  onToggleNudge: () => void;
   adjustOpen: boolean;
   onOpenAdjust: () => void;
 };
 
 /**
- * The camera's tool row: mirror H/V, torch and image adjustments. It stays while locked (torch
- * and adjustments still work; the mirror would move the image, so it is dimmed), so nothing
- * around it moves when the lock engages.
+ * The camera's tool row: mirror H/V, torch, the fine-adjust pad and image adjustments. It stays
+ * while locked (torch, adjustments and opening the pad still work; the mirror would move the
+ * image, so it is dimmed), so nothing around it moves when the lock engages.
  */
 export function CameraTools({
   flips,
@@ -30,6 +33,8 @@ export function CameraTools({
   onLockedFlip,
   torchOn,
   onTorchChange,
+  nudgeOpen,
+  onToggleNudge,
   adjustOpen,
   onOpenAdjust,
 }: CameraToolsProps) {
@@ -62,6 +67,13 @@ export function CameraTools({
           onPress={() => onTorchChange(!torchOn)}
         />
       )}
+      <IconButton
+        icon="nudge"
+        label={t("camera.menu.nudge")}
+        tone="camera"
+        pressed={nudgeOpen}
+        onPress={onToggleNudge}
+      />
       <IconButton
         icon="adjust"
         label={t("camera.adjust.open")}

@@ -2,24 +2,30 @@ import {
   applyGesture,
   fitTransform,
   type GestureStep,
+  holdDistance,
+  NUDGE_HOLD,
+  type NudgeDirection,
   nudge,
+  nudgeMove,
   radiansToDegrees,
   restoreTransform,
   rotationDeadZone,
   type Size,
   type Transform,
 } from "@ar-darwin/core";
-import { resolveMotion, spring, toReanimatedSpring } from "@ar-darwin/ui";
-import { useCallback, useRef } from "react";
+import { resolveMotion, spring, toReanimatedSpring, touchTarget } from "@ar-darwin/ui";
+import { useCallback, useEffect, useRef } from "react";
 import { Gesture } from "react-native-gesture-handler";
 import {
   type SharedValue,
   useAnimatedReaction,
+  useFrameCallback,
   useReducedMotion,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
+import { playHaptic } from "../theme/playHaptic";
 
 /** A saved transform and the canvas its x/y are px of (`Project.transformViewport`). */
 export type OverlayPlacement = { transform: Transform; viewport: Size };
@@ -39,7 +45,16 @@ type Options = {
    * canvas changes size, when a gesture ends and after a double-tap reset. Never per frame.
    */
   onSettle?: (placement: OverlayPlacement) => void;
+  /** A fine-adjust arrow was pressed while locked: the screen explains the lock. JS thread. */
+  onNudgeBlocked?: () => void;
+  /** The position pinned as home: the reset button goes back to it. Read once. */
+  pin?: OverlayPlacement | null;
+  /** The current position was pinned (JS thread). */
+  onPinChange?: (placement: OverlayPlacement) => void;
 };
+
+/** The finger may drift this far from an arrow before the hold ends: the hold is not a drag. */
+const NUDGE_MAX_DRIFT = touchTarget * 2;
 
 const NO_STEP: GestureStep = {
   changeX: 0,
@@ -78,8 +93,25 @@ const NO_STEP: GestureStep = {
  * `toggleFlip` (the mirror buttons, JS thread) flips one axis in place: the matrix mirrors around
  * the image's center, so nothing moves. Like the gestures, it does nothing while locked or before
  * the first placement (returns `null`); otherwise it settles and returns the new flips.
+ *
+ * Fine adjust (`nudgeGestures`, the pad's arrows): a press moves the image 1 px at once, and
+ * holding repeats with acceleration (`holdDistance`, core). Begin, release and every repeated
+ * step run on the UI thread — a `useFrameCallback` that only runs while an arrow is down — so a
+ * busy JS thread can neither delay the release (the image would overshoot at speed) nor stutter
+ * the repetition. Only the haptics and starting/stopping the frame callback cross to JS, once
+ * per press. The transform is settled (saved) once, on release. Arrows move along screen axes
+ * and keep the image's center inside the canvas.
  */
-export function useOverlayGestures({ imageSize, canvasSize, locked, initial, onSettle }: Options) {
+export function useOverlayGestures({
+  imageSize,
+  canvasSize,
+  locked,
+  initial,
+  onSettle,
+  onNudgeBlocked,
+  pin,
+  onPinChange,
+}: Options) {
   const reduce = useReducedMotion();
 
   const x = useSharedValue(0);
@@ -104,6 +136,27 @@ export function useOverlayGestures({ imageSize, canvasSize, locked, initial, onS
   const settle = useCallback((placement: OverlayPlacement) => {
     onSettleRef.current?.(placement);
   }, []);
+
+  const onNudgeBlockedRef = useRef(onNudgeBlocked);
+  onNudgeBlockedRef.current = onNudgeBlocked;
+  const nudgeBlocked = useCallback(() => {
+    onNudgeBlockedRef.current?.();
+  }, []);
+  /** Read once, like `initialPlacement`: where the reset goes back to when nothing is pinned. */
+  const openingRef = useRef(initial ?? null);
+  /** The pinned position: the reset's first choice. Replaced by `pinHere`. */
+  const pinRef = useRef(pin ?? null);
+  const onPinChangeRef = useRef(onPinChange);
+  onPinChangeRef.current = onPinChange;
+
+  /** Arrow held down on the pad, or null. Only the UI thread writes it while a hold runs. */
+  const nudgeHeld = useSharedValue<NudgeDirection | null>(null);
+  /** Timestamp of the hold's first frame; -1 until that frame arrives. */
+  const nudgeStartMs = useSharedValue(-1);
+  /** `holdDistance` that earlier frames of this hold already applied. */
+  const nudgeApplied = useSharedValue(0);
+  /** The hold reached the canvas edge: nothing more is written until it is released. */
+  const nudgeAtLimit = useSharedValue(false);
 
   const current = (): Transform => {
     "worklet";
@@ -135,6 +188,47 @@ export function useOverlayGestures({ imageSize, canvasSize, locked, initial, onS
       viewport: { width: canvas.width, height: canvas.height },
     });
   };
+
+  // Repetition of a held arrow. Only active while one is down (started and stopped from JS, once
+  // per press): until the stop lands `nudgeHeld` is already null, so late frames write nothing.
+  const frame = useFrameCallback((info) => {
+    const dir = nudgeHeld.value;
+    if (dir === null || nudgeAtLimit.value) return;
+    if (locked.value) {
+      // The lock engaged under the finger: stop dead, like the drag gestures do.
+      nudgeHeld.value = null;
+      emitSettle();
+      return;
+    }
+    if (nudgeStartMs.value < 0) {
+      nudgeStartMs.value = info.timestamp;
+      return;
+    }
+    const total = holdDistance(info.timestamp - nudgeStartMs.value);
+    const step = total - nudgeApplied.value;
+    if (step <= 0) return;
+    nudgeApplied.value = total;
+    const moved = nudgeMove(current(), dir, step, canvasSize.value);
+    x.value = moved.transform.x;
+    y.value = moved.transform.y;
+    if (moved.hitLimit) {
+      nudgeAtLimit.value = true;
+      scheduleOnRN(playHaptic, "limitReached");
+    }
+  }, false);
+  const frameRef = useRef(frame);
+  frameRef.current = frame;
+  const setFrameActive = useCallback((active: boolean) => {
+    frameRef.current.setActive(active);
+  }, []);
+
+  // Nothing keeps running when the camera screen goes away mid-hold.
+  useEffect(
+    () => () => {
+      nudgeHeld.value = null;
+    },
+    [nudgeHeld],
+  );
 
   // The string key (not the size objects themselves) makes this fire only when a size actually
   // changes, not on every frame the canvas happens to report its size again.
@@ -227,9 +321,11 @@ export function useOverlayGestures({ imageSize, canvasSize, locked, initial, onS
       if (!locked.value) emitSettle();
     });
 
-  const reset = () => {
+  /** Springs (or jumps, with reduced motion) to `base`, keeping the mirror, and settles once. */
+  const resetTo = (base: Transform) => {
     if (locked.value || !placed.value) return;
-    const base = fitTransform(imageSize.value, canvasSize.value);
+    // A hold in progress must not fight the spring.
+    nudgeHeld.value = null;
     const target = nudge(current(), "reset", "fine", { base });
     const canvas = canvasSize.value;
     settle({ transform: target, viewport: { width: canvas.width, height: canvas.height } });
@@ -248,9 +344,112 @@ export function useOverlayGestures({ imageSize, canvasSize, locked, initial, onS
     rotation.value = withSpring(target.rotation, config);
   };
 
+  const reset = () => {
+    if (!placed.value) return;
+    resetTo(fitTransform(imageSize.value, canvasSize.value));
+  };
+
+  /**
+   * Back to the pinned position; with no pin, to where the image was when the camera opened; with
+   * neither (a project that was never placed), fitted. The mirror stays as it is.
+   */
+  const resetToHome = () => {
+    if (!placed.value) return;
+    const canvas = canvasSize.value;
+    const home = pinRef.current ?? openingRef.current;
+    resetTo(
+      home
+        ? restoreTransform(home.transform, home.viewport, canvas)
+        : fitTransform(imageSize.value, canvas),
+    );
+  };
+
+  /** Pins the current position (x, y, scale, rotation) as home. False if nothing was pinned. */
+  const pinHere = (): boolean => {
+    if (locked.value || !placed.value) return false;
+    const canvas = canvasSize.value;
+    const placement = {
+      transform: current(),
+      viewport: { width: canvas.width, height: canvas.height },
+    };
+    pinRef.current = placement;
+    onPinChangeRef.current?.(placement);
+    playHaptic("pinSet");
+    return true;
+  };
+
   const doubleTap = Gesture.Tap().numberOfTaps(2).runOnJS(true).onEnd(reset);
 
   const gesture = Gesture.Simultaneous(pan, pinch, rotate, doubleTap);
+
+  const nudgeGesture = (dir: NudgeDirection) =>
+    Gesture.LongPress()
+      .minDuration(0)
+      .maxDistance(NUDGE_MAX_DRIFT)
+      .shouldCancelWhenOutside(false)
+      .onBegin(() => {
+        if (locked.value) {
+          scheduleOnRN(nudgeBlocked);
+          return;
+        }
+        if (!placed.value) return;
+        nudgeHeld.value = dir;
+        nudgeStartMs.value = -1;
+        nudgeApplied.value = 0;
+        // The tap step lands now, not on the next frame.
+        const moved = nudgeMove(current(), dir, NUDGE_HOLD.tapPx, canvasSize.value);
+        x.value = moved.transform.x;
+        y.value = moved.transform.y;
+        nudgeAtLimit.value = moved.hitLimit;
+        scheduleOnRN(playHaptic, moved.hitLimit ? "limitReached" : "nudgeStep");
+        scheduleOnRN(setFrameActive, true);
+      })
+      .onFinalize(() => {
+        const held = nudgeHeld.value;
+        // Another arrow may have taken over the hold: only the one that owns it ends it.
+        if (held !== null && held !== dir) return;
+        // `held` is null when something else already ended the hold (the lock engaged, a reset):
+        // the frame callback still has to be switched off, but there is nothing to settle.
+        if (held !== null) {
+          nudgeHeld.value = null;
+          emitSettle();
+        }
+        scheduleOnRN(setFrameActive, false);
+      });
+
+  const nudgeGestures: Record<NudgeDirection, ReturnType<typeof nudgeGesture>> = {
+    up: nudgeGesture("up"),
+    down: nudgeGesture("down"),
+    left: nudgeGesture("left"),
+    right: nudgeGesture("right"),
+  };
+
+  /** One 1 px step without a touch (the screen reader's "activate"), settled at once. */
+  const nudgeTap = (dir: NudgeDirection) => {
+    if (locked.value) {
+      nudgeBlocked();
+      return;
+    }
+    if (!placed.value) return;
+    const canvas = canvasSize.value;
+    const moved = nudgeMove(current(), dir, NUDGE_HOLD.tapPx, canvas);
+    x.value = moved.transform.x;
+    y.value = moved.transform.y;
+    playHaptic(moved.hitLimit ? "limitReached" : "nudgeStep");
+    settle({
+      transform: moved.transform,
+      viewport: { width: canvas.width, height: canvas.height },
+    });
+  };
+
+  /** Ends a hold from outside (focus lost, app in the background): keeps what already moved. */
+  const nudgeStop = () => {
+    if (nudgeHeld.value === null) return;
+    nudgeHeld.value = null;
+    frameRef.current.setActive(false);
+    const canvas = canvasSize.value;
+    settle({ transform: current(), viewport: { width: canvas.width, height: canvas.height } });
+  };
 
   const toggleFlip = (axis: FlipAxis): Flips | null => {
     if (locked.value || !placed.value) return null;
@@ -266,5 +465,21 @@ export function useOverlayGestures({ imageSize, canvasSize, locked, initial, onS
     return { flipX: transform.flipX, flipY: transform.flipY };
   };
 
-  return { gesture, x, y, scale, rotation, flipX, flipY, placed, toggleFlip };
+  return {
+    gesture,
+    x,
+    y,
+    scale,
+    rotation,
+    flipX,
+    flipY,
+    placed,
+    toggleFlip,
+    nudgeGestures,
+    nudgeHeld,
+    nudgeTap,
+    nudgeStop,
+    resetToHome,
+    pinHere,
+  };
 }

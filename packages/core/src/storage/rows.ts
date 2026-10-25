@@ -4,7 +4,15 @@ import {
   ImageAdjustmentsSchema,
   isNeutralAdjustments,
 } from "../imageAdjustments";
-import { type Category, CategorySchema, type Project, ProjectSchema, type Size } from "../models";
+import {
+  type Category,
+  CategorySchema,
+  type Placement,
+  PlacementSchema,
+  type Project,
+  ProjectSchema,
+  type Size,
+} from "../models";
 
 /** A `projects` row as SQLite returns it: snake_case, JSON in TEXT columns, NULL for missing. */
 const ProjectRowSchema = z.object({
@@ -13,6 +21,7 @@ const ProjectRowSchema = z.object({
   source_uri: z.string(),
   transform: z.string(),
   transform_viewport: z.string().nullable(),
+  pinned_placement: z.string().nullable(),
   opacity: z.number(),
   image_adjustments: z.string().nullable(),
   split: z.string().nullable(),
@@ -80,6 +89,22 @@ function parseAdjustments(text: string | null): ImageAdjustments | undefined {
   return parsed.success && !isNeutralAdjustments(parsed.data) ? parsed.data : undefined;
 }
 
+/**
+ * Like parseAdjustments, never throws: a corrupt pin loads as no pin, so it can't keep the
+ * project from opening.
+ */
+function parsePinnedPlacement(text: string | null): Placement | undefined {
+  if (text === null) return undefined;
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+  const parsed = PlacementSchema.safeParse(value);
+  return parsed.success ? parsed.data : undefined;
+}
+
 function orUndefined<T>(value: T | null): T | undefined {
   return value === null ? undefined : value;
 }
@@ -91,6 +116,7 @@ export function projectToRow(project: Project): ProjectRow {
     source_uri: project.sourceUri,
     transform: JSON.stringify(project.transform),
     transform_viewport: json(project.transformViewport),
+    pinned_placement: json(project.pinnedPlacement),
     opacity: project.opacity,
     image_adjustments: adjustmentsJson(project.imageAdjustments),
     split: json(project.split),
@@ -115,6 +141,7 @@ export function projectRowParams(row: ProjectRow): SqlValue[] {
     row.source_uri,
     row.transform,
     row.transform_viewport,
+    row.pinned_placement,
     row.opacity,
     row.image_adjustments,
     row.split,
@@ -137,7 +164,7 @@ export function projectRowParams(row: ProjectRow): SqlValue[] {
  */
 export type CameraState = Pick<
   Project,
-  "transform" | "opacity" | "imageAdjustments" | "status" | "timeSpentMs"
+  "transform" | "opacity" | "imageAdjustments" | "pinnedPlacement" | "status" | "timeSpentMs"
 > & {
   transformViewport?: Size;
 };
@@ -147,6 +174,7 @@ export function cameraStateParams(id: string, state: CameraState, now: Date): Sq
   return [
     JSON.stringify(state.transform),
     json(state.transformViewport),
+    json(state.pinnedPlacement),
     state.opacity,
     adjustmentsJson(state.imageAdjustments),
     state.status,
@@ -169,6 +197,7 @@ export function projectFromRow(row: unknown, categoryIds: readonly string[]): Pr
     sourceUri: r.source_uri,
     transform: parseJson(r.transform, "transform"),
     transformViewport: parseJson(r.transform_viewport, "transform_viewport"),
+    pinnedPlacement: parsePinnedPlacement(r.pinned_placement),
     opacity: r.opacity,
     imageAdjustments: parseAdjustments(r.image_adjustments),
     split: parseJson(r.split, "split"),

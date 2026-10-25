@@ -61,7 +61,7 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
       «en curso»; migración v3 `transform_viewport` (issue #40)
 - [x] Espejo H/V, linterna y ajustes de imagen (contraste, brillo, invertir) con Skia (issue #55)
 - [ ] Modo imán con guías y vibración (`snapTransform`)
-- [ ] Ajuste fino: dos velocidades, pulsación larga, reset y candado (`nudge`)
+- [x] Ajuste fino: dos velocidades, pulsación larga, reset y candado (`nudgeHold`, issue #68)
 - [ ] Menú flotante en píldora que se oculta solo
 - [ ] Modo inmersivo al bloquear: ocultar la barra de navegación de Android (`expo-navigation-bar`,
       requiere nuevo development build)

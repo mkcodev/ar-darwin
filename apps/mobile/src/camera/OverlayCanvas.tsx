@@ -8,7 +8,7 @@ import {
   Skia,
   type SkMatrix,
 } from "@shopify/react-native-skia";
-import { type Ref, useEffect, useImperativeHandle } from "react";
+import { type Ref, useEffect, useImperativeHandle, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
 import {
@@ -17,6 +17,7 @@ import {
   useDerivedValue,
   useSharedValue,
 } from "react-native-reanimated";
+import { NudgePad } from "./NudgePad";
 import {
   type FlipAxis,
   type Flips,
@@ -34,6 +35,8 @@ export type OverlayAdjustments = {
 export type OverlayCanvasHandle = {
   /** Mirrors the image on one axis; `null` (nothing done) while locked or not yet placed. */
   toggleFlip: (axis: FlipAxis) => Flips | null;
+  /** Ends a fine-adjust hold in progress (focus lost, app in the background), keeping its result. */
+  nudgeStop: () => void;
 };
 
 type OverlayCanvasProps = {
@@ -48,6 +51,20 @@ type OverlayCanvasProps = {
   /** Transform settled (placed, gesture ended, reset, mirrored): never per frame. */
   onSettle?: (placement: OverlayPlacement) => void;
   adjustments: OverlayAdjustments;
+  /** JS mirror of `locked`, for the pad's screen-reader state. */
+  isLocked: boolean;
+  /** Shows the fine-adjust pad; closing it also ends a hold in progress. */
+  nudgeOpen: boolean;
+  /** Distance from the bottom of the screen to the pad: it sits above the camera's controls. */
+  nudgeBottom: number;
+  /** A pad button was tapped while locked. */
+  onNudgeBlocked: () => void;
+  /** The position pinned as home, if any. Read once. */
+  initialPin?: OverlayPlacement | null;
+  /** The current position was pinned (JS thread). */
+  onPinChange?: (placement: OverlayPlacement) => void;
+  /** The pin button just pinned the position: the screen confirms it. */
+  onPinned: () => void;
   ref?: Ref<OverlayCanvasHandle>;
 };
 
@@ -60,6 +77,8 @@ const ZERO_SIZE: Size = { width: 0, height: 0 };
  * image stays invisible until it is placed, so it never flashes at the top-left corner.
  * Brightness, contrast and invert are a `<ColorMatrix>` on the image, derived on the UI thread
  * from `adjustments` (`adjustmentColorMatrix`, core). The mirror buttons go through `ref`.
+ * The fine-adjust pad (`NudgePad`) is a sibling of the gesture detector, not inside it, so touches
+ * on it never reach the drag and pinch gestures.
  *
  * Sized with `onLayout` on the wrapping View (same box as the Canvas: both fill the screen), not
  * Skia's `onSize`: the Canvas itself doesn't support `onLayout` on the New Architecture, and
@@ -73,8 +92,16 @@ export function OverlayCanvas({
   initial,
   onSettle,
   adjustments,
+  isLocked,
+  nudgeOpen,
+  nudgeBottom,
+  onNudgeBlocked,
+  initialPin,
+  onPinChange,
+  onPinned,
   ref,
 }: OverlayCanvasProps) {
+  const [pinned, setPinned] = useState(initialPin != null);
   const canvasSize = useSharedValue<Size>(ZERO_SIZE);
   const imageSize = useSharedValue<Size>(ZERO_SIZE);
 
@@ -82,15 +109,39 @@ export function OverlayCanvas({
     imageSize.value = image ? { width: image.width(), height: image.height() } : ZERO_SIZE;
   }, [image, imageSize]);
 
-  const { gesture, x, y, scale, rotation, flipX, flipY, placed, toggleFlip } = useOverlayGestures({
+  const {
+    gesture,
+    x,
+    y,
+    scale,
+    rotation,
+    flipX,
+    flipY,
+    placed,
+    toggleFlip,
+    nudgeGestures,
+    nudgeHeld,
+    nudgeTap,
+    nudgeStop,
+    resetToHome,
+    pinHere,
+  } = useOverlayGestures({
     imageSize,
     canvasSize,
     locked,
     initial,
     onSettle,
+    onNudgeBlocked,
+    pin: initialPin,
+    onPinChange,
   });
 
-  useImperativeHandle(ref, () => ({ toggleFlip }), [toggleFlip]);
+  useImperativeHandle(ref, () => ({ toggleFlip, nudgeStop }), [toggleFlip, nudgeStop]);
+
+  // Closing the pad (the adjustments sheet opens, the button is toggled) releases a held arrow.
+  useEffect(() => {
+    if (!nudgeOpen) nudgeStop();
+  }, [nudgeOpen, nudgeStop]);
 
   const { brightness, contrast, invert } = adjustments;
   const colorMatrix = useDerivedValue(() =>
@@ -110,26 +161,46 @@ export function OverlayCanvas({
   const shownOpacity = useDerivedValue(() => (placed.value ? opacity.value : 0));
 
   return (
-    <GestureDetector gesture={gesture}>
-      <View
-        style={StyleSheet.absoluteFill}
-        onLayout={(e) => {
-          const { width, height } = e.nativeEvent.layout;
-          canvasSize.value = { width, height };
-        }}
-      >
-        <Canvas style={StyleSheet.absoluteFill}>
-          {image && (
-            <ImageLayer
-              image={image}
-              matrix={matrix}
-              opacity={shownOpacity}
-              colorMatrix={colorMatrix}
-            />
-          )}
-        </Canvas>
-      </View>
-    </GestureDetector>
+    <>
+      <GestureDetector gesture={gesture}>
+        <View
+          style={StyleSheet.absoluteFill}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            canvasSize.value = { width, height };
+          }}
+        >
+          <Canvas style={StyleSheet.absoluteFill}>
+            {image && (
+              <ImageLayer
+                image={image}
+                matrix={matrix}
+                opacity={shownOpacity}
+                colorMatrix={colorMatrix}
+              />
+            )}
+          </Canvas>
+        </View>
+      </GestureDetector>
+      {nudgeOpen && (
+        <NudgePad
+          gestures={nudgeGestures}
+          held={nudgeHeld}
+          locked={locked}
+          isLocked={isLocked}
+          bottom={nudgeBottom}
+          onStep={nudgeTap}
+          onReset={resetToHome}
+          pinned={pinned}
+          onPin={() => {
+            if (!pinHere()) return;
+            setPinned(true);
+            onPinned();
+          }}
+          onLockedPress={onNudgeBlocked}
+        />
+      )}
+    </>
   );
 }
 

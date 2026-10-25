@@ -1,10 +1,12 @@
-import type { Project } from "@ar-darwin/core";
+import { type Project, samePlacement } from "@ar-darwin/core";
 import { cameraBackdropColor } from "@ar-darwin/ui";
 import { StatusBar } from "expo-status-bar";
+import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { t } from "../i18n";
 import { CameraNotice } from "./CameraNotice";
 import { CameraOverlayScreen } from "./CameraOverlayScreen";
+import type { OverlayPlacement } from "./useOverlayGestures";
 import { useProjectCameraSession } from "./useProjectCameraSession";
 import { useProjectImage } from "./useProjectImage";
 
@@ -22,6 +24,15 @@ type ProjectCameraScreenProps = {
 export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenProps) {
   const image = useProjectImage(project.sourceUri);
   const session = useProjectCameraSession(project, image.status === "ready");
+  const [choice, setChoice] = useState<"last" | "pin" | null>(null);
+
+  // A pinned position that differs from where the image was left: ask which one to open with,
+  // before the camera mounts, so the image is placed once, where it was chosen.
+  const { initialPlacement, initialPin } = session;
+  const mustChoose =
+    initialPin !== null &&
+    initialPlacement !== null &&
+    !samePlacement(initialPlacement, initialPin);
 
   if (image.status === "missing") {
     return (
@@ -36,11 +47,42 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
     );
   }
 
+  if (mustChoose && choice === null) {
+    return (
+      <View style={[styles.frame, { backgroundColor: cameraBackdropColor }]}>
+        <StatusBar style="light" />
+        <CameraNotice
+          title={t("camera.pinChoice.title")}
+          body={t("camera.pinChoice.body")}
+          actions={[
+            { label: t("camera.pinChoice.keepLast"), onPress: () => setChoice("last") },
+            { label: t("camera.pinChoice.usePin"), onPress: () => setChoice("pin") },
+          ]}
+        />
+      </View>
+    );
+  }
+
+  // The pin brings back position, size and rotation; the mirror stays as it was left.
+  const placement: OverlayPlacement | null =
+    choice === "pin" && initialPin !== null && initialPlacement !== null
+      ? {
+          transform: {
+            ...initialPin.transform,
+            flipX: initialPlacement.transform.flipX,
+            flipY: initialPlacement.transform.flipY,
+          },
+          viewport: initialPin.viewport,
+        }
+      : initialPlacement;
+
   return (
     <CameraOverlayScreen
       image={image.status === "ready" ? image.image : null}
       initialOpacity={session.initialOpacity}
-      initialPlacement={session.initialPlacement}
+      initialPlacement={placement}
+      initialPin={initialPin}
+      onPinChange={session.onPinChange}
       onPlacementSettle={session.onPlacementSettle}
       onOpacitySettle={session.onOpacitySettle}
       initialAdjustments={session.initialAdjustments}
