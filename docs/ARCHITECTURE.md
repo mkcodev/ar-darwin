@@ -123,13 +123,20 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
       `reset`. Solo cambia estado al ocultar o mostrar, nunca por fotograma, y limpia el `setTimeout`
       al desmontar. `poke()` reinicia la cuenta de un menú visible (cualquier toque, en
       `onTouchStart`); un menú oculto solo vuelve con `wake()`.
-    - **Despertar solo con un toque quieto.** La vista raíz de `CameraOverlayScreen` recibe los
-      toques en bruto de todos sus hijos (`onTouchStart/Move/End/Cancel`) y los pasa por
-      `tapStart/tapMove/tapEnd` (`packages/core/src/tap.ts`): un dedo que baja y sube sin pasar de
-      `TAP_SLOP_PX` (10) es un toque; un segundo dedo o desplazarse no. Arrastrar, pellizcar o girar la
-      imagen con todo oculto no despierta nada (RNGH cancela los toques de JS al activar el arrastre:
-      `onTouchCancel` olvida el toque). El estado cambia al *levantar* el dedo, no al bajarlo, así que
-      ningún re-render ocurre en mitad de una pulsación (ver `LockButton`, más abajo).
+    - **Tocar el lienzo muestra u oculta el menú; solo un toque quieto.** `OverlayCanvas` recibe los
+      toques en bruto de su propia vista (`onTouchStart/Move/End/Cancel`; las píldoras y la cruz son
+      hermanas, sus toques no llegan) y los pasa por `tapStart/tapMove/tapEnd`
+      (`packages/core/src/tap.ts`): un dedo que baja y sube sin pasar de `TAP_SLOP_PX` (10) es un
+      toque; un segundo dedo o desplazarse no. Un toque pasa a `onCanvasTap(onImage)`, con
+      `onImage = imageContainsPoint(...)` (`pointInImage`, `packages/core/src/imageHit.ts`: el punto se
+      lleva al sistema de la imagen deshaciendo giro y escala). **En el hueco vacío** alterna: oculta
+      al momento un menú visible (`hide()`) y trae uno oculto; **sobre la imagen** solo trae uno oculto
+      o reinicia la cuenta. Arrastrar, pellizcar o girar con todo oculto no despierta nada (RNGH
+      cancela los toques de JS al activar el arrastre: `onTouchCancel` olvida el toque). Cualquier
+      toque en la pantalla reinicia la cuenta de un menú visible (`onTouchStart` de la raíz). El estado
+      cambia al *levantar* el dedo, no al bajarlo, así que ningún re-render ocurre en mitad de una
+      pulsación (ver `LockButton`, más abajo). Con una pausa activa (dedo en el slider, hoja abierta…)
+      `hide()` no hace nada.
     - **Pausas** (la cuenta se detiene; una pausa nunca muestra ni oculta nada por sí sola: si el menú
       estaba oculto sigue oculto, si estaba visible empieza de cero al acabar): un dedo en la imagen
       (`onTouchingChange` de `useOverlayGestures`, al pasar `touches` de 0 a 1 y de vuelta a 0), un dedo
@@ -157,7 +164,12 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
       `onLockedChange`, `placement`); solo cambia `isLocked`. El anillo de progreso mide
       `lockButton.ringSize` (72 dp, más ancho que la yema) y se dibuja sobre una pista grafito que solo
       existe mientras se pulsa (el bermellón nunca va directo sobre la foto); el disco de 56 dp no se
-      mueve de sitio.
+      mueve de sitio. Candado **abierto y blanco** (`unlock`) si está desbloqueado, **cerrado y
+      naranja** (`lock`) si está bloqueado; cada cambio lo redibuja («trazo vivo»). `toggle()` calcula
+      el valor nuevo desde un `ref` propio y lo escribe en el shared value y en el estado de React sin
+      volver a leerlo: leer `locked.value` justo después de escribirlo desde JS puede devolver el valor
+      viejo (la escritura llega después al hilo de UI), y el icono y los gestos acababan en desacuerdo
+      («a veces»: la imagen bloqueada y el icono no, o al revés).
   - `CameraTools` (issue #55): espejo H, espejo V, linterna, ajuste fino y ajustes de imagen, en el
     raíl. No se oculta con el candado: linterna, ajustes y abrir el panel siguen activos; el espejo se atenúa y, al tocarlo,
     `LockedToast` dice «Desbloquea para usar el espejo» (`IconButton` `onDisabledPress`). El espejo
