@@ -8,6 +8,8 @@ import { useTheme } from "../theme/ThemeProvider";
 type TileTagProps = {
   tile: PreviewTile;
   progress: SharedValue<number>;
+  /** The preview's fade (reduced motion): the tags follow the canvas, not appear before it. */
+  fade: SharedValue<number>;
   /** Zoom and pan of the preview: the tag follows its tile but keeps its own size. */
   scale: SharedValue<number>;
   tx: SharedValue<number>;
@@ -24,14 +26,20 @@ const label = toNativeTextStyle(typography.value);
  * screen reader can reach: touches go to the preview's own gestures (`pointerEvents="none"`), and a
  * screen reader picks the tile with its «activate» action.
  */
-export function TileTag({ tile, progress, scale, tx, ty, isCurrent, onPick }: TileTagProps) {
+export function TileTag({ tile, progress, scale, tx, ty, isCurrent, onPick, fade }: TileTagProps) {
   const { theme } = useTheme();
   const c = theme.color.camera;
   // Centre of the crop with the tiles joined; the offset adds the separation.
   const homeX = tile.rect.x + tile.rect.width / 2;
   const homeY = tile.rect.y + tile.rect.height / 2;
 
+  // A tag wider than its tile would cover the drawing (10 columns): it hides, unless it is the
+  // picked one, and shows again with zoom.
+  const tagWidth =
+    Math.max(splitter.tagHeight, tile.id.length * splitter.tagCharWidth) + 2 * splitter.tagPaddingX;
+
   const place = useAnimatedStyle(() => ({
+    opacity: fade.value * (isCurrent || tile.rect.width * scale.value >= tagWidth ? 1 : 0),
     transform: [
       { translateX: tx.value + (homeX + tile.offset.x * progress.value) * scale.value },
       { translateY: ty.value + (homeY + tile.offset.y * progress.value) * scale.value },
@@ -44,9 +52,10 @@ export function TileTag({ tile, progress, scale, tx, ty, isCurrent, onPick }: Ti
     <Animated.View
       pointerEvents="none"
       accessible
-      accessibilityRole="button"
+      accessibilityRole="radio"
       accessibilityLabel={t("splitter.pickTile", { id: tile.id })}
-      accessibilityState={{ selected: isCurrent }}
+      accessibilityHint={t("splitter.pickTileHint")}
+      accessibilityState={{ checked: isCurrent }}
       accessibilityActions={[{ name: "activate" }]}
       onAccessibilityAction={(event) => {
         if (event.nativeEvent.actionName === "activate") onPick(tile.id);

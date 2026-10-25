@@ -1,9 +1,9 @@
-import { hasCuts, MAX_SPLIT, type Project, pickedTileId } from "@ar-darwin/core";
-import { radius, space } from "@ar-darwin/ui";
+import { hasCuts, MAX_SPLIT, type Project, pickedTileId, sheetCount } from "@ar-darwin/core";
+import { hairline, radius, space, toNativeTextStyle, typography } from "@ar-darwin/ui";
 import type { SkImage } from "@shopify/react-native-skia";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useAnimatedReaction, useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { scheduleOnRN } from "react-native-worklets";
@@ -102,6 +102,9 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
           )}
         </View>
         <SplitSummary config={config} overlapPercent={draft.overlapPercent} />
+        {sheetCount(config) > 1 && (
+          <Text style={[styles.help, { color: c.text.muted }]}>{t("splitter.pickHelp")}</Text>
+        )}
       </View>
       <ScrollView
         style={styles.controls}
@@ -140,7 +143,7 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
             label={t("splitter.edges")}
             options={[
               { value: "flush", label: t("splitter.flush") },
-              { value: "extended", label: t("splitter.extended") },
+              { value: "extended", label: t("splitter.extendedShort") },
             ]}
             value={draft.edges}
             onChange={(edges) => update({ edges })}
@@ -161,8 +164,23 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
           </>
         )}
       </ScrollView>
-      <View style={[styles.action, { paddingBottom: Math.max(insets.bottom, space[4]) }]}>
-        <Button variant="primary" fullWidth onPress={start}>
+      <View
+        style={[
+          styles.action,
+          {
+            paddingBottom: Math.max(insets.bottom, space[4]),
+            borderTopColor: c.border.subtle,
+            backgroundColor: c.bg.canvas,
+          },
+        ]}
+      >
+        <Button
+          variant="primary"
+          icon="camera"
+          fullWidth
+          accessibilityHint={t("splitter.startHint")}
+          onPress={start}
+        >
           {t("splitter.start", { id: picked })}
         </Button>
       </View>
@@ -176,6 +194,7 @@ const styles = StyleSheet.create({
   preview: { flex: 1, borderRadius: radius.md, overflow: "hidden" },
   controls: { flexGrow: 0, maxHeight: "58%" },
   controlsContent: { padding: space[4], gap: space[4] },
-  action: { paddingHorizontal: space[4], paddingTop: space[3] },
+  action: { paddingHorizontal: space[4], paddingTop: space[3], borderTopWidth: hairline },
+  help: { ...toNativeTextStyle(typography.label), textAlign: "center" },
   steppers: { flexDirection: "row", gap: space[6] },
 });

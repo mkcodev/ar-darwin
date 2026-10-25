@@ -35,6 +35,9 @@ type SplitPreviewProps = {
 /** One shared value per possible tile (10 × 10), made once: hooks can't run in a loop. */
 const MAX_TILES = 100;
 
+/** The staggered separation never takes longer than this to start its last tile (a transition). */
+const separationMs = duration.medium.ms;
+
 /**
  * The splitter's live preview: the image cut with `splitPreviewLayout`, drawn in one Skia canvas
  * (crops, blue tint on the extended zones, dashed original cuts) with the names as pills over it.
@@ -76,7 +79,15 @@ export function SplitPreview({
     frame,
     maxZoom: splitter.maxZoom,
     onTapContent: (x, y) => {
-      const id = tileAtPoint(layout, { x, y });
+      // Tiles still coming apart sit where their progress has them, not at their final place.
+      const moving = {
+        ...layout,
+        tiles: layout.tiles.map((tile, i) => {
+          const p = progress[i]?.value ?? 1;
+          return { ...tile, offset: { x: tile.offset.x * p, y: tile.offset.y * p } };
+        }),
+      };
+      const id = tileAtPoint(moving, { x, y });
       if (id !== null) onPickTile(id);
     },
   });
@@ -86,12 +97,14 @@ export function SplitPreview({
   useEffect(() => {
     reset(false);
     const count = config.rows * config.cols;
+    // Whatever the grid, the last tile starts within `separationMs` of the first.
+    const step = Math.min(stagger, separationMs / count);
     progress.forEach((p, i) => {
       if (i >= count) {
         p.value = 1;
       } else if (plan.mode === "full") {
         p.value = 0;
-        p.value = withDelay(i * stagger, animateMove(1, plan));
+        p.value = withDelay(i * step, animateMove(1, plan));
       } else {
         p.value = 1;
       }
@@ -113,7 +126,7 @@ export function SplitPreview({
     () => ({
       tint: c.guide.tint,
       cut: c.guide.default,
-      cutCase: c.bg.canvas,
+      cutCase: c.camera.guideCase,
       current: c.accent.default,
     }),
     [c],
@@ -139,18 +152,26 @@ export function SplitPreview({
               ))}
             </Group>
           </Canvas>
-          {layout.tiles.map((tile, i) => (
-            <TileTag
-              key={tile.id}
-              tile={tile}
-              progress={progress[i] ?? fade}
-              scale={scale}
-              tx={tx}
-              ty={ty}
-              isCurrent={tile.id === currentTileId}
-              onPick={onPickTile}
-            />
-          ))}
+          <View
+            pointerEvents="none"
+            accessibilityRole="radiogroup"
+            accessibilityLabel={t("splitter.preview")}
+            style={StyleSheet.absoluteFill}
+          >
+            {layout.tiles.map((tile, i) => (
+              <TileTag
+                key={tile.id}
+                tile={tile}
+                progress={progress[i] ?? fade}
+                fade={fade}
+                scale={scale}
+                tx={tx}
+                ty={ty}
+                isCurrent={tile.id === currentTileId}
+                onPick={onPickTile}
+              />
+            ))}
+          </View>
         </View>
       </GestureDetector>
       {zoomed && (

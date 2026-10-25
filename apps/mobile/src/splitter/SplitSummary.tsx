@@ -1,6 +1,7 @@
 import { type SplitConfig, sheetCount } from "@ar-darwin/core";
 import { toNativeTextStyle, typography } from "@ar-darwin/ui";
-import { StyleSheet, Text } from "react-native";
+import { useEffect } from "react";
+import { AccessibilityInfo, StyleSheet, Text } from "react-native";
 import { t } from "../i18n";
 import { useTheme } from "../theme/ThemeProvider";
 
@@ -22,14 +23,14 @@ export function SplitSummary({ config, overlapPercent }: SplitSummaryProps) {
       : config.overlapPx > 0
         ? t("splitter.summary", { count, percent: overlapPercent })
         : t("splitter.summaryFlush", { count });
-  return (
-    <Text
-      accessibilityLiveRegion="polite"
-      style={[styles.text, { color: theme.color.text.primary }]}
-    >
-      {summary}
-    </Text>
-  );
+  // Announced once the person stops changing things: a live region would read every step of a
+  // slider drag, and only exists on Android.
+  useEffect(() => {
+    const timer = setTimeout(() => AccessibilityInfo.announceForAccessibility(summary), 600);
+    return () => clearTimeout(timer);
+  }, [summary]);
+
+  return <Text style={[styles.text, { color: theme.color.text.primary }]}>{summary}</Text>;
 }
 
 const styles = StyleSheet.create({

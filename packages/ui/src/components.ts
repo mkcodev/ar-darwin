@@ -99,6 +99,8 @@ export const splitter = {
   /** Name tag («A1») over each tile: a pill, legible on any photo. */
   tagHeight: 28,
   tagPaddingX: 10,
+  /** Width of one character of a tag, to tell if a tag fits in its tile. */
+  tagCharWidth: 9,
   /** Distance of the zoom reset button from the corner of the preview. */
   zoomResetInset: 8,
 } as const;

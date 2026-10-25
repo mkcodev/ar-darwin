@@ -334,7 +334,8 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   se guarda (`configFromDraft`). El grosor se muestra en % del lado más corto de un trozo en los ejes
   con corte (`shortestTileSide`; el máximo es siempre 50 %, el tope de `maxOverlapPx`) y se guarda en
   px de imagen. Al cambiar filas o columnas se conserva el %, no los px; en al ras o en 1×1 el % se
-  recuerda para cuando vuelva. «Extendidos» al reabrir es `overlapPx > 0`. Por defecto, 2×2 con bordes
+  recuerda mientras la pantalla siga abierta (solo se guarda `overlapPx`: al reabrir un corte al ras
+  vuelve el 8 %). «Extendidos» al reabrir es `overlapPx > 0`. Por defecto, 2×2 con bordes
   extendidos al 8 % y tinte activo.
 - **Guardado.** `UPDATE_PROJECT_SPLIT` (`split`, `current_tile_id`, `updated_at`; sin migración) es
   aparte de `UPDATE_PROJECT_CAMERA`: ninguna pantalla pisa lo de la otra. `enqueueSplitSave` usa la misma
@@ -520,7 +521,7 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 - `splitPreview.ts`: `splitPreviewLayout(image, config, frame, tileGap)` devuelve la escala, el origen y,
   por trozo, `rect`/`coreRect` en px de pantalla con los trozos unidos y el `offset` al separarse;
   `tileAtPoint` y `separatedCenter`. Lanza como `computeTiles` si la división no es válida.
-- `previewZoom.ts` (worklets): `zoomPreviewAt`, `panPreview`, `clampPreviewPan`, `previewContentPoint`,
+- `previewZoom.ts` (worklets): `pinchPreview`, `panPreview`, `clampPreviewPan`, `previewContentPoint`,
   `isPreviewZoomed`.
 
 Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone`, `radiansToDegrees`, `normalizeRotation` y los helpers internos) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones, y sin constantes externas en valores por defecto de parámetros (el plugin de worklets no las captura). `worklet.test.ts` lo comprueba en CI (también para `frameStats.ts`, `controls.ts`, `imageAdjustments.ts` y `previewZoom.ts`), porque Vitest ejecuta JS normal y esos fallos solo aparecen en el móvil.

@@ -2,8 +2,10 @@ import type { PreviewTile } from "@ar-darwin/core";
 import { splitter } from "@ar-darwin/ui";
 import {
   DashPathEffect,
+  FilterMode,
   Group,
   Image,
+  MipmapMode,
   Path,
   Rect,
   type SkImage,
@@ -18,7 +20,7 @@ export type SplitPreviewColors = {
   tint: string;
   /** The original cut line. */
   cut: string;
-  /** Under the cut line, so it reads on any photo. */
+  /** Under the cut line and the picked outline, so they read on any photo. */
   cutCase: string;
   /** Outline of the tile picked last. */
   current: string;
@@ -101,6 +103,8 @@ export function SplitTile({
           width={imageFrame.width}
           height={imageFrame.height}
           fit="fill"
+          // A 4096 px photo shown ~13× smaller: mipmaps keep it from shimmering while it moves.
+          sampling={{ filter: FilterMode.Linear, mipmap: MipmapMode.Linear }}
         />
         {showTint && geometry && (
           <Path path={geometry.zones} fillType="evenOdd" color={colors.tint} />
@@ -127,15 +131,27 @@ export function SplitTile({
         </>
       )}
       {isCurrent && (
-        <Rect
-          x={rect.x + half}
-          y={rect.y + half}
-          width={rect.width - splitter.currentWidth}
-          height={rect.height - splitter.currentWidth}
-          style="stroke"
-          strokeWidth={splitter.currentWidth}
-          color={colors.current}
-        />
+        <>
+          {/* The accent never sits straight on a photo: a dark case under it, like the cut lines. */}
+          <Rect
+            x={rect.x + half}
+            y={rect.y + half}
+            width={rect.width - splitter.currentWidth}
+            height={rect.height - splitter.currentWidth}
+            style="stroke"
+            strokeWidth={splitter.currentWidth + 2}
+            color={colors.cutCase}
+          />
+          <Rect
+            x={rect.x + half}
+            y={rect.y + half}
+            width={rect.width - splitter.currentWidth}
+            height={rect.height - splitter.currentWidth}
+            style="stroke"
+            strokeWidth={splitter.currentWidth}
+            color={colors.current}
+          />
+        </>
       )}
     </Group>
   );

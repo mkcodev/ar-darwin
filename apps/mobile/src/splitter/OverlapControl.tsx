@@ -34,7 +34,7 @@ export function OverlapControl({ percent, committed, onCommit }: OverlapControlP
 
   return (
     <View style={styles.root}>
-      <Text style={[label, { color: theme.color.text.muted }]}>{t("splitter.overlap")}</Text>
+      <Text style={[label, { color: theme.color.text.muted }]}>{t("splitter.overlapAmount")}</Text>
       <View style={styles.row}>
         <IconButton
           icon="minus"
@@ -44,7 +44,7 @@ export function OverlapControl({ percent, committed, onCommit }: OverlapControlP
         />
         <View style={styles.slider}>
           <Slider
-            label={t("splitter.overlap")}
+            label={t("splitter.overlapAmount")}
             compact
             value={percent}
             min={MIN_PERCENT}

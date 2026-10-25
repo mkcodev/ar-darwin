@@ -80,8 +80,8 @@ export function SegmentedControl<V extends string>({
               styles.thumb,
               {
                 width: segmentWidth - segmented.thumbInset * 2,
-                backgroundColor: c.bg.raised,
-                borderColor: c.border.strong,
+                backgroundColor: c.accent.subtle,
+                borderColor: c.accent.default,
               },
               thumbStyle,
             ]}
