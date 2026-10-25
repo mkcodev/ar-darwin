@@ -35,6 +35,8 @@ type ButtonProps = {
   children: string;
   onPress?: () => void;
   disabled?: boolean;
+  /** Stretches across its container (a main action at the foot of a screen). */
+  fullWidth?: boolean;
   accessibilityHint?: string;
 };
 
@@ -50,6 +52,7 @@ export function Button({
   children,
   onPress,
   disabled = false,
+  fullWidth = false,
   accessibilityHint,
 }: ButtonProps) {
   const { theme } = useTheme();
@@ -156,6 +159,7 @@ export function Button({
         style={[
           styles.button,
           { backgroundColor: look.bg, borderColor: look.border },
+          fullWidth && styles.fullWidth,
           disabled && styles.disabled,
         ]}
       >
@@ -171,6 +175,7 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
+  fullWidth: { alignSelf: "stretch", justifyContent: "center" },
   button: {
     flexDirection: "row",
     alignItems: "center",

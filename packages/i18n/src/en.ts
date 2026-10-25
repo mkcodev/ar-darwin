@@ -203,7 +203,8 @@ export const en = {
     summaryFlush: "{count} sheets · flush cut",
     summaryOne: "1 sheet",
     resetZoom: "Reset zoom",
-    openTile: "Open tile {id} in the camera",
+    pickTile: "Pick tile {id}",
+    start: "Trace {id}",
     missing: "This project's image can't be found.",
   },
   playground: {

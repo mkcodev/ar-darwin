@@ -204,7 +204,8 @@ export const es = {
     summaryFlush: "{count} folios · al ras",
     summaryOne: "1 folio",
     resetZoom: "Restablecer zoom",
-    openTile: "Abrir el trozo {id} en la cámara",
+    pickTile: "Elegir el trozo {id}",
+    start: "Calcar {id}",
     missing: "No se encuentra la imagen de este proyecto.",
   },
   playground: {

@@ -6,9 +6,11 @@ import {
   defaultSplitDraft,
   draftFromConfig,
   hasCuts,
+  isTileInGrid,
   MAX_OVERLAP_PERCENT,
   overlapPercent,
   overlapPxForPercent,
+  pickedTileId,
   SPLIT_PRESETS,
   sheetCount,
 } from "./splitConfig";
@@ -155,5 +157,24 @@ describe("grid helpers", () => {
       "3×3",
       "4×4",
     ]);
+  });
+});
+
+describe("the picked tile", () => {
+  it("knows which ids belong to a grid", () => {
+    const grid = { rows: 2, cols: 3 };
+    expect(isTileInGrid(grid, "A1")).toBe(true);
+    expect(isTileInGrid(grid, "B3")).toBe(true);
+    expect(isTileInGrid(grid, "C1")).toBe(false);
+    expect(isTileInGrid(grid, "A4")).toBe(false);
+    expect(isTileInGrid(grid, "A0")).toBe(false);
+    expect(isTileInGrid(grid, "a1")).toBe(false);
+    expect(isTileInGrid(grid, "")).toBe(false);
+  });
+
+  it("is the saved tile while it exists, A1 otherwise", () => {
+    expect(pickedTileId({ rows: 2, cols: 3 }, "B2")).toBe("B2");
+    expect(pickedTileId({ rows: 2, cols: 3 }, undefined)).toBe("A1");
+    expect(pickedTileId({ rows: 1, cols: 2 }, "B2")).toBe("A1");
   });
 });

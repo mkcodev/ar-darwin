@@ -353,11 +353,13 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   movimiento» aparecen ya separados con un fundido corto. Cambiar el grosor no la repite.
 - **Zoom.** Pellizco y arrastre (`useSplitPreviewGestures`, matemática de worklets en
   `packages/core/src/previewZoom.ts`) entre 1× y `splitter.maxZoom`; se queda al soltar y aparece un botón
-  de restablecer mientras haya zoom. Cambiar filas, columnas o modo lo restablece. Un toque abre el trozo
-  al instante, con o sin zoom (`previewContentPoint` deshace el zoom y `tileAtPoint` busca el trozo). El
+  de restablecer mientras haya zoom. Cambiar filas, columnas o modo lo restablece. Un toque elige el
+  trozo al instante, con o sin zoom (`previewContentPoint` deshace el zoom y `tileAtPoint` busca el trozo). El
   slider del grosor mueve un `SharedValue`; a React solo llega cada % entero.
-- Tocar un trozo marca `currentTileId`, vibra (`tileChange`) y abre la cámara con la imagen **entera**:
-  el recorte por trozo llega con «Minimapa y Siguiente trozo». La cabecera deja un hueco
+- **Elegir y calcar.** Tocar un trozo lo elige (`currentTileId`, se guarda en el acto, vibra con
+  `tileChange` y queda con borde de acento); mientras no haya ninguno, o si el guardado ya no existe en
+  la rejilla, el elegido es A1 (`pickedTileId`). El botón fijo «Calcar B2», al pie de la pantalla, guarda y
+  abre la cámara con la imagen **entera**: el recorte por trozo llega con «Minimapa y Siguiente trozo». La cabecera deja un hueco
   (`SplitterHeader`, `modeSwitcher`) para el selector «Manual | Folios» de «Divisor: tamaño real».
 
 ## Navegación (Expo Router, issue #34)

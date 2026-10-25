@@ -13,7 +13,7 @@ type TileTagProps = {
   tx: SharedValue<number>;
   ty: SharedValue<number>;
   isCurrent: boolean;
-  onOpen: (id: string) => void;
+  onPick: (id: string) => void;
 };
 
 const label = toNativeTextStyle(typography.value);
@@ -22,9 +22,9 @@ const label = toNativeTextStyle(typography.value);
  * The tile's name («A1») in a dark pill, legible on any photo (the camera's own colours, which are
  * measured against paper). It sits over the preview, not inside the canvas, so it is real text a
  * screen reader can reach: touches go to the preview's own gestures (`pointerEvents="none"`), and a
- * screen reader opens the tile with its «activate» action.
+ * screen reader picks the tile with its «activate» action.
  */
-export function TileTag({ tile, progress, scale, tx, ty, isCurrent, onOpen }: TileTagProps) {
+export function TileTag({ tile, progress, scale, tx, ty, isCurrent, onPick }: TileTagProps) {
   const { theme } = useTheme();
   const c = theme.color.camera;
   // Centre of the crop with the tiles joined; the offset adds the separation.
@@ -45,11 +45,11 @@ export function TileTag({ tile, progress, scale, tx, ty, isCurrent, onOpen }: Ti
       pointerEvents="none"
       accessible
       accessibilityRole="button"
-      accessibilityLabel={t("splitter.openTile", { id: tile.id })}
+      accessibilityLabel={t("splitter.pickTile", { id: tile.id })}
       accessibilityState={{ selected: isCurrent }}
       accessibilityActions={[{ name: "activate" }]}
       onAccessibilityAction={(event) => {
-        if (event.nativeEvent.actionName === "activate") onOpen(tile.id);
+        if (event.nativeEvent.actionName === "activate") onPick(tile.id);
       }}
       style={[
         styles.pill,

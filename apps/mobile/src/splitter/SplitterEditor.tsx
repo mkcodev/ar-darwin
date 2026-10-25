@@ -1,11 +1,13 @@
-import { hasCuts, MAX_SPLIT, type Project } from "@ar-darwin/core";
+import { hasCuts, MAX_SPLIT, type Project, pickedTileId } from "@ar-darwin/core";
 import { radius, space } from "@ar-darwin/ui";
 import type { SkImage } from "@shopify/react-native-skia";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useAnimatedReaction, useSharedValue } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { scheduleOnRN } from "react-native-worklets";
+import { Button } from "../components/Button";
 import { SegmentedControl } from "../components/SegmentedControl";
 import { Stepper } from "../components/Stepper";
 import { Toggle } from "../components/Toggle";
@@ -27,13 +29,14 @@ type Frame = { width: number; height: number };
 
 /**
  * The splitter with its image decoded: live preview, summary and controls. Every control edits the
- * draft; the preview, the summary and the saved split all come from it. Picking a tile marks it,
- * stores it and opens the camera (with the whole image for now: cropping per tile comes with the
- * camera's minimap).
+ * draft; the preview, the summary and the saved split all come from it. A tap on a tile picks it
+ * (A1 until one is), and the button under the controls, «Calcar B2», stores it and opens the camera
+ * (with the whole image for now: cropping per tile comes with the camera's minimap).
  */
 export function SplitterEditor({ project, image }: SplitterEditorProps) {
   const { theme } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const imageSize = useMemo(() => ({ width: image.width(), height: image.height() }), [image]);
   const { draft, config, currentTileId, update, pickTile } = useSplitterDraft(project, imageSize);
   const [frame, setFrame] = useState<Frame | null>(null);
@@ -60,11 +63,16 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
       opening.current = false;
     }, []),
   );
-  const openTile = (id: string) => {
-    if (opening.current) return;
-    opening.current = true;
+  const picked = pickedTileId(config, currentTileId);
+  const choose = (id: string) => {
+    if (id === picked && id === currentTileId) return;
     playHaptic("tileChange");
     pickTile(id);
+  };
+  const start = () => {
+    if (opening.current) return;
+    opening.current = true;
+    pickTile(picked);
     router.push({ pathname: "/project/[id]/camera", params: { id: project.id } });
   };
 
@@ -86,10 +94,10 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
               image={image}
               imageSize={imageSize}
               config={config}
-              currentTileId={currentTileId}
+              currentTileId={picked}
               frame={frame}
               separationKey={`${draft.rows}x${draft.cols}-${draft.edges}`}
-              onPickTile={openTile}
+              onPickTile={choose}
             />
           )}
         </View>
@@ -153,6 +161,11 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
           </>
         )}
       </ScrollView>
+      <View style={[styles.action, { paddingBottom: Math.max(insets.bottom, space[4]) }]}>
+        <Button variant="primary" fullWidth onPress={start}>
+          {t("splitter.start", { id: picked })}
+        </Button>
+      </View>
     </View>
   );
 }
@@ -163,5 +176,6 @@ const styles = StyleSheet.create({
   preview: { flex: 1, borderRadius: radius.md, overflow: "hidden" },
   controls: { flexGrow: 0, maxHeight: "58%" },
   controlsContent: { padding: space[4], gap: space[4] },
+  action: { paddingHorizontal: space[4], paddingTop: space[3] },
   steppers: { flexDirection: "row", gap: space[6] },
 });

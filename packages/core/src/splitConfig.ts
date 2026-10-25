@@ -102,3 +102,20 @@ export function sheetCount(config: Pick<SplitConfig, "rows" | "cols">): number {
 export function hasCuts(config: Pick<SplitConfig, "rows" | "cols">): boolean {
   return config.rows > 1 || config.cols > 1;
 }
+
+/** True when `id` («A1», «B3») names a tile of a rows × cols grid. */
+export function isTileInGrid(config: Pick<SplitConfig, "rows" | "cols">, id: string): boolean {
+  const match = /^([A-Z])([1-9]\d*)$/.exec(id);
+  if (match === null) return false;
+  const row = (match[1] ?? "").charCodeAt(0) - "A".charCodeAt(0);
+  const col = Number(match[2]);
+  return row < config.rows && col <= config.cols;
+}
+
+/** The tile the splitter has picked: the saved one while it still exists in the grid, else A1. */
+export function pickedTileId(
+  config: Pick<SplitConfig, "rows" | "cols">,
+  currentTileId: string | undefined,
+): string {
+  return currentTileId !== undefined && isTileInGrid(config, currentTileId) ? currentTileId : "A1";
+}

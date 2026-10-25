@@ -148,7 +148,7 @@ export function SplitPreview({
               tx={tx}
               ty={ty}
               isCurrent={tile.id === currentTileId}
-              onOpen={onPickTile}
+              onPick={onPickTile}
             />
           ))}
         </View>
