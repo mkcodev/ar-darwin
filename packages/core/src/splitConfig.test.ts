@@ -9,6 +9,7 @@ import {
   hasCuts,
   isTileInGrid,
   MAX_OVERLAP_PERCENT,
+  nextTileId,
   overlapPercent,
   overlapPxForPercent,
   pickedTileId,
@@ -177,6 +178,49 @@ describe("the picked tile", () => {
     expect(pickedTileId({ rows: 2, cols: 3 }, "B2")).toBe("B2");
     expect(pickedTileId({ rows: 2, cols: 3 }, undefined)).toBe("A1");
     expect(pickedTileId({ rows: 1, cols: 2 }, "B2")).toBe("A1");
+  });
+});
+
+describe("nextTileId", () => {
+  it("goes along the row, then down to the next one", () => {
+    const grid = { rows: 3, cols: 3 };
+    expect(nextTileId(grid, "A1")).toBe("A2");
+    expect(nextTileId(grid, "A3")).toBe("B1");
+    expect(nextTileId(grid, "B2")).toBe("B3");
+    expect(nextTileId(grid, "B3")).toBe("C1");
+  });
+
+  it("wraps from the last tile back to A1", () => {
+    expect(nextTileId({ rows: 2, cols: 2 }, "B2")).toBe("A1");
+    expect(nextTileId({ rows: 1, cols: 2 }, "A2")).toBe("A1");
+    expect(nextTileId({ rows: 3, cols: 1 }, "C1")).toBe("A1");
+  });
+
+  it("walks a column grid top to bottom", () => {
+    expect(nextTileId({ rows: 3, cols: 1 }, "A1")).toBe("B1");
+    expect(nextTileId({ rows: 3, cols: 1 }, "B1")).toBe("C1");
+  });
+
+  it("treats a missing or out-of-grid tile as A1, so the next is A2", () => {
+    expect(nextTileId({ rows: 2, cols: 2 }, undefined)).toBe("A2");
+    expect(nextTileId({ rows: 1, cols: 2 }, "B2")).toBe("A2");
+  });
+
+  it("stays on A1 in a 1×1 grid", () => {
+    expect(nextTileId({ rows: 1, cols: 1 }, "A1")).toBe("A1");
+    expect(nextTileId({ rows: 1, cols: 1 }, undefined)).toBe("A1");
+  });
+
+  it("visits every tile of the grid once before coming back", () => {
+    const grid = { rows: 4, cols: 3 };
+    const seen = new Set<string>();
+    let id: string | undefined;
+    for (let i = 0; i < sheetCount(grid); i++) {
+      id = nextTileId(grid, id);
+      seen.add(id);
+    }
+    expect(seen.size).toBe(sheetCount(grid));
+    expect(nextTileId(grid, id)).toBe("A2");
   });
 });
 

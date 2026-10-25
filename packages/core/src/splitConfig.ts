@@ -121,6 +121,23 @@ export function pickedTileId(
   return currentTileId !== undefined && isTileInGrid(config, currentTileId) ? currentTileId : "A1";
 }
 
+/**
+ * The tile after the picked one, in reading order (A1, A2, … B1, …), wrapping from the last back
+ * to A1. A1 when none is picked or the saved one no longer exists in the grid. A 1×1 grid has only
+ * A1, so it stays on it.
+ */
+export function nextTileId(
+  config: Pick<SplitConfig, "rows" | "cols">,
+  currentTileId: string | undefined,
+): string {
+  const picked = pickedTileId(config, currentTileId);
+  const row = picked.charCodeAt(0) - "A".charCodeAt(0);
+  const col = Number(picked.slice(1)) - 1;
+  const next = (row * config.cols + col + 1) % sheetCount(config);
+  const nextRow = Math.floor(next / config.cols);
+  return `${String.fromCharCode(65 + nextRow)}${(next % config.cols) + 1}`;
+}
+
 /** What the camera shows of a split project: one tile of the image, as the image it traces. */
 export type CameraCrop = {
   /** The tile's final crop, in image px (extended edges included). */
