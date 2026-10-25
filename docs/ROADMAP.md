@@ -63,7 +63,8 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 - [x] Modo imán con guías y vibración: ejes, ángulos rectos y pin con histéresis; interruptor en Ajustes
       (`magnetize`, issue #70)
 - [x] Ajuste fino: dos velocidades, pulsación larga, reset y candado (`nudgeHold`, issue #68)
-- [ ] Menú flotante en píldora que se oculta solo
+- [x] Menú flotante en píldora que se oculta solo: raíl de herramientas y barra del slider; cruz y
+      candado no se retiran (`useMenuIdle`, issue #72)
 - [ ] Modo inmersivo al bloquear: ocultar la barra de navegación de Android (`expo-navigation-bar`,
       requiere nuevo development build)
 - [ ] Pantalla del divisor con vista previa en vivo (Prompt 6)

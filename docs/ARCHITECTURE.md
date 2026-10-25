@@ -114,8 +114,27 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     `ImageAdjustSheet`, candado, `LockedToast`, `useKeepAwake`, `usePreventRemove` +
     `gestureEnabled` y avisos de cámara. Huecos `extraControls` (se ocultan con el candado) y
     `overlay`.
-  - `CameraTools` (issue #55): espejo H, espejo V, linterna, ajuste fino y ajustes de imagen, bajo el
-    slider. No se oculta con el candado: linterna, ajustes y abrir el panel siguen activos; el espejo se atenúa y, al tocarlo,
+  - **Menú flotante** (issue #72): el slider de opacidad (más los `extraControls`) va en una píldora
+    `FloatingPill` abajo y `CameraTools` en un raíl vertical, otra `FloatingPill`, en el lado de la
+    mano libre bajo el candado. Las dos se retiran 8 px y se desvanecen tras `signature.menuIdleMs`
+    (3 s) sin tocar (`retreated`, hilo de UI, con «reducir movimiento» solo se desvanecen). El
+    candado y la cruz de ajuste fino no se retiran.
+    - `useMenuIdle(ms, paused)` (`camera/useMenuIdle.ts`) es el temporizador: `idle`, `wake` y
+      `reset`. Solo cambia estado al ocultar o mostrar, nunca por fotograma, y limpia el `setTimeout`
+      al desmontar. Cualquier toque lo despierta (`onTouchStart` en la vista raíz de
+      `CameraOverlayScreen`; una píldora oculta deja pasar el toque, que solo la despierta).
+    - **Pausas** (el menú se queda visible y la cuenta empieza de cero al acabar): un dedo en la
+      imagen (`onTouchingChange` de `useOverlayGestures`, al pasar `touches` de 0 a 1 y de vuelta a
+      0), un dedo en el slider (`Slider` `onActiveChange`), la cruz abierta (`nudgeOpen`) y la hoja de
+      ajustes abierta. RNGH cancela los toques de JS al activar un gesto, así que el fin no llega
+      por `onTouchEnd`: cada fuente avisa una vez al empezar y otra al acabar con `scheduleOnRN`.
+    - **Reinicio**: perder el foco o pasar a segundo plano (`endInteractions`) suelta las pausas de
+      imagen y slider y llama a `reset()`; al volver a primer plano o recuperar el foco, `wake()`.
+      El menú nunca queda en pausa para siempre.
+    - Con un lector de pantalla activo (`AccessibilityInfo`) el menú no se oculta: activar un control
+      con TalkBack no envía toques que lo despierten.
+  - `CameraTools` (issue #55): espejo H, espejo V, linterna, ajuste fino y ajustes de imagen, en el
+    raíl. No se oculta con el candado: linterna, ajustes y abrir el panel siguen activos; el espejo se atenúa y, al tocarlo,
     `LockedToast` dice «Desbloquea para usar el espejo» (`IconButton` `onDisabledPress`). El espejo
     va por `ref` (`OverlayCanvasHandle.toggleFlip`): voltea en su sitio (la matriz voltea alrededor
     del centro) y se guarda con la transformada vía `onSettle`. La linterna es `torchMode` de
@@ -177,8 +196,9 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
       `signature.guideFadeOutMs` al soltar el objetivo; con «reducir movimiento», solo fundido.
     - Interruptor en Ajustes (`AppSettingsProvider`, activo por defecto), tabla `settings` (v6). La
       lectura no retrasa la cámara; un cambio de la persona antes de que acabe la lectura gana.
-  - `NudgePad` (issue #68): cruz de 4 flechas y reset, en la esquina del lado de la mano libre,
-    justo encima de los controles (altura medida con `onLayout`). Se abre con el botón «Ajuste fino»
+  - `NudgePad` (issue #68): cruz de 4 flechas y reset, en la esquina del lado de la mano que dibuja
+    (opuesto al raíl de herramientas), justo encima de la píldora de abajo (altura medida con
+    `onLayout`). Mientras está abierta el menú no se oculta, pero ella no se retira. Se abre con el botón «Ajuste fino»
     de `CameraTools` y se cierra sola al abrir la hoja de ajustes. Lo dibuja un solo `<Canvas>` de
     Skia (cinco discos y glifos) y es hermano del detector de gestos de la imagen: un dedo en el panel
     nunca arrastra, y otro dedo fuera sigue arrastrando y pellizcando. Semitransparente en reposo
