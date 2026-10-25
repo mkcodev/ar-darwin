@@ -5,11 +5,12 @@ import {
   type IconName,
   icon,
   opacity,
+  signature,
   space,
   touchTarget,
 } from "@ar-darwin/ui";
 import { Canvas, Circle } from "@shopify/react-native-skia";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import { Gesture, GestureDetector, type GestureType } from "react-native-gesture-handler";
 import Animated, {
@@ -46,6 +47,8 @@ type NudgePadProps = {
   pinned: boolean;
   /** Pins the current position as home. */
   onPin: () => void;
+  /** Removes the pin (double tap on the pin button, or the screen reader's «unpin» action). */
+  onUnpin: () => void;
   /** An arrow or reset was tapped while locked. */
   onLockedPress: () => void;
 };
@@ -105,9 +108,12 @@ export function NudgePad({
   onReset,
   pinned,
   onPin,
+  onUnpin,
   onLockedPress,
 }: NudgePadProps) {
   const [pinKey, setPinKey] = useState(0);
+  /** The last touch on the pin button, and whether a pin existed before it. */
+  const lastPinTouch = useRef({ at: 0, wasPinned: false });
   const insets = useSafeAreaInsets();
   const { controls } = useHandedness();
   const { reduce } = useReduceMotion();
@@ -137,8 +143,23 @@ export function NudgePad({
   // Declared before the gesture: the worklets plugin captures what a gesture callback uses when
   // the gesture is created, so a function declared after it would be undefined inside.
   const pin = () => {
+    const now = Date.now();
+    const last = lastPinTouch.current;
+    // A second touch right after one that found a pin there: the person is removing it. (Without
+    // a pin before the first touch, two touches just pin twice: nothing to remove.)
+    if (last.wasPinned && now - last.at < signature.doubleTapMs) {
+      lastPinTouch.current = { at: 0, wasPinned: false };
+      onUnpin();
+      return;
+    }
+    lastPinTouch.current = { at: now, wasPinned: pinned };
     setPinKey((key) => key + 1);
     onPin();
+  };
+
+  const unpinFromReader = () => {
+    lastPinTouch.current = { at: 0, wasPinned: false };
+    onUnpin();
   };
 
   // Pins on touch-down, not on release: a tap, a double tap and a long press all answer at once
@@ -261,10 +282,15 @@ export function NudgePad({
             accessibilityLabel={t("camera.nudge.pin")}
             accessibilityHint={t("camera.nudge.pinHint")}
             accessibilityState={{ disabled: isLocked, selected: pinned }}
-            accessibilityActions={[{ name: "activate" }]}
+            accessibilityActions={[
+              { name: "activate" },
+              ...(pinned ? [{ name: "unpin", label: t("camera.nudge.unpin") }] : []),
+            ]}
             onAccessibilityAction={(event) => {
-              if (event.nativeEvent.actionName !== "activate") return;
+              const action = event.nativeEvent.actionName;
+              if (action !== "activate" && action !== "unpin") return;
               if (isLocked) onLockedPress();
+              else if (action === "unpin") unpinFromReader();
               else pin();
             }}
             style={[styles.cell, place(CELLS.pin)]}

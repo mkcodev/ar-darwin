@@ -44,7 +44,7 @@ type CameraOverlayScreenProps = {
   /** The position pinned as home, if any. Read once. */
   initialPin?: OverlayPlacement | null;
   /** The position was pinned (or re-pinned). */
-  onPinChange?: (placement: OverlayPlacement) => void;
+  onPinChange?: (placement: OverlayPlacement | null) => void;
   /** Extra controls under the slider; hidden (keeping their space) while locked. */
   extraControls?: ReactNode;
   /** Drawn over everything, also while locked (e.g. the spike's fps meter). */
@@ -195,6 +195,7 @@ export function CameraOverlayScreen({
                 initialPin={initialPin}
                 onPinChange={onPinChange}
                 onPinned={() => showToast(t("camera.nudge.pinned"))}
+                onUnpinned={() => showToast(t("camera.nudge.unpinned"))}
               />
               {/* The slider and the tools stay usable while locked (opacity, torch and image
                   adjustments are tuned while drawing; the mirror dims); the extra controls hide

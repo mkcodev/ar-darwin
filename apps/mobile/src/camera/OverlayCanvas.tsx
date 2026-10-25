@@ -68,9 +68,11 @@ type OverlayCanvasProps = {
   /** The position pinned as home, if any. Read once. */
   initialPin?: OverlayPlacement | null;
   /** The current position was pinned (JS thread). */
-  onPinChange?: (placement: OverlayPlacement) => void;
+  onPinChange?: (placement: OverlayPlacement | null) => void;
   /** The pin button just pinned the position: the screen confirms it. */
   onPinned: () => void;
+  /** The pin button was double tapped and the pin removed: the screen confirms it. */
+  onUnpinned: () => void;
   ref?: Ref<OverlayCanvasHandle>;
 };
 
@@ -108,6 +110,7 @@ export function OverlayCanvas({
   initialPin,
   onPinChange,
   onPinned,
+  onUnpinned,
   ref,
 }: OverlayCanvasProps) {
   const { reduce } = useReduceMotion();
@@ -133,6 +136,7 @@ export function OverlayCanvas({
     releaseTouches,
     resetToHome,
     pinHere,
+    unpinHere,
   } = useOverlayGestures({
     imageSize,
     canvasSize,
@@ -218,6 +222,11 @@ export function OverlayCanvas({
             if (!pinHere()) return;
             setPinned(true);
             onPinned();
+          }}
+          onUnpin={() => {
+            if (!unpinHere()) return;
+            setPinned(false);
+            onUnpinned();
           }}
           onLockedPress={onNudgeBlocked}
         />

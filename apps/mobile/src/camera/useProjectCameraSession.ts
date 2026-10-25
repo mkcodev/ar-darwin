@@ -30,8 +30,8 @@ export type ProjectCameraSession = {
   onPlacementSettle: (placement: OverlayPlacement) => void;
   onOpacitySettle: (opacity: number) => void;
   onAdjustmentsSettle: (adjustments: ImageAdjustments) => void;
-  /** The position was pinned (or re-pinned). */
-  onPinChange: (placement: OverlayPlacement) => void;
+  /** The position was pinned (or re-pinned), or the pin removed (`null`). */
+  onPinChange: (placement: OverlayPlacement | null) => void;
 };
 
 /**
@@ -152,8 +152,8 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
   );
 
   const onPinChange = useCallback(
-    (pinnedPlacement: OverlayPlacement) => {
-      state.current = { ...state.current, pinnedPlacement };
+    (pinnedPlacement: OverlayPlacement | null) => {
+      state.current = { ...state.current, pinnedPlacement: pinnedPlacement ?? undefined };
       saveSoon();
     },
     [saveSoon],

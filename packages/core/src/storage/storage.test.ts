@@ -433,6 +433,33 @@ describe("project repository SQL", () => {
     });
   });
 
+  it("saving a camera state without a pin removes the pin that was stored", () => {
+    const db = openMigrated();
+    const pinned = newProject("p", "2026-10-10T10:00:00.000Z", {
+      pinnedPlacement: {
+        transform: { ...IDENTITY_TRANSFORM, x: 180, y: 360, scale: 0.3 },
+        viewport: { width: 400, height: 800 },
+      },
+    });
+    save(db, pinned);
+    expect(load(db, pinned.id)?.pinnedPlacement).toBeDefined();
+    db.prepare(UPDATE_PROJECT_CAMERA).run(
+      ...cameraStateParams(
+        pinned.id,
+        {
+          transform: pinned.transform,
+          opacity: pinned.opacity,
+          pinnedPlacement: undefined,
+          status: "in_progress",
+          timeSpentMs: 0,
+        },
+        new Date("2026-10-10T12:00:00.000Z"),
+      ),
+    );
+    expect(load(db, pinned.id)?.pinnedPlacement).toBeUndefined();
+    expect(db.prepare(SELECT_PROJECT).get(pinned.id)).toMatchObject({ pinned_placement: null });
+  });
+
   it("saves status and time before the first placement, leaving the project unplaced", () => {
     const db = openMigrated();
     const project = newProject("p", "2026-10-10T10:00:00.000Z");

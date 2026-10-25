@@ -199,7 +199,7 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     - Pin (`pinHere`, issue #68): disco en la esquina superior derecha de la cruz. Un toque guarda la
       posición actual (x, y, escala y giro, con su lienzo) como `pinnedPlacement`: háptica `pinSet`,
       aviso «Posición fijada» (el mismo `LockedToast`) y el icono pasa a acento con «trazo vivo».
-      Volver a pulsar lo reemplaza; no se puede quitar. Con el candado puesto, el toque muestra el
+      Volver a pulsar lo reemplaza; un doble toque (dos toques a menos de `signature.doubleTapMs`, 350 ms, sobre un pin ya existente) lo quita (`unpinHere`: `onPinChange(null)` guarda NULL, el reset vuelve a la posición de apertura, el imán lo olvida, aviso «Posición liberada», háptica `nudgeStep`); el lector de pantalla tiene la acción «Quitar la posición fijada». Con el candado puesto, el toque muestra el
       aviso del candado. Se guarda por `onPinChange` → `useProjectCameraSession` (mismo debounce).
     - Al abrir la cámara (`ProjectCameraScreen`): si hay pin y `samePlacement(última, pin)` es falso,
       antes de montar la cámara se muestra un `CameraNotice` «¿Dónde colocamos la imagen?» con

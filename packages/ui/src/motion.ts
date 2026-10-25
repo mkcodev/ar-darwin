@@ -74,6 +74,8 @@ export const signature = {
   labelHoldMs: 1600,
   /** Wheel or pinch counts as finished (guides fade, transform is stored) after this pause. */
   gestureSettleMs: 280,
+  /** Two touches on the fine-adjust pin button this close together are a double tap (unpin). */
+  doubleTapMs: 350,
   /** Long press on the lock button that toggles touch lock. */
   lockHoldMs: 1000,
   /** Large title header: the big title shrinks to this scale as it collapses into the bar. */

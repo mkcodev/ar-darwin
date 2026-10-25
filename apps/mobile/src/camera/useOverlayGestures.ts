@@ -56,8 +56,8 @@ type Options = {
   onNudgeBlocked?: () => void;
   /** The position pinned as home: the reset button goes back to it. Read once. */
   pin?: OverlayPlacement | null;
-  /** The current position was pinned (JS thread). */
-  onPinChange?: (placement: OverlayPlacement) => void;
+  /** The current position was pinned, or `null` when the pin was removed (JS thread). */
+  onPinChange?: (placement: OverlayPlacement | null) => void;
 };
 
 /** The finger may drift this far from an arrow before the hold ends: the hold is not a drag. */
@@ -550,6 +550,16 @@ export function useOverlayGestures({
     );
   };
 
+  /** Removes the pin: reset goes back to where the camera opened and the magnet forgets it. */
+  const unpinHere = (): boolean => {
+    if (locked.value || !placed.value) return false;
+    pinRef.current = null;
+    pinPlacement.value = null;
+    onPinChangeRef.current?.(null);
+    playHaptic("nudgeStep");
+    return true;
+  };
+
   /** Pins the current position (x, y, scale, rotation) as home. False if nothing was pinned. */
   const pinHere = (): boolean => {
     if (locked.value || !placed.value) return false;
@@ -667,5 +677,6 @@ export function useOverlayGestures({
     releaseTouches,
     resetToHome,
     pinHere,
+    unpinHere,
   };
 }
