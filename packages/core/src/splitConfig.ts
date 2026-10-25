@@ -23,7 +23,8 @@ export type SplitEdges = "flush" | "extended";
 /**
  * What the splitter screen edits. Unlike SplitConfig it keeps the overlap as a percentage of a
  * tile and remembers it while the cut is flush (or there is no cut yet, 1×1), so going back to
- * «Bordes extendidos» or to a bigger grid brings the same thickness back.
+ * «Bordes extendidos» or to a bigger grid brings the same thickness back, for as long as the
+ * screen stays open: only `overlapPx` is stored, so a reopened flush split starts from the default.
  */
 export type SplitDraft = {
   rows: number;

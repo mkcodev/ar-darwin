@@ -2,43 +2,70 @@ import { describe, expect, it } from "vitest";
 import {
   clampPreviewPan,
   isPreviewZoomed,
+  type PreviewView,
   panPreview,
+  pinchPreview,
   previewContentPoint,
   UNZOOMED_VIEW,
-  zoomPreviewAt,
 } from "./previewZoom";
 
 const FRAME = { width: 400, height: 300 };
 const MAX = 4;
 
-describe("zoomPreviewAt", () => {
-  it("keeps the content point under the focus where it was", () => {
-    const view = zoomPreviewAt(UNZOOMED_VIEW, 2, 300, 200, FRAME.width, FRAME.height, MAX);
+describe("pinchPreview", () => {
+  const pinch = (
+    start: PreviewView,
+    from: [number, number],
+    factor: number,
+    to: [number, number] = from,
+  ) => pinchPreview(start, from[0], from[1], factor, to[0], to[1], FRAME.width, FRAME.height, MAX);
+
+  it("keeps the content point under the fingers where it was", () => {
+    const view = pinch(UNZOOMED_VIEW, [300, 200], 2);
     expect(view.scale).toBe(2);
     expect(previewContentPoint(view, 300, 200)).toEqual({ x: 300, y: 200 });
   });
 
-  it("keeps it on a second zoom of an already panned view", () => {
-    const first = zoomPreviewAt(UNZOOMED_VIEW, 2, 300, 200, FRAME.width, FRAME.height, MAX);
+  it("keeps it on a second pinch of an already zoomed and panned view", () => {
+    const first = pinch(UNZOOMED_VIEW, [300, 200], 2);
     const before = previewContentPoint(first, 120, 90);
-    const second = zoomPreviewAt(first, 3, 120, 90, FRAME.width, FRAME.height, MAX);
+    const second = pinch(first, [120, 90], 1.5);
     const after = previewContentPoint(second, 120, 90);
     expect(after.x).toBeCloseTo(before.x, 9);
     expect(after.y).toBeCloseTo(before.y, 9);
   });
 
+  it("makes the starting content point follow the fingers while they drift and zoom", () => {
+    const start = pinch(UNZOOMED_VIEW, [300, 200], 2);
+    const anchor = previewContentPoint(start, 250, 150);
+    const view = pinch(start, [250, 150], 1.4, [270, 140]);
+    const under = previewContentPoint(view, 270, 140);
+    expect(under.x).toBeCloseTo(anchor.x, 9);
+    expect(under.y).toBeCloseTo(anchor.y, 9);
+  });
+
+  it("pans without zooming when the fingers only move", () => {
+    const start = pinch(UNZOOMED_VIEW, [300, 200], 2);
+    const view = pinch(start, [250, 150], 1, [230, 170]);
+    expect(view.scale).toBe(2);
+    expect(view.tx).toBeCloseTo(start.tx - 20, 9);
+    expect(view.ty).toBeCloseTo(start.ty + 20, 9);
+  });
+
   it("stays within 1..maxScale", () => {
-    expect(zoomPreviewAt(UNZOOMED_VIEW, 9, 0, 0, FRAME.width, FRAME.height, MAX).scale).toBe(MAX);
-    expect(zoomPreviewAt(UNZOOMED_VIEW, 0.2, 0, 0, FRAME.width, FRAME.height, MAX)).toEqual(
-      UNZOOMED_VIEW,
-    );
+    expect(pinch(UNZOOMED_VIEW, [0, 0], 9).scale).toBe(MAX);
+    expect(pinch(UNZOOMED_VIEW, [0, 0], 0.2)).toEqual(UNZOOMED_VIEW);
   });
 
   it("zooming out to 1 returns to the unzoomed view from anywhere", () => {
-    const zoomed = zoomPreviewAt(UNZOOMED_VIEW, 3, 350, 250, FRAME.width, FRAME.height, MAX);
-    expect(zoomPreviewAt(zoomed, 1, 100, 100, FRAME.width, FRAME.height, MAX)).toEqual(
-      UNZOOMED_VIEW,
-    );
+    const zoomed = pinch(UNZOOMED_VIEW, [350, 250], 3);
+    expect(pinch(zoomed, [100, 100], 0.01)).toEqual(UNZOOMED_VIEW);
+  });
+
+  it("never leaves an empty margin", () => {
+    const view = pinch(UNZOOMED_VIEW, [10, 10], 3, [390, 290]);
+    expect(view.tx).toBeLessThanOrEqual(0);
+    expect(view.tx).toBeGreaterThanOrEqual(FRAME.width * (1 - view.scale));
   });
 });
 

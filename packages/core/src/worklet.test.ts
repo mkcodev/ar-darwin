@@ -79,7 +79,7 @@ const modules = [
     exports: previewZoom as Record<string, unknown>,
     mustExport: [
       "clampPreviewPan",
-      "zoomPreviewAt",
+      "pinchPreview",
       "panPreview",
       "previewContentPoint",
       "isPreviewZoomed",

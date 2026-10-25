@@ -25,12 +25,16 @@ export function clampPreviewPan(
 }
 
 /**
- * Zooms to `nextScale` (kept within 1..maxScale) so the content point under the focus
- * (`focusX`, `focusY`, frame px) stays under it.
+ * The view of a pinch that started on `start` with its fingers' centre at (`startFocusX`,
+ * `startFocusY`) and has since scaled by `factor` with the centre now at (`focusX`, `focusY`): the
+ * content point that was under the starting centre follows the fingers, so a two-finger drag
+ * pans and a pinch zooms about the fingers, without double counting. Scale stays in 1..maxScale.
  */
-export function zoomPreviewAt(
-  view: PreviewView,
-  nextScale: number,
+export function pinchPreview(
+  start: PreviewView,
+  startFocusX: number,
+  startFocusY: number,
+  factor: number,
   focusX: number,
   focusY: number,
   frameWidth: number,
@@ -38,14 +42,11 @@ export function zoomPreviewAt(
   maxScale: number,
 ): PreviewView {
   "worklet";
-  const scale = clamp(nextScale, 1, maxScale);
-  const ratio = scale / view.scale;
+  const scale = clamp(start.scale * factor, 1, maxScale);
+  const anchorX = (startFocusX - start.tx) / start.scale;
+  const anchorY = (startFocusY - start.ty) / start.scale;
   return clampPreviewPan(
-    {
-      scale,
-      tx: focusX - (focusX - view.tx) * ratio,
-      ty: focusY - (focusY - view.ty) * ratio,
-    },
+    { scale, tx: focusX - anchorX * scale, ty: focusY - anchorY * scale },
     frameWidth,
     frameHeight,
   );

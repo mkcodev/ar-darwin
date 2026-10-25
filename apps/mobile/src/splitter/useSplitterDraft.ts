@@ -27,8 +27,9 @@ export type SplitterDraft = {
 /**
  * The splitter's draft of a project: its saved split (or 2×2 with 8 % extended edges), the tile
  * picked last, and the saves. Edits are stored after `SAVE_DELAY_MS` of quiet and when the screen
- * goes, through the camera's queue so the two never write out of order. Opening the screen and
- * leaving it untouched stores nothing.
+ * goes, through the camera's queue so the two never write out of order. A save only happens when
+ * what would be stored differs from what was last stored (or loaded): opening the screen and
+ * leaving it untouched, or putting a value back, writes nothing.
  */
 export function useSplitterDraft(project: Project, image: ImageSize): SplitterDraft {
   const db = useSQLiteContext();
@@ -40,23 +41,17 @@ export function useSplitterDraft(project: Project, image: ImageSize): SplitterDr
 
   const latest = useRef({ config, currentTileId });
   latest.current = { config, currentTileId };
-  const dirty = useRef(false);
-  const started = useRef(false);
+  const lastSaved = useRef(JSON.stringify(latest.current));
 
   const flush = useCallback(() => {
-    if (!dirty.current) return;
-    dirty.current = false;
+    const pending = JSON.stringify(latest.current);
+    if (pending === lastSaved.current) return;
+    lastSaved.current = pending;
     enqueueSplitSave(db, project.id, latest.current.config, latest.current.currentTileId);
   }, [db, project.id]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: a change of either value is the trigger
   useEffect(() => {
-    // The first run is the saved state itself, not an edit.
-    if (!started.current) {
-      started.current = true;
-      return;
-    }
-    dirty.current = true;
     const timer = setTimeout(flush, SAVE_DELAY_MS);
     return () => clearTimeout(timer);
   }, [config, currentTileId, flush]);
@@ -77,7 +72,6 @@ export function useSplitterDraft(project: Project, image: ImageSize): SplitterDr
   const pickTile = useCallback(
     (id: string) => {
       latest.current = { ...latest.current, currentTileId: id };
-      dirty.current = true;
       setCurrentTileId(id);
       flush();
     },
