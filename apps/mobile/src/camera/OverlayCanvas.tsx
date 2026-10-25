@@ -8,7 +8,7 @@ import {
   Skia,
   type SkMatrix,
 } from "@shopify/react-native-skia";
-import { type Ref, useEffect, useImperativeHandle } from "react";
+import { type Ref, useEffect, useImperativeHandle, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { GestureDetector } from "react-native-gesture-handler";
 import {
@@ -59,6 +59,12 @@ type OverlayCanvasProps = {
   nudgeBottom: number;
   /** A pad button was tapped while locked. */
   onNudgeBlocked: () => void;
+  /** The position pinned as home, if any. Read once. */
+  initialPin?: OverlayPlacement | null;
+  /** The current position was pinned (JS thread). */
+  onPinChange?: (placement: OverlayPlacement) => void;
+  /** The pin button just pinned the position: the screen confirms it. */
+  onPinned: () => void;
   ref?: Ref<OverlayCanvasHandle>;
 };
 
@@ -90,8 +96,12 @@ export function OverlayCanvas({
   nudgeOpen,
   nudgeBottom,
   onNudgeBlocked,
+  initialPin,
+  onPinChange,
+  onPinned,
   ref,
 }: OverlayCanvasProps) {
+  const [pinned, setPinned] = useState(initialPin != null);
   const canvasSize = useSharedValue<Size>(ZERO_SIZE);
   const imageSize = useSharedValue<Size>(ZERO_SIZE);
 
@@ -113,8 +123,18 @@ export function OverlayCanvas({
     nudgeHeld,
     nudgeTap,
     nudgeStop,
-    resetToOpening,
-  } = useOverlayGestures({ imageSize, canvasSize, locked, initial, onSettle, onNudgeBlocked });
+    resetToHome,
+    pinHere,
+  } = useOverlayGestures({
+    imageSize,
+    canvasSize,
+    locked,
+    initial,
+    onSettle,
+    onNudgeBlocked,
+    pin: initialPin,
+    onPinChange,
+  });
 
   useImperativeHandle(ref, () => ({ toggleFlip, nudgeStop }), [toggleFlip, nudgeStop]);
 
@@ -170,7 +190,13 @@ export function OverlayCanvas({
           isLocked={isLocked}
           bottom={nudgeBottom}
           onStep={nudgeTap}
-          onReset={resetToOpening}
+          onReset={resetToHome}
+          pinned={pinned}
+          onPin={() => {
+            if (!pinHere()) return;
+            setPinned(true);
+            onPinned();
+          }}
           onLockedPress={onNudgeBlocked}
         />
       )}

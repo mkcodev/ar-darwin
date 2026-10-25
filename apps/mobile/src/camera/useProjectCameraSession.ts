@@ -25,9 +25,13 @@ export type ProjectCameraSession = {
   initialOpacity: number;
   /** Absent = no adjustments. */
   initialAdjustments: ImageAdjustments | undefined;
+  /** The position pinned as home, or `null`. */
+  initialPin: OverlayPlacement | null;
   onPlacementSettle: (placement: OverlayPlacement) => void;
   onOpacitySettle: (opacity: number) => void;
   onAdjustmentsSettle: (adjustments: ImageAdjustments) => void;
+  /** The position was pinned (or re-pinned). */
+  onPinChange: (placement: OverlayPlacement) => void;
 };
 
 /**
@@ -51,12 +55,14 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
         : { transform: project.transform, viewport: project.transformViewport },
     opacity: project.opacity,
     adjustments: project.imageAdjustments,
+    pin: project.pinnedPlacement ?? null,
   }));
   const state = useRef<CameraState>({
     transform: project.transform,
     transformViewport: project.transformViewport,
     opacity: project.opacity,
     imageAdjustments: project.imageAdjustments,
+    pinnedPlacement: project.pinnedPlacement,
     status: statusOnOpen(project.status),
     timeSpentMs: project.timeSpentMs,
   });
@@ -145,12 +151,22 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
     [saveSoon],
   );
 
+  const onPinChange = useCallback(
+    (pinnedPlacement: OverlayPlacement) => {
+      state.current = { ...state.current, pinnedPlacement };
+      saveSoon();
+    },
+    [saveSoon],
+  );
+
   return {
     initialPlacement: initial.placement,
     initialOpacity: initial.opacity,
     initialAdjustments: initial.adjustments,
+    initialPin: initial.pin,
     onPlacementSettle,
     onOpacitySettle,
     onAdjustmentsSettle,
+    onPinChange,
   };
 }

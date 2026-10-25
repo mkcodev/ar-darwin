@@ -9,6 +9,7 @@ import {
   touchTarget,
 } from "@ar-darwin/ui";
 import { Canvas, Circle } from "@shopify/react-native-skia";
+import { useState } from "react";
 import { StyleSheet } from "react-native";
 import { Gesture, GestureDetector, type GestureType } from "react-native-gesture-handler";
 import Animated, {
@@ -39,8 +40,12 @@ type NudgePadProps = {
   bottom: number;
   /** A screen reader "activated" an arrow: one 1 px step. */
   onStep: (dir: NudgeDirection) => void;
-  /** Back to where the image was when the camera opened. */
+  /** Back to the pinned position, or to where the image was when the camera opened. */
   onReset: () => void;
+  /** A position is pinned: its icon takes the accent. */
+  pinned: boolean;
+  /** Pins the current position as home. */
+  onPin: () => void;
   /** An arrow or reset was tapped while locked. */
   onLockedPress: () => void;
 };
@@ -67,6 +72,7 @@ const CELLS = {
   reset: { col: 1, row: 1 },
   right: { col: 2, row: 1 },
   down: { col: 1, row: 2 },
+  pin: { col: 2, row: 0 },
 } as const satisfies Record<string, Cell>;
 
 type ArrowLabel =
@@ -83,8 +89,8 @@ const ARROWS: { dir: NudgeDirection; glyph: IconName; label: ArrowLabel }[] = [
 ];
 
 /**
- * The fine-adjust cross (arrows and reset), drawn with one Skia `<Canvas>` for all five discs and
- * glyphs. It sits on the free hand's side, a sibling of the overlay's own gesture detector, so
+ * The fine-adjust cross (arrows, reset and the pin), drawn with one Skia `<Canvas>` for all the
+ * discs and glyphs. It sits on the free hand's side, a sibling of the overlay's own gesture detector, so
  * touches on a disc never start a drag, while a finger anywhere else still drags and pinches.
  * Translucent while idle so it covers less of the drawing; solid while an arrow is held; dimmed
  * while locked (a tap then explains the lock instead of moving anything).
@@ -97,8 +103,11 @@ export function NudgePad({
   bottom,
   onStep,
   onReset,
+  pinned,
+  onPin,
   onLockedPress,
 }: NudgePadProps) {
+  const [pinKey, setPinKey] = useState(0);
   const insets = useSafeAreaInsets();
   const { controls } = useHandedness();
   const { reduce } = useReduceMotion();
@@ -124,6 +133,19 @@ export function NudgePad({
       if (isLocked) onLockedPress();
       else onReset();
     });
+
+  const pinTap = Gesture.Tap()
+    .runOnJS(true)
+    .onEnd((_event, success) => {
+      if (!success) return;
+      if (isLocked) onLockedPress();
+      else pin();
+    });
+
+  const pin = () => {
+    setPinKey((key) => key + 1);
+    onPin();
+  };
 
   const side =
     controls === "left" ? { left: insets.left + space[5] } : { right: insets.right + space[5] };
@@ -177,6 +199,7 @@ export function NudgePad({
           {[
             ...ARROWS.map(({ dir, glyph }) => ({ key: dir, glyph, cell: CELLS[dir] })),
             { key: "reset", glyph: "reset" as const, cell: CELLS.reset },
+            { key: "pin", glyph: "pin" as const, cell: CELLS.pin },
           ].map(({ key, glyph, cell }) => {
             const { left, top } = place(cell);
             return (
@@ -186,7 +209,8 @@ export function NudgePad({
                 size={icon.size}
                 x={left + (CELL - icon.size) / 2}
                 y={top + (CELL - icon.size) / 2}
-                color={cameraColors.text}
+                color={key === "pin" && pinned ? cameraColors.accent : cameraColors.text}
+                drawKey={key === "pin" ? pinKey : 0}
                 reduce={reduce}
               />
             );
@@ -222,6 +246,22 @@ export function NudgePad({
               else onReset();
             }}
             style={[styles.cell, place(CELLS.reset)]}
+          />
+        </GestureDetector>
+        <GestureDetector gesture={pinTap}>
+          <Animated.View
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={t("camera.nudge.pin")}
+            accessibilityHint={t("camera.nudge.pinHint")}
+            accessibilityState={{ disabled: isLocked, selected: pinned }}
+            accessibilityActions={[{ name: "activate" }]}
+            onAccessibilityAction={(event) => {
+              if (event.nativeEvent.actionName !== "activate") return;
+              if (isLocked) onLockedPress();
+              else pin();
+            }}
+            style={[styles.cell, place(CELLS.pin)]}
           />
         </GestureDetector>
       </Animated.View>

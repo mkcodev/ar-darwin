@@ -47,6 +47,10 @@ type Options = {
   onSettle?: (placement: OverlayPlacement) => void;
   /** A fine-adjust arrow was pressed while locked: the screen explains the lock. JS thread. */
   onNudgeBlocked?: () => void;
+  /** The position pinned as home: the reset button goes back to it. Read once. */
+  pin?: OverlayPlacement | null;
+  /** The current position was pinned (JS thread). */
+  onPinChange?: (placement: OverlayPlacement) => void;
 };
 
 /** The finger may drift this far from an arrow before the hold ends: the hold is not a drag. */
@@ -105,6 +109,8 @@ export function useOverlayGestures({
   initial,
   onSettle,
   onNudgeBlocked,
+  pin,
+  onPinChange,
 }: Options) {
   const reduce = useReducedMotion();
 
@@ -136,8 +142,12 @@ export function useOverlayGestures({
   const nudgeBlocked = useCallback(() => {
     onNudgeBlockedRef.current?.();
   }, []);
-  /** Read once, like `initialPlacement`: where "reset to the opening position" goes back to. */
+  /** Read once, like `initialPlacement`: where the reset goes back to when nothing is pinned. */
   const openingRef = useRef(initial ?? null);
+  /** The pinned position: the reset's first choice. Replaced by `pinHere`. */
+  const pinRef = useRef(pin ?? null);
+  const onPinChangeRef = useRef(onPinChange);
+  onPinChangeRef.current = onPinChange;
 
   /** Arrow held down on the pad, or null. Only the UI thread writes it while a hold runs. */
   const nudgeHeld = useSharedValue<NudgeDirection | null>(null);
@@ -339,16 +349,33 @@ export function useOverlayGestures({
     resetTo(fitTransform(imageSize.value, canvasSize.value));
   };
 
-  /** Back to where the image was when the camera opened (or fitted, if it had no saved place). */
-  const resetToOpening = () => {
+  /**
+   * Back to the pinned position; with no pin, to where the image was when the camera opened; with
+   * neither (a project that was never placed), fitted. The mirror stays as it is.
+   */
+  const resetToHome = () => {
     if (!placed.value) return;
     const canvas = canvasSize.value;
-    const opening = openingRef.current;
+    const home = pinRef.current ?? openingRef.current;
     resetTo(
-      opening
-        ? restoreTransform(opening.transform, opening.viewport, canvas)
+      home
+        ? restoreTransform(home.transform, home.viewport, canvas)
         : fitTransform(imageSize.value, canvas),
     );
+  };
+
+  /** Pins the current position (x, y, scale, rotation) as home. False if nothing was pinned. */
+  const pinHere = (): boolean => {
+    if (locked.value || !placed.value) return false;
+    const canvas = canvasSize.value;
+    const placement = {
+      transform: current(),
+      viewport: { width: canvas.width, height: canvas.height },
+    };
+    pinRef.current = placement;
+    onPinChangeRef.current?.(placement);
+    playHaptic("pinSet");
+    return true;
   };
 
   const doubleTap = Gesture.Tap().numberOfTaps(2).runOnJS(true).onEnd(reset);
@@ -452,6 +479,7 @@ export function useOverlayGestures({
     nudgeHeld,
     nudgeTap,
     nudgeStop,
-    resetToOpening,
+    resetToHome,
+    pinHere,
   };
 }
