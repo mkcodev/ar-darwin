@@ -62,6 +62,18 @@ const UI_CHECKS: Check[] = [
     min: text,
   },
   {
+    what: "camera.onAccent on camera.accent",
+    fg: (c) => c.camera.onAccent,
+    bg: (c) => c.camera.accent,
+    min: text,
+  },
+  {
+    what: "camera.onAccent on camera.accentPressed",
+    fg: (c) => c.camera.onAccent,
+    bg: (c) => c.camera.accentPressed,
+    min: text,
+  },
+  {
     what: "accent on its active background",
     fg: (c) => c.accent.default,
     bg: (c) => blendOver(c.accent.subtle, c.bg.surface),
