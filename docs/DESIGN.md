@@ -134,7 +134,8 @@ Momentos de firma:
 - Racha de Retos: el contador avanza con muelle.
 - Pulsación «tinta que empapa» en los botones (≤ 180 ms).
 - Etiquetas de estado que llegan torcidas 6° y se enderezan.
-- Menú de la cámara que se retira 8 px y se desvanece tras 3 s sin tocar; sigue siendo alcanzable con teclado (el foco lo despierta).
+- Menú de la cámara que se retira 8 px y se desvanece tras 3 s sin tocar; sigue siendo alcanzable con teclado (el foco lo despierta). En el móvil lo despierta solo un toque quieto (no un arrastre, pellizco o giro de la imagen), no se oculta con el lector de pantalla activo, y arrastra consigo la cruz de ajuste fino; el candado no se retira.
+- Candado: al mantenerlo pulsado, un anillo de 72 dp (más ancho que la yema) se rellena en sentido horario sobre una pista grafito, para que se vea alrededor del dedo cuánto falta.
 
 ## Cabeceras
 

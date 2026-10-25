@@ -116,23 +116,48 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     `overlay`.
   - **Menú flotante** (issue #72): el slider de opacidad (más los `extraControls`) va en una píldora
     `FloatingPill` abajo y `CameraTools` en un raíl vertical, otra `FloatingPill`, en el lado de la
-    mano libre bajo el candado. Las dos se retiran 8 px y se desvanecen tras `signature.menuIdleMs`
-    (3 s) sin tocar (`retreated`, hilo de UI, con «reducir movimiento» solo se desvanecen). El
-    candado y la cruz de ajuste fino no se retiran.
-    - `useMenuIdle(ms, paused)` (`camera/useMenuIdle.ts`) es el temporizador: `idle`, `wake` y
+    mano libre bajo el candado. Las dos y la cruz de ajuste fino se retiran 8 px y se desvanecen
+    tras `signature.menuIdleMs` (3 s) sin tocar, en el hilo de UI (`useRetreat`; con «reducir
+    movimiento» solo se desvanecen). El candado no se retira nunca.
+    - `useMenuIdle(ms, paused)` (`camera/useMenuIdle.ts`) es el temporizador: `idle`, `wake`, `poke` y
       `reset`. Solo cambia estado al ocultar o mostrar, nunca por fotograma, y limpia el `setTimeout`
-      al desmontar. Cualquier toque lo despierta (`onTouchStart` en la vista raíz de
-      `CameraOverlayScreen`; una píldora oculta deja pasar el toque, que solo la despierta).
-    - **Pausas** (el menú se queda visible y la cuenta empieza de cero al acabar): un dedo en la
-      imagen (`onTouchingChange` de `useOverlayGestures`, al pasar `touches` de 0 a 1 y de vuelta a
-      0), un dedo en el slider (`Slider` `onActiveChange`), la cruz abierta (`nudgeOpen`) y la hoja de
-      ajustes abierta. RNGH cancela los toques de JS al activar un gesto, así que el fin no llega
-      por `onTouchEnd`: cada fuente avisa una vez al empezar y otra al acabar con `scheduleOnRN`.
-    - **Reinicio**: perder el foco o pasar a segundo plano (`endInteractions`) suelta las pausas de
-      imagen y slider y llama a `reset()`; al volver a primer plano o recuperar el foco, `wake()`.
-      El menú nunca queda en pausa para siempre.
-    - Con un lector de pantalla activo (`AccessibilityInfo`) el menú no se oculta: activar un control
-      con TalkBack no envía toques que lo despierten.
+      al desmontar. `poke()` reinicia la cuenta de un menú visible (cualquier toque, en
+      `onTouchStart`); un menú oculto solo vuelve con `wake()`.
+    - **Despertar solo con un toque quieto.** La vista raíz de `CameraOverlayScreen` recibe los
+      toques en bruto de todos sus hijos (`onTouchStart/Move/End/Cancel`) y los pasa por
+      `tapStart/tapMove/tapEnd` (`packages/core/src/tap.ts`): un dedo que baja y sube sin pasar de
+      `TAP_SLOP_PX` (10) es un toque; un segundo dedo o desplazarse no. Arrastrar, pellizcar o girar la
+      imagen con todo oculto no despierta nada (RNGH cancela los toques de JS al activar el arrastre:
+      `onTouchCancel` olvida el toque). El estado cambia al *levantar* el dedo, no al bajarlo, así que
+      ningún re-render ocurre en mitad de una pulsación (ver `LockButton`, más abajo).
+    - **Pausas** (la cuenta se detiene; una pausa nunca muestra ni oculta nada por sí sola: si el menú
+      estaba oculto sigue oculto, si estaba visible empieza de cero al acabar): un dedo en la imagen
+      (`onTouchingChange` de `useOverlayGestures`, al pasar `touches` de 0 a 1 y de vuelta a 0), un dedo
+      en el slider (`Slider` `onActiveChange`), una flecha del ajuste fino mantenida
+      (`onNudgeHoldChange`, junto a `setFrameActive`) y la hoja de ajustes abierta. La cruz abierta **no**
+      pausa: se oculta con el menú. Cada fuente avisa a JS una vez al empezar y otra al acabar con
+      `scheduleOnRN`, nunca por fotograma.
+    - **Reinicio**: perder el foco o pasar a segundo plano (`endInteractions`) suelta las pausas y
+      llama a `reset()` (muestra el menú sin contar); al volver a primer plano o recuperar el foco,
+      `wake()`. El menú nunca queda en pausa para siempre.
+    - Con un lector de pantalla activo (`AccessibilityInfo`) el menú se muestra y no se oculta:
+      activar un control con TalkBack no envía toques que lo despierten.
+    - **Lados.** Con la mano que dibuja en «derecha» (por defecto) el raíl queda a la izquierda y la
+      cruz a la derecha; con «izquierda», al revés. Van en lados opuestos porque en 360×640 no caben
+      en el mismo: el raíl (hasta 6 botones, ~318 px desde y≈116) se solaparía con la cruz (152 px sobre
+      la barra de abajo, que empieza en y≈374; con los extras del spike, y≈322). El último botón del raíl
+      (`swapSides`) cambia la mano que dibuja: `AppSettingsProvider.setDrawingHand` la aplica
+      (`useHandedness().setHand`) y la guarda en `settings` (`drawing_hand`, `"right" | "left"`, tabla v6
+      sin migración). A diferencia del imán, esa lectura **sí** se espera: el proveedor no monta la pila
+      hasta que termina (lectura local de SQLite; si falla, mano por defecto) y aplica la mano en el
+      mismo paso, así el primer fotograma ya lleva el raíl en su lado y no salta al abrir la app.
+    - **Candado (`LockButton`)**: va en `React.memo`. Su `Gesture.LongPress()` se recrea en cada render
+      y RNGH sustituye los handlers de un gesto en curso (`updateHandlers`), de modo que un re-render
+      con el dedo puesto podía dejar pasar `onStart` y no bloquear. Sus props son estables (`locked`,
+      `onLockedChange`, `placement`); solo cambia `isLocked`. El anillo de progreso mide
+      `lockButton.ringSize` (72 dp, más ancho que la yema) y se dibuja sobre una pista grafito que solo
+      existe mientras se pulsa (el bermellón nunca va directo sobre la foto); el disco de 56 dp no se
+      mueve de sitio.
   - `CameraTools` (issue #55): espejo H, espejo V, linterna, ajuste fino y ajustes de imagen, en el
     raíl. No se oculta con el candado: linterna, ajustes y abrir el panel siguen activos; el espejo se atenúa y, al tocarlo,
     `LockedToast` dice «Desbloquea para usar el espejo» (`IconButton` `onDisabledPress`). El espejo
@@ -198,7 +223,9 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
       lectura no retrasa la cámara; un cambio de la persona antes de que acabe la lectura gana.
   - `NudgePad` (issue #68): cruz de 4 flechas y reset, en la esquina del lado de la mano que dibuja
     (opuesto al raíl de herramientas), justo encima de la píldora de abajo (altura medida con
-    `onLayout`). Mientras está abierta el menú no se oculta, pero ella no se retira. Se abre con el botón «Ajuste fino»
+    `onLayout`). Se retira con el menú (`retreated`; `useRetreat` va en una capa propia, porque el
+    fundido de montaje es una animación de entrada y no puede compartir vista con una opacidad
+    animada). Se abre con el botón «Ajuste fino»
     de `CameraTools` y se cierra sola al abrir la hoja de ajustes. Lo dibuja un solo `<Canvas>` de
     Skia (cinco discos y glifos) y es hermano del detector de gestos de la imagen: un dedo en el panel
     nunca arrastra, y otro dedo fuera sigue arrastrando y pellizcando. Semitransparente en reposo
