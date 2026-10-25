@@ -46,17 +46,21 @@ export type MagnetOptions = {
   pinRotationExit: number;
 };
 
+/**
+ * The thresholds in one place, easy to tune by feel. Each pair is (grab, let go): let go is the
+ * larger one. The pin's scale and rotation margins follow its position margin and the rotation's.
+ */
 export const DEFAULT_MAGNET_OPTIONS: MagnetOptions = {
-  enter: 8,
-  exit: 16,
-  rotationEnter: 3,
-  rotationExit: 6,
-  pinEnter: 12,
-  pinExit: 20,
-  pinScaleEnter: 0.03,
-  pinScaleExit: 0.06,
-  pinRotationEnter: 3,
-  pinRotationExit: 6,
+  enter: 5,
+  exit: 9,
+  rotationEnter: 2,
+  rotationExit: 4,
+  pinEnter: 8,
+  pinExit: 14,
+  pinScaleEnter: 0.02,
+  pinScaleExit: 0.04,
+  pinRotationEnter: 2,
+  pinRotationExit: 4,
 };
 
 export type MagnetResult = {

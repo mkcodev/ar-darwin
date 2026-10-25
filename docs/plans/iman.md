@@ -9,10 +9,11 @@
 | Tema | Decisión | Por qué |
 | --- | --- | --- |
 | Objetivos | Centro de la imagen sobre el eje vertical y el horizontal del lienzo; rotación a múltiplos de 90° | Es lo que se usa al calcar: dejar la imagen centrada y recta. 45° y los 4 bordes se quedan en `snapTransform` (playground de PC) |
-| Histéresis | Engancha a 8 px / 3°; suelta a 16 px / 6° | Sin ella, un dedo quieto en el borde del umbral hace vibrar la imagen |
-| Pin | Es un objetivo más: gana a los ejes si posición, escala y giro están dentro de su radio (12 px, 3 %, 3°; suelta a 20 px, 6 %, 6°) | El pin es una elección explícita y fija las cuatro magnitudes. Si los ejes compitieran, una imagen fijada cerca del centro saltaría entre pin y eje |
+| Histéresis | Engancha a 5 px / 2°; suelta a 9 px / 4° (constantes en `DEFAULT_MAGNET_OPTIONS`) | Sin ella, un dedo quieto en el borde del umbral hace vibrar la imagen. Los umbrales iniciales (8/16 px, 3/6°) eran demasiado agresivos |
+| Pin | Es un objetivo más: gana a los ejes si posición, escala y giro están dentro de su radio (8 px, 2 %, 2°; suelta a 14 px, 4 %, 4°) | El pin es una elección explícita y fija las cuatro magnitudes. Si los ejes compitieran, una imagen fijada cerca del centro saltaría entre pin y eje |
 | Bruta y magnetizada | Los gestos escriben la bruta; el lienzo pinta la magnetizada mientras hay un dedo; al soltar el último dedo la magnetizada pasa a bruta y se guarda | Si la magnetizada fuera la base, la imagen se quedaría pegada a la guía |
 | Nudge, reset, espejo | Escriben la bruta y no enganchan; el panel ignora pulsaciones mientras hay un dedo en el lienzo | Un paso de 1 px no puede volver a saltar a la guía; la bruta no puede tener dos escritores |
+| Guías | Solo en el flanco de subida del candado durante el gesto; ejes al arrastrar, ángulo al girar con dos dedos, pin con cualquiera; finas, opacidad baja y se desvanecen solas a los 400 ms | Una imagen que ya empieza centrada, o el giro de 0°, contaban como enganchados desde el principio y las guías salían todo el rato |
 | Vibración | Solo `guideSnap` al engancharse moviendo. No al soltar ni al tocar una imagen ya encajada | Soltar no es un logro y duplicaría vibraciones; en iOS la cámara silencia el motor, así que la señal principal es la guía con rebote |
 | Interruptor | En Ajustes, activo por defecto, tabla `settings` (migración v6) | Es una forma de trabajar, no un dato del dibujo. La lectura no retrasa la cámara |
 

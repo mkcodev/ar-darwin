@@ -70,11 +70,11 @@ Al mover, escalar o rotar la imagen, se alinea sola, como las guías inteligente
 - Encaja el centro de la imagen sobre el eje vertical y sobre el horizontal del lienzo (cada eje por separado). En fase 3, también con los bordes del folio detectado.
 - Imán de rotación en múltiplos de 90° (0°, 90°, 180°, 270°).
 - La posición fijada con el pin del ajuste fino también es un imán: si la imagen está dentro de su radio (posición, tamaño y giro), se engancha entera a ella y gana a los ejes.
-- Las guías se dibujan (azul no-foto) solo mientras está encajada; la del pin es discontinua.
+- Las guías son finas y discretas (azul no-foto): aparecen solo cuando la imagen se engancha durante el gesto (no si ya estaba encajada al tocarla) y se desvanecen solas enseguida. Ejes solo al arrastrar, ángulo solo al girar con dos dedos; la del pin es discontinua.
 - Vibración ligera (haptic) solo en el momento en que encaja moviendo, nunca al tocar una imagen que ya está encajada ni al soltar.
 - Al soltar se guarda la posición encajada. El ajuste fino no encaja.
 - Interruptor en Ajustes para activarlo o desactivarlo (activo por defecto).
-- Umbral de encaje por defecto: 8 px en pantalla y 3° en rotación; para soltarse hay que alejarse más (16 px y 6°), para que no vibre en el borde. Configurables en la tarea de Ajustes.
+- Umbral de encaje por defecto: 5 px en pantalla y 2° en rotación (pin: 8 px); para soltarse hay que alejarse más (9 px y 4°; pin: 14 px), para que no vibre en el borde. Configurables en la tarea de Ajustes.
 
 ### Botones de ajuste fino
 

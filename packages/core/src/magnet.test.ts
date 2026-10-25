@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { magnetEngaged, magnetize, NO_MAGNET_LOCK } from "./magnet";
+import { magnetEngaged, magnetize, NO_MAGNET_LOCK, DEFAULT_MAGNET_OPTIONS as O } from "./magnet";
 import type { Size, Transform } from "./models";
+
+// Every threshold below comes from DEFAULT_MAGNET_OPTIONS, so tuning them by feel does not break
+// these tests: only their relations do (grab < let go, strict comparisons).
 
 const VIEWPORT: Size = { width: 400, height: 800 };
 const ON_AXES = { x: 200, y: 400 };
@@ -18,43 +21,60 @@ const at = (patch: Partial<Transform>): Transform => ({
 const run = (raw: Transform, prev = NO_MAGNET_LOCK, pin: Transform | null = null) =>
   magnetize(raw, prev, VIEWPORT, pin);
 
+describe("thresholds", () => {
+  it("always let go farther than they grab", () => {
+    expect(O.exit).toBeGreaterThan(O.enter);
+    expect(O.rotationExit).toBeGreaterThan(O.rotationEnter);
+    expect(O.pinExit).toBeGreaterThan(O.pinEnter);
+    expect(O.pinScaleExit).toBeGreaterThan(O.pinScaleEnter);
+    expect(O.pinRotationExit).toBeGreaterThan(O.pinRotationEnter);
+  });
+});
+
 describe("magnetize: axes", () => {
   it("grabs the center onto the vertical axis inside the enter threshold", () => {
-    const { transform, lock } = run(at({ x: 207 }));
+    const { transform, lock } = run(at({ x: 200 + O.enter - 1 }));
     expect(transform.x).toBe(200);
     expect(lock.axisX).toBe(true);
   });
 
   it("leaves it alone at the enter threshold (strict) and beyond", () => {
-    expect(run(at({ x: 208 })).transform.x).toBe(208);
-    expect(run(at({ x: 208 })).lock.axisX).toBe(false);
-    expect(run(at({ x: 192 })).lock.axisX).toBe(false);
+    const edge = 200 + O.enter;
+    expect(run(at({ x: edge })).transform.x).toBe(edge);
+    expect(run(at({ x: edge })).lock.axisX).toBe(false);
+    expect(run(at({ x: 200 - O.enter })).lock.axisX).toBe(false);
   });
 
   it("snaps both axes independently", () => {
-    const both = run(at({ x: 195, y: 403 }));
+    const both = run(at({ x: 200 - (O.enter - 1), y: 400 + (O.enter - 2) }));
     expect(both.transform).toMatchObject(ON_AXES);
     expect(both.lock).toMatchObject({ axisX: true, axisY: true });
-    const onlyY = run(at({ x: 100, y: 403 }));
+    const onlyY = run(at({ x: 100, y: 400 + (O.enter - 2) }));
     expect(onlyY.transform).toMatchObject({ x: 100, y: 400 });
     expect(onlyY.lock).toMatchObject({ axisX: false, axisY: true });
   });
 
   it("holds until the exit threshold once grabbed (hysteresis)", () => {
     const grabbed = { ...NO_MAGNET_LOCK, axisX: true };
-    expect(run(at({ x: 212 }), grabbed).lock.axisX).toBe(true);
-    expect(run(at({ x: 212 }), grabbed).transform.x).toBe(200);
-    expect(run(at({ x: 215.9 }), grabbed).lock.axisX).toBe(true);
-    expect(run(at({ x: 216 }), grabbed).lock.axisX).toBe(false);
-    expect(run(at({ x: 216 }), grabbed).transform.x).toBe(216);
+    const inside = 200 + O.exit - 0.1;
+    expect(run(at({ x: inside }), grabbed).lock.axisX).toBe(true);
+    expect(run(at({ x: inside }), grabbed).transform.x).toBe(200);
+    const edge = 200 + O.exit;
+    expect(run(at({ x: edge }), grabbed).lock.axisX).toBe(false);
+    expect(run(at({ x: edge }), grabbed).transform.x).toBe(edge);
   });
 
-  it("does not grab at 12 px when it was free, but holds at 12 px when it was grabbed", () => {
-    expect(run(at({ x: 212 })).lock.axisX).toBe(false);
+  it("does not grab between the enter and the exit threshold when it was free", () => {
+    expect(run(at({ x: 200 + O.exit - 1 })).lock.axisX).toBe(false);
   });
 
   it("works on whatever canvas it is given", () => {
-    const wide = magnetize(at({ x: 503 }), NO_MAGNET_LOCK, { width: 1000, height: 600 }, null);
+    const wide = magnetize(
+      at({ x: 500 + O.enter - 1 }),
+      NO_MAGNET_LOCK,
+      { width: 1000, height: 600 },
+      null,
+    );
     expect(wide.transform.x).toBe(500);
   });
 });
@@ -62,9 +82,9 @@ describe("magnetize: axes", () => {
 describe("magnetize: rotation", () => {
   it.each([
     [0, 0],
-    [2, 0],
-    [88, 90],
-    [92, 90],
+    [1, 0],
+    [89, 90],
+    [91, 90],
     [-91, -90],
     [179, 180],
     [181, 180],
@@ -81,18 +101,24 @@ describe("magnetize: rotation", () => {
     expect(lock.rotation).toBe(true);
   });
 
-  it.each([3, 45, -45, 135, 87, 93, 270.5 - 90 + 3])("%s° is too far from a right angle", (raw) => {
-    const { transform, lock } = run(at({ rotation: raw }));
-    expect(lock.rotation).toBe(false);
-    expect(transform.rotation).toBe(raw);
-  });
+  it.each([O.rotationEnter, 90 - O.rotationEnter, 90 + O.rotationEnter, 45, -45, 135])(
+    "%s° is too far from a right angle",
+    (raw) => {
+      const { transform, lock } = run(at({ rotation: raw }));
+      expect(lock.rotation).toBe(false);
+      expect(transform.rotation).toBe(raw);
+    },
+  );
 
   it("holds up to the exit threshold, then lets go", () => {
     const grabbed = { ...NO_MAGNET_LOCK, rotation: true };
-    expect(run(at({ rotation: 95 }), grabbed).transform.rotation).toBe(90);
-    expect(run(at({ rotation: 96 }), grabbed).transform.rotation).toBe(96);
-    expect(run(at({ rotation: 5 }), grabbed).lock.rotation).toBe(true);
-    expect(run(at({ rotation: 6 }), grabbed).lock.rotation).toBe(false);
+    const inside = O.rotationExit - 0.5;
+    expect(run(at({ rotation: 90 + inside }), grabbed).transform.rotation).toBe(90);
+    expect(run(at({ rotation: 90 + O.rotationExit }), grabbed).transform.rotation).toBe(
+      90 + O.rotationExit,
+    );
+    expect(run(at({ rotation: inside }), grabbed).lock.rotation).toBe(true);
+    expect(run(at({ rotation: O.rotationExit }), grabbed).lock.rotation).toBe(false);
   });
 
   it("never returns -0", () => {
@@ -102,22 +128,30 @@ describe("magnetize: rotation", () => {
 
 describe("magnetize: mirror", () => {
   it("passes the flags through and snaps the same way", () => {
-    const flipped = run(at({ x: 203, rotation: 88, flipX: true, flipY: true }));
-    const plain = run(at({ x: 203, rotation: 88 }));
+    const x = 200 + O.enter - 2;
+    const flipped = run(at({ x, rotation: 89, flipX: true, flipY: true }));
+    const plain = run(at({ x, rotation: 89 }));
     expect(flipped.transform).toMatchObject({ x: 200, rotation: 90, flipX: true, flipY: true });
     expect(flipped.lock).toEqual(plain.lock);
   });
 
   it("keeps scale untouched", () => {
-    expect(run(at({ x: 203, scale: 1.37 })).transform.scale).toBe(1.37);
+    expect(run(at({ x: 200 + O.enter - 1, scale: 1.37 })).transform.scale).toBe(1.37);
   });
 });
 
 describe("magnetize: pin", () => {
   const pin = at({ x: 150, y: 250, scale: 0.8, rotation: 30 });
+  const near = { dx: O.pinEnter * 0.5, dy: O.pinEnter * 0.4 };
 
   it("grabs the whole pinned transform when position, scale and rotation are close", () => {
-    const raw = at({ x: 156, y: 255, scale: 0.81, rotation: 32, flipX: true });
+    const raw = at({
+      x: 150 + near.dx,
+      y: 250 + near.dy,
+      scale: 0.8 * (1 + O.pinScaleEnter * 0.5),
+      rotation: 30 + O.pinRotationEnter * 0.5,
+      flipX: true,
+    });
     const { transform, lock } = run(raw, NO_MAGNET_LOCK, pin);
     expect(transform).toEqual({ ...pin, flipX: true });
     expect(lock).toEqual({ axisX: false, axisY: false, rotation: false, pin: true });
@@ -125,40 +159,46 @@ describe("magnetize: pin", () => {
 
   it("wins over the axes and the right angles when both would apply", () => {
     const nearAxis = at({ x: 200, y: 400, scale: 1, rotation: 90 });
-    const pinOnAxis = at({ x: 205, y: 395, scale: 1, rotation: 88 });
+    const pinOnAxis = at({ x: 200 + O.pinEnter * 0.5, y: 400 - O.pinEnter * 0.4, rotation: 89 });
     const { transform, lock } = run(nearAxis, NO_MAGNET_LOCK, pinOnAxis);
-    expect(transform).toEqual({ ...pinOnAxis, rotation: 88 });
+    expect(transform).toEqual(pinOnAxis);
     expect(lock.pin).toBe(true);
     expect(lock.axisX).toBe(false);
   });
 
   it("falls back to the axes when the pin is out of radius", () => {
-    const { transform, lock } = run(at({ x: 203, y: 100, scale: 0.8 }), NO_MAGNET_LOCK, pin);
+    const { transform, lock } = run(
+      at({ x: 200 + O.enter - 1, y: 100, scale: 0.8 }),
+      NO_MAGNET_LOCK,
+      pin,
+    );
     expect(transform.x).toBe(200);
     expect(lock).toMatchObject({ axisX: true, pin: false });
   });
 
   it.each([
-    ["position", at({ x: 163, y: 250, scale: 0.8, rotation: 30 })],
-    ["scale", at({ x: 150, y: 250, scale: 0.84, rotation: 30 })],
-    ["rotation", at({ x: 150, y: 250, scale: 0.8, rotation: 34 })],
+    ["position", at({ x: 150 + O.pinEnter + 1, y: 250, scale: 0.8, rotation: 30 })],
+    ["scale", at({ x: 150, y: 250, scale: 0.8 * (1 + O.pinScaleEnter * 1.5), rotation: 30 })],
+    ["rotation", at({ x: 150, y: 250, scale: 0.8, rotation: 30 + O.pinRotationEnter + 1 })],
   ])("does not grab when only the %s is off", (_what, raw) => {
     expect(run(raw, NO_MAGNET_LOCK, pin).lock.pin).toBe(false);
   });
 
   it("holds until the exit radius, on each magnitude", () => {
     const held = { ...NO_MAGNET_LOCK, pin: true };
-    expect(run(at({ x: 168, y: 250, scale: 0.8, rotation: 30 }), held, pin).lock.pin).toBe(true);
-    expect(run(at({ x: 171, y: 250, scale: 0.8, rotation: 30 }), held, pin).lock.pin).toBe(false);
-    expect(run(at({ x: 150, y: 250, scale: 0.84, rotation: 30 }), held, pin).lock.pin).toBe(true);
-    expect(run(at({ x: 150, y: 250, scale: 0.86, rotation: 30 }), held, pin).lock.pin).toBe(false);
-    expect(run(at({ x: 150, y: 250, scale: 0.8, rotation: 35 }), held, pin).lock.pin).toBe(true);
-    expect(run(at({ x: 150, y: 250, scale: 0.8, rotation: 37 }), held, pin).lock.pin).toBe(false);
+    const at150 = (patch: Partial<Transform>) =>
+      at({ x: 150, y: 250, scale: 0.8, rotation: 30, ...patch });
+    expect(run(at150({ x: 150 + O.pinExit - 1 }), held, pin).lock.pin).toBe(true);
+    expect(run(at150({ x: 150 + O.pinExit }), held, pin).lock.pin).toBe(false);
+    expect(run(at150({ scale: 0.8 * (1 + O.pinScaleExit * 0.9) }), held, pin).lock.pin).toBe(true);
+    expect(run(at150({ scale: 0.8 * (1 + O.pinScaleExit * 1.1) }), held, pin).lock.pin).toBe(false);
+    expect(run(at150({ rotation: 30 + O.pinRotationExit - 0.5 }), held, pin).lock.pin).toBe(true);
+    expect(run(at150({ rotation: 30 + O.pinRotationExit + 0.5 }), held, pin).lock.pin).toBe(false);
   });
 
   it("measures the rotation the short way around", () => {
     const wrapPin = at({ x: 150, y: 250, rotation: 179 });
-    expect(run(at({ x: 150, y: 250, rotation: -179 }), NO_MAGNET_LOCK, wrapPin).lock.pin).toBe(
+    expect(run(at({ x: 150, y: 250, rotation: -180 }), NO_MAGNET_LOCK, wrapPin).lock.pin).toBe(
       true,
     );
   });

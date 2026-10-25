@@ -12,6 +12,20 @@ export const magnetGuide = {
   tickMajor: 8,
   /** Ring drawn at the contact point when the image snaps. */
   contactRing: 44,
+  /**
+   * The look on the phone's camera: thin and faint, it appears when a target gets grabbed and
+   * fades on its own `holdMs` later even if the image stays on it.
+   */
+  quiet: {
+    coreWidth: 1,
+    caseWidth: 2.5,
+    /** Peak opacity of a guide. */
+    opacity: 0.55,
+    /** How long a guide stays before it starts fading by itself. */
+    holdMs: 400,
+    /** Length of that fade. */
+    fadeMs: 240,
+  },
   /** The pinned position's guide is dashed (on, off) so it never reads as an axis. */
   pinDash: [8, 6],
   /** Half length of the arms of the cross at the pinned position's center. */

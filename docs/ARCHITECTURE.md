@@ -142,8 +142,9 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     quedaría pegada a la guía.
     - Objetivos: centro de la imagen sobre el eje vertical y sobre el horizontal del lienzo (cada eje
       por separado), rotación a múltiplos de 90° y la posición fijada (pin). Cada uno con histéresis:
-      engancha a menos de 8 px / 3° (pin: 12 px, 3 % de escala, 3°) y suelta a más de 16 px / 6°
-      (pin: 20 px, 6 %, 6°); `MagnetLock` es la memoria de un fotograma al siguiente.
+      engancha a menos de 5 px / 2° (pin: 8 px, 2 % de escala, 2°) y suelta a más de 9 px / 4° (pin:
+      14 px, 4 %, 4°). Son constantes de `DEFAULT_MAGNET_OPTIONS`, fáciles de ajustar a ojo (los tests
+      se derivan de ellas); `MagnetLock` es la memoria de un fotograma al siguiente.
     - **Prioridad: el pin gana.** Si posición, escala y giro están dentro de su radio, la imagen se
       engancha entera al pin y los ejes y el giro quedan libres (sin sus guías). Si no, ejes y giro.
       El pin es una elección explícita y fija las cuatro magnitudes a la vez; con los ejes
@@ -163,8 +164,14 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     - Guías (`MagnetGuides`, en el mismo `<Canvas>`, sobre la imagen y bajo los controles): líneas de
       eje con doble trazo (`camera.guideCase` bajo `camera.guide`) y marcas cada 20 px; recta por el
       centro de la imagen para el ángulo recto; contorno discontinuo con cruz para el pin
-      (`magnetGuide.pinDash`). Solo se dibujan mientras su flag está activo; entran con el muelle
-      `snappy` y salen en `signature.guideFadeOutMs`; con «reducir movimiento», solo fundido de 120 ms.
+      (`magnetGuide.pinDash`). Discretas: trazo fino y opacidad baja (`magnetGuide.quiet`).
+    - **Cuándo se ven** (`revealed` en `useOverlayGestures`, distinto de `lock`): una guía aparece solo
+      cuando su candado pasa de suelto a enganchado durante el gesto. Si la imagen ya estaba sobre el
+      objetivo al empezar (una imagen centrada, o el giro de 0°), no se ve hasta que salga y vuelva a
+      entrar. Cada gesto es dueño de las suyas: ejes solo al arrastrar (sin pellizco ni giro
+      activos); ángulo solo con el giro de dos dedos; pin con cualquiera. Entran con el muelle
+      `snappy`, se desvanecen solas a los 400 ms (`quiet.holdMs`) aunque siga enganchada, y salen en
+      `signature.guideFadeOutMs` al soltar el objetivo; con «reducir movimiento», solo fundido.
     - Interruptor en Ajustes (`AppSettingsProvider`, activo por defecto), tabla `settings` (v6). La
       lectura no retrasa la cámara; un cambio de la persona antes de que acabe la lectura gana.
   - `NudgePad` (issue #68): cruz de 4 flechas y reset, en la esquina del lado de la mano libre,

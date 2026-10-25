@@ -122,7 +122,7 @@ export function OverlayCanvas({
   const {
     gesture,
     shown,
-    guideLock,
+    revealed,
     pinPlacement,
     placed,
     toggleFlip,
@@ -194,7 +194,7 @@ export function OverlayCanvas({
               />
             )}
             <MagnetGuides
-              lock={guideLock}
+              lock={revealed}
               shown={shown}
               canvasSize={canvasSize}
               imageSize={imageSize}

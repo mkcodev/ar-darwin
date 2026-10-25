@@ -8,6 +8,8 @@ import {
   useAnimatedReaction,
   useDerivedValue,
   useSharedValue,
+  withDelay,
+  withSequence,
 } from "react-native-reanimated";
 import { animateFade, animateMove, type MotionPlan, springPlan } from "../theme/motion";
 import type { OverlayPlacement } from "./useOverlayGestures";
@@ -27,10 +29,13 @@ type MagnetGuidesProps = {
 /**
  * The magnet's guides, inside the camera's Skia canvas, over the image: a vertical and a horizontal
  * line for the canvas axes, a line along the image's own axis for the grabbed right angle, and a
- * dashed outline with a cross for the pinned position. Each is drawn only while its flag in `lock`
- * is on (double stroke: the dark case under the blue core, with measuring ticks). A guide enters
- * with the `snappy` spring (a small overshoot of the stroke) and leaves in
- * `signature.guideFadeOutMs`; with «reduce motion» it only fades, in 120 ms. Everything runs on the
+ * dashed outline with a cross for the pinned position. A guide shows only while its flag in `lock`
+ * (the hook's `revealed`) is on: a target grabbed during the gesture, never one the image already
+ * sat on, and each gesture owns its guides (axes: drag; angle: two-finger rotation). Thin and faint
+ * (`magnetGuide.quiet`), double stroke (the dark case under the blue core) with measuring ticks. It
+ * enters with the `snappy` spring (a small overshoot of the stroke), fades by itself after
+ * `quiet.holdMs` even if the image stays on the target, and leaves in `signature.guideFadeOutMs`
+ * when the target is let go; with «reduce motion» it only fades, in 120 ms. Everything runs on the
  * UI thread: the shared values drive the paths and strokes, React renders it once.
  */
 export function MagnetGuides({
@@ -122,9 +127,15 @@ type GuideProps = {
 
 /** One guide: the case stroke under the core stroke, both scaled and faded by `progress`. */
 function Guide({ path, progress, dashed = false }: GuideProps) {
-  const opacity = useDerivedValue(() => Math.min(1, Math.max(0, progress.value)));
-  const caseWidth = useDerivedValue(() => magnetGuide.caseWidth * Math.max(0, progress.value));
-  const coreWidth = useDerivedValue(() => magnetGuide.coreWidth * Math.max(0, progress.value));
+  const opacity = useDerivedValue(
+    () => Math.min(1, Math.max(0, progress.value)) * magnetGuide.quiet.opacity,
+  );
+  const caseWidth = useDerivedValue(
+    () => magnetGuide.quiet.caseWidth * Math.max(0, progress.value),
+  );
+  const coreWidth = useDerivedValue(
+    () => magnetGuide.quiet.coreWidth * Math.max(0, progress.value),
+  );
   return (
     <Group opacity={opacity}>
       <Path
@@ -150,9 +161,10 @@ function Guide({ path, progress, dashed = false }: GuideProps) {
 }
 
 /**
- * 0 while `active` is false, 1 once it is on. Rising uses the plan's spring (it overshoots a
- * little, the «bounce»); falling fades in `signature.guideFadeOutMs`. Reduced motion: the plan is a
- * fade, so both directions are a plain fade.
+ * 0 while `active` is false. When it turns on, the guide rises with the plan's spring (it
+ * overshoots a little, the «bounce»), holds `magnetGuide.quiet.holdMs` and fades out by itself,
+ * even if `active` stays on; when it turns off it fades in `signature.guideFadeOutMs`. Reduced
+ * motion: the plan is a fade, so it is a plain fade each way.
  */
 function useGuideProgress(active: DerivedValue<boolean>, plan: MotionPlan): SharedValue<number> {
   const progress = useSharedValue(0);
@@ -160,11 +172,19 @@ function useGuideProgress(active: DerivedValue<boolean>, plan: MotionPlan): Shar
     () => active.value,
     (on, was) => {
       if (on === was) return;
-      progress.value = on
-        ? plan.mode === "full"
+      if (!on) {
+        progress.value = animateFade(0, plan, signature.guideFadeOutMs);
+        return;
+      }
+      const enter =
+        plan.mode === "full"
           ? animateMove(1, plan)
-          : animateFade(1, plan, signature.guideFadeOutMs)
-        : animateFade(0, plan, signature.guideFadeOutMs);
+          : animateFade(1, plan, signature.guideFadeOutMs);
+      // It does not wait to be let go: it fades by itself soon after appearing.
+      progress.value = withSequence(
+        enter,
+        withDelay(magnetGuide.quiet.holdMs, animateFade(0, plan, magnetGuide.quiet.fadeMs)),
+      );
     },
     [plan],
   );
