@@ -27,7 +27,7 @@ type FloatingPillProps = {
 
 /**
  * Camera control pill: dark fill with a paper edge (dark in both themes). It gets out of the way
- * when `retreated` (the 3 s idle timer belongs to the camera menu, not to this component) and
+ * when `retreated` (the 3 s idle timer is `useMenuIdle`, in the camera, not in this component) and
  * returns with the `gentle` spring. Reduced motion: it only fades. While retreated, touches pass
  * through, but it stays in the screen reader's tree so the controls are never lost.
  */

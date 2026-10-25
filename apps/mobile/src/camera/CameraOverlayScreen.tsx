@@ -1,6 +1,13 @@
 import type { CameraIssueKind, ImageAdjustments } from "@ar-darwin/core";
 import { classifyCameraIssue, isIgnorableCameraError } from "@ar-darwin/core";
-import { cameraBackdropColor, cameraColors, opacity, space, typography } from "@ar-darwin/ui";
+import {
+  cameraBackdropColor,
+  cameraColors,
+  opacity,
+  signature,
+  space,
+  typography,
+} from "@ar-darwin/ui";
 import type { SkImage } from "@shopify/react-native-skia";
 import { useKeepAwake } from "expo-keep-awake";
 import { Stack, useIsFocused } from "expo-router";
@@ -11,6 +18,7 @@ import { AppState, StyleSheet, Text, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, useCameraDevice } from "react-native-vision-camera";
+import { FloatingPill } from "../components/FloatingPill";
 import { LockButton } from "../components/LockButton";
 import { Slider } from "../components/Slider";
 import { percentFormat } from "../format";
@@ -22,6 +30,7 @@ import { CameraTools } from "./CameraTools";
 import { ImageAdjustSheet } from "./ImageAdjustSheet";
 import { LockedToast } from "./LockedToast";
 import { OverlayCanvas, type OverlayCanvasHandle } from "./OverlayCanvas";
+import { useMenuIdle } from "./useMenuIdle";
 import type { FlipAxis, Flips, OverlayPlacement } from "./useOverlayGestures";
 
 const opacityText = percentFormat(1);
@@ -55,6 +64,8 @@ type CameraOverlayScreenProps = {
  * The camera with an image over it, shared by the project camera and the spike (`/dev/camera`):
  * camera preview, overlay (`OverlayCanvas`), opacity slider, tools (`CameraTools`: mirror, torch,
  * image adjustments in `ImageAdjustSheet`), touch lock, keep-awake and the camera's error notices.
+ * The slider and the tools are floating pills that retreat after `signature.menuIdleMs` without
+ * touches (`useMenuIdle`); the lock and the fine-adjust pad stay where they are.
  * The torch is vision-camera's `torchMode`, only passed when the device has one (setting it on a
  * device without a torch throws into `onError`) and only once it was turned on: any value, even
  * `"off"`, makes vision-camera call `setTorchMode` as soon as the camera mounts, and CameraX
@@ -104,8 +115,18 @@ export function CameraOverlayScreen({
   const [torchUsed, setTorchUsed] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [nudgeOpen, setNudgeOpen] = useState(false);
-  /** Height of the controls column: the fine-adjust pad sits right above it. */
+  /** Height of the bottom pill: the fine-adjust pad sits right above it. */
   const [controlsHeight, setControlsHeight] = useState(0);
+  /** A finger is on the image / on the slider: the menu stays shown until it lifts. */
+  const [touching, setTouching] = useState(false);
+  const [sliderActive, setSliderActive] = useState(false);
+  // The menu retreats after `signature.menuIdleMs` without touches. It never hides while a finger
+  // is on the image or the slider, nor while the fine-adjust pad or the adjustments sheet is open.
+  const {
+    idle: menuIdle,
+    wake: wakeMenu,
+    reset: resetMenu,
+  } = useMenuIdle(signature.menuIdleMs, touching || sliderActive || nudgeOpen || adjustOpen);
   const adjustments = {
     brightness: useSharedValue(initialAdjustments?.brightness ?? 0),
     contrast: useSharedValue(initialAdjustments?.contrast ?? 0),
@@ -126,19 +147,25 @@ export function CameraOverlayScreen({
   // A fine-adjust arrow held down, or a finger dragging the image, must not keep acting when the
   // screen loses focus or the app goes to the background (a locked phone): the release would never
   // reach us. Both end here, keeping what is painted (and not leaving the image stuck on a guide).
+  // The menu's pauses end too (`releaseTouches` reports the image's), so it can never stay shown
+  // for good: it comes back counting when the screen is focused and active again.
   const endInteractions = useCallback(() => {
     canvas.current?.nudgeStop();
     canvas.current?.releaseTouches();
-  }, []);
+    setSliderActive(false);
+    resetMenu();
+  }, [resetMenu]);
   useEffect(() => {
-    if (!isFocused) endInteractions();
-  }, [isFocused, endInteractions]);
+    if (isFocused) wakeMenu();
+    else endInteractions();
+  }, [isFocused, endInteractions, wakeMenu]);
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
-      if (state !== "active") endInteractions();
+      if (state === "active") wakeMenu();
+      else endInteractions();
     });
     return () => subscription.remove();
-  }, [endInteractions]);
+  }, [endInteractions, wakeMenu]);
 
   // While locked, going back must not leave the camera (#19): block the screen's removal and
   // nudge the person towards the lock instead. A raw `BackHandler` listener wasn't enough — the
@@ -151,11 +178,12 @@ export function CameraOverlayScreen({
 
   const retry = () => {
     setIssue(null);
+    setSliderActive(false);
     setCameraKey((key) => key + 1);
   };
 
   return (
-    <View style={[styles.frame, { backgroundColor: cameraBackdropColor }]}>
+    <View style={[styles.frame, { backgroundColor: cameraBackdropColor }]} onTouchStart={wakeMenu}>
       <StatusBar style="light" />
       <Stack.Screen options={{ gestureEnabled: !isLocked }} />
       <CameraPermissionGate>
@@ -196,56 +224,70 @@ export function CameraOverlayScreen({
                 onPinChange={onPinChange}
                 onPinned={() => showToast(t("camera.nudge.pinned"))}
                 onUnpinned={() => showToast(t("camera.nudge.unpinned"))}
+                onTouchingChange={setTouching}
               />
-              {/* The slider and the tools stay usable while locked (opacity, torch and image
-                  adjustments are tuned while drawing; the mirror dims); the extra controls hide
-                  but keep their space so nothing jumps. */}
+              {/* The menu: a tool rail under the lock and a slim bar with the opacity slider,
+                  both retreating when idle (`menuIdle`). The slider and the tools stay usable
+                  while locked (opacity, torch and image adjustments are tuned while drawing; the
+                  mirror dims); the extra controls hide but keep their space so nothing jumps. */}
+              <CameraTools
+                retreated={menuIdle}
+                flips={flips}
+                isLocked={isLocked}
+                onFlip={flip}
+                onLockedFlip={() => showToast(t("camera.unlockToMirror"))}
+                torchOn={device.hasTorch ? torchOn : null}
+                onTorchChange={(on) => {
+                  setTorchOn(on);
+                  if (on) setTorchUsed(true);
+                }}
+                nudgeOpen={nudgeOpen}
+                onToggleNudge={() => setNudgeOpen((open) => !open)}
+                adjustOpen={adjustOpen}
+                onOpenAdjust={() => {
+                  // The sheet owns the screen while it is open: the pad closes (and releases a
+                  // held arrow) and does not come back by itself.
+                  setNudgeOpen(false);
+                  setAdjustOpen(true);
+                }}
+              />
               <View
                 style={styles.controls}
                 pointerEvents="box-none"
                 onLayout={(e) => setControlsHeight(e.nativeEvent.layout.height)}
               >
-                <Slider
-                  label={t("camera.opacity")}
-                  value={imageOpacity}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  format={opacityText}
-                  compact
-                  tone="camera"
-                  onChangeEnd={onOpacitySettle}
-                />
-                <CameraTools
-                  flips={flips}
-                  isLocked={isLocked}
-                  onFlip={flip}
-                  onLockedFlip={() => showToast(t("camera.unlockToMirror"))}
-                  torchOn={device.hasTorch ? torchOn : null}
-                  onTorchChange={(on) => {
-                    setTorchOn(on);
-                    if (on) setTorchUsed(true);
-                  }}
-                  nudgeOpen={nudgeOpen}
-                  onToggleNudge={() => setNudgeOpen((open) => !open)}
-                  adjustOpen={adjustOpen}
-                  onOpenAdjust={() => {
-                    // The sheet owns the screen while it is open: the pad closes (and releases a
-                    // held arrow) and does not come back by itself.
-                    setNudgeOpen(false);
-                    setAdjustOpen(true);
-                  }}
-                />
-                {extraControls && (
-                  <View
-                    style={[styles.extraRow, isLocked && styles.hidden]}
-                    pointerEvents={isLocked ? "none" : "box-none"}
-                    accessibilityElementsHidden={isLocked}
-                    importantForAccessibility={isLocked ? "no-hide-descendants" : "auto"}
-                  >
-                    {extraControls}
+                <FloatingPill
+                  retreated={menuIdle}
+                  towards="down"
+                  direction="column"
+                  label={t("camera.menu.top")}
+                  style={styles.bar}
+                >
+                  <View style={styles.sliderSlot}>
+                    <Slider
+                      label={t("camera.opacity")}
+                      value={imageOpacity}
+                      min={0}
+                      max={1}
+                      step={0.01}
+                      format={opacityText}
+                      compact
+                      tone="camera"
+                      onChangeEnd={onOpacitySettle}
+                      onActiveChange={setSliderActive}
+                    />
                   </View>
-                )}
+                  {extraControls && (
+                    <View
+                      style={[styles.extraRow, isLocked && styles.hidden]}
+                      pointerEvents={isLocked ? "none" : "box-none"}
+                      accessibilityElementsHidden={isLocked}
+                      importantForAccessibility={isLocked ? "no-hide-descendants" : "auto"}
+                    >
+                      {extraControls}
+                    </View>
+                  )}
+                </FloatingPill>
               </View>
             </>
           )
@@ -282,8 +324,9 @@ const styles = StyleSheet.create({
     left: space[5],
     right: space[5],
     bottom: space[10],
-    gap: space[4],
   },
+  bar: { alignSelf: "stretch" },
+  sliderSlot: { alignSelf: "stretch", paddingHorizontal: space[3] },
   extraRow: { flexDirection: "row", justifyContent: "center", gap: space[3] },
   hidden: { opacity: 0 },
 });

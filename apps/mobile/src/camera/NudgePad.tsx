@@ -93,7 +93,8 @@ const ARROWS: { dir: NudgeDirection; glyph: IconName; label: ArrowLabel }[] = [
 
 /**
  * The fine-adjust cross (arrows, reset and the pin), drawn with one Skia `<Canvas>` for all the
- * discs and glyphs. It sits on the free hand's side, a sibling of the overlay's own gesture detector, so
+ * discs and glyphs. It sits on the drawing hand's side, opposite to the tool rail, above the bottom
+ * pill, a sibling of the overlay's own gesture detector, so
  * touches on a disc never start a drag, while a finger anywhere else still drags and pinches.
  * Translucent while idle so it covers less of the drawing; solid while an arrow is held; dimmed
  * while locked (a tap then explains the lock instead of moving anything).
@@ -174,8 +175,9 @@ export function NudgePad({
       else pin();
     });
 
+  // The drawing hand's side, opposite to the tool rail (which sits under the free hand).
   const side =
-    controls === "left" ? { left: insets.left + space[5] } : { right: insets.right + space[5] };
+    controls === "left" ? { right: insets.right + space[5] } : { left: insets.left + space[5] };
 
   return (
     <Animated.View
