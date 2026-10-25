@@ -268,7 +268,11 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
       «Donde la dejé» / «En el punto fijado». Con el pin, la imagen entra con su posición, tamaño y
       giro, y con los espejos con que se dejó. Sin pin, o si coinciden, entra directo.
     - Lector de pantalla: cada flecha expone «activar» (`nudgeTap`, un paso de 1 px que se guarda
-      al momento).
+      al momento). Las celdas **no** llevan `accessibilityState.disabled` con el candado puesto: en
+      Android eso hace `setEnabled(false)` y RNGH trata una vista desactivada como «nunca objetivo
+      táctil» (`RNViewConfigurationHelper`), así que el toque caía al lienzo de debajo (y alternaba el
+      menú, ver «Tocar el lienzo»). El candado se comunica con `accessibilityHint` y el aviso
+      `LockedToast`.
   - `CameraNotice`: aviso a pantalla completa sobre el fondo de cámara (lo usan los errores de cámara
     y la imagen que no se encuentra).
 - Ruta `app/project/[id]/camera.tsx` (sin header; deja sitio a una futura ficha `project/[id]`):

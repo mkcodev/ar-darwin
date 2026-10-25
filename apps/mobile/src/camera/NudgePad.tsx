@@ -100,7 +100,10 @@ const ARROWS: { dir: NudgeDirection; glyph: IconName; label: ArrowLabel }[] = [
  * pill, a sibling of the overlay's own gesture detector, so
  * touches on a disc never start a drag, while a finger anywhere else still drags and pinches.
  * Translucent while idle so it covers less of the drawing; solid while an arrow is held; dimmed
- * while locked (a tap then explains the lock instead of moving anything).
+ * while locked (a tap then explains the lock instead of moving anything). The cells never carry
+ * `accessibilityState.disabled`: on Android that disables the view and RNGH then skips it as a touch
+ * target, so with the lock on a tap on the pad fell through to the canvas below (and toggled the
+ * camera menu). The lock is told to screen readers through the hint instead.
  */
 export function NudgePad({
   gestures,
@@ -264,7 +267,7 @@ export function NudgePad({
                 accessible
                 accessibilityRole="button"
                 accessibilityLabel={t(label)}
-                accessibilityState={{ disabled: isLocked }}
+                accessibilityHint={isLocked ? t("camera.unlockToNudge") : undefined}
                 accessibilityActions={[{ name: "activate" }]}
                 onAccessibilityAction={(event) => {
                   if (event.nativeEvent.actionName === "activate") onStep(dir);
@@ -278,8 +281,7 @@ export function NudgePad({
               accessible
               accessibilityRole="button"
               accessibilityLabel={t("camera.nudge.reset")}
-              accessibilityHint={t("camera.nudge.resetHint")}
-              accessibilityState={{ disabled: isLocked }}
+              accessibilityHint={isLocked ? t("camera.unlockToNudge") : t("camera.nudge.resetHint")}
               accessibilityActions={[{ name: "activate" }]}
               onAccessibilityAction={(event) => {
                 if (event.nativeEvent.actionName !== "activate") return;
@@ -294,8 +296,8 @@ export function NudgePad({
               accessible
               accessibilityRole="button"
               accessibilityLabel={t("camera.nudge.pin")}
-              accessibilityHint={t("camera.nudge.pinHint")}
-              accessibilityState={{ disabled: isLocked, selected: pinned }}
+              accessibilityHint={isLocked ? t("camera.unlockToNudge") : t("camera.nudge.pinHint")}
+              accessibilityState={{ selected: pinned }}
               accessibilityActions={[
                 { name: "activate" },
                 ...(pinned ? [{ name: "unpin", label: t("camera.nudge.unpin") }] : []),
