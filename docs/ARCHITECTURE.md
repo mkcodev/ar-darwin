@@ -190,7 +190,21 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     recorte y el recorte al ras (la franja que el trozo toma del vecino) se tiñe con `camera.guideTint`.
     Un proyecto dividido muestra siempre su trozo actual, también desde la biblioteca; sin división, la
     imagen entera. La posición y el pin guardados son del trozo en que se hicieron: `UPDATE_PROJECT_SPLIT`
-    los borra si cambian la división o el trozo (sin migración), y la cámara encaja el trozo nuevo.
+    los borra si cambian la división o el trozo desde el divisor (sin migración), y la cámara encaja el
+    trozo nuevo.
+  - **Siguiente trozo (issue #86).** Con más de un trozo, la píldora de abajo lleva encima del slider
+    la `TileBar`: `TileMinimap` (la rejilla en miniatura, con la forma de la imagen y el trozo actual
+    relleno de acento; oculto al lector de pantalla), el nombre del trozo («B2», «Trozo B2 de 4» para
+    TalkBack) y el botón «Siguiente trozo» (`Button` `tone="camera"`), bajo la mano libre. Funciona
+    con el candado. `ProjectCameraScreen` guarda el trozo en su estado; `nextTileId` (core) avanza por
+    filas y de la última vuelve a A1. Cambiar de trozo cambia `crop` con la misma imagen y
+    `OverlayCanvas` pone `keepOnImageResize`: `useOverlayGestures` conserva x, y, escala, giro y espejo en
+    vez de encajar, así el zoom, la posición y el pin (y el imán hacia él) siguen donde estaban; la
+    opacidad es un shared value de la pantalla y tampoco cambia. La cámara guarda `current_tile_id` en
+    el acto (`CameraState.currentTileId`, `UPDATE_PROJECT_CAMERA`) **sin** borrar posición ni pin. Al
+    volver al divisor, `useSplitterDraft` espera a la cola de guardados y relee el trozo del
+    proyecto (salvo que se haya elegido otro entre medias), para que su siguiente guardado no pise el
+    de la cámara.
   - `OverlayCanvas` + `useOverlayGestures`: la imagen no se dibuja (opacidad 0, flag `placed`) hasta
     tener tamaño de lienzo **y** dimensiones reales de la imagen. Entonces restaura la colocación
     guardada con `restoreTransform` o encaja con `fitTransform`. Un cambio posterior de lienzo mueve

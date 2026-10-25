@@ -57,6 +57,8 @@ type CameraOverlayScreenProps = {
   initialPin?: OverlayPlacement | null;
   /** The position was pinned (or re-pinned). */
   onPinChange?: (placement: OverlayPlacement | null) => void;
+  /** The tile bar of a split project: above the slider, and usable while locked. */
+  tileBar?: ReactNode;
   /** Extra controls under the slider; hidden (keeping their space) while locked. */
   extraControls?: ReactNode;
   /** Drawn over everything, also while locked (e.g. the spike's fps meter). */
@@ -67,6 +69,8 @@ type CameraOverlayScreenProps = {
  * The camera with an image over it, shared by the project camera and the spike (`/dev/camera`):
  * camera preview, overlay (`OverlayCanvas`), opacity slider, tools (`CameraTools`: mirror, torch,
  * image adjustments in `ImageAdjustSheet`), touch lock, keep-awake and the camera's error notices.
+ * A split project adds its tile bar (`TileBar`) in the bottom pill; changing the tile changes
+ * `crop` and the image keeps its placement (`OverlayCanvas`).
  * The slider and the tools are floating pills that retreat after `signature.menuIdleMs` without
  * touches (`useMenuIdle`), and so does the fine-adjust pad; the lock stays where it is.
  * The torch is vision-camera's `torchMode`, only passed when the device has one (setting it on a
@@ -93,6 +97,7 @@ export function CameraOverlayScreen({
   onAdjustmentsSettle,
   initialPin,
   onPinChange,
+  tileBar,
   extraControls,
   overlay,
 }: CameraOverlayScreenProps) {
@@ -290,6 +295,7 @@ export function CameraOverlayScreen({
                   label={t("camera.menu.top")}
                   style={styles.bar}
                 >
+                  {tileBar}
                   <View style={styles.sliderSlot}>
                     <Slider
                       label={t("camera.opacity")}

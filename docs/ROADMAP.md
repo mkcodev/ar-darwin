@@ -75,8 +75,8 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
       compartida con la PWA (adelanta los dos «divisor por tamaño de papel» de la fase 2)
 - [ ] Progreso por trozo: marcar hecho, «4/9»; migración v7 `completed_tiles`. Se une a «Minimapa y
       Siguiente trozo»
-- [ ] Minimapa y botón Siguiente trozo en la cámara (el recorte por trozo ya está: la cámara abre solo
-      el trozo elegido, con su franja de solape tintada)
+- [x] Minimapa y botón Siguiente trozo en la cámara: indicador del trozo, vuelta a A1 tras el último,
+      zoom, opacidad y pin intactos, también con el candado (`TileBar`, `nextTileId`, issue #86)
 - [ ] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja, reducir movimiento, idioma
 - [ ] Onboarding de 3 pantallas y permiso de cámara explicado (es/en)
 - [ ] Pasada de `impeccable` y `web-design-guidelines` sobre cada pantalla (Prompt 7)
