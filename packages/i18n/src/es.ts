@@ -65,7 +65,9 @@ export const es = {
     mirrorH: "Espejo horizontal",
     mirrorV: "Espejo vertical",
     tile: "Trozo {id}",
+    tileOf: "Trozo {id} de {count}",
     nextTile: "Siguiente trozo",
+    nextTileHint: "Pasa al trozo {id} con el mismo zoom y la misma opacidad",
     adjust: {
       open: "Ajustes de imagen",
       title: "Ajustes de imagen",

@@ -65,7 +65,9 @@ export const en = {
     mirrorH: "Mirror horizontally",
     mirrorV: "Mirror vertically",
     tile: "Tile {id}",
+    tileOf: "Tile {id} of {count}",
     nextTile: "Next tile",
+    nextTileHint: "Moves to tile {id} with the same zoom and opacity",
     adjust: {
       open: "Image adjustments",
       title: "Image adjustments",
