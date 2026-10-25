@@ -86,10 +86,23 @@ export const bottomSheet = {
   maxHeightRatio: 0.85,
 } as const;
 
-/** Splitter preview: gap opened between tiles when they separate. */
+/** Splitter preview: gap opened between tiles when they separate, cut lines and name tags. */
 export const splitter = {
   tileGap: 12,
   cutDash: [4, 4],
+  /** Original cut line, drawn on the tiles that were extended. */
+  cutWidth: 1.5,
+  /** Outline of the tile picked last. */
+  currentWidth: 2.5,
+  /** Pinch zoom of the preview goes from 1× up to this. */
+  maxZoom: 4,
+  /** Name tag («A1») over each tile: a pill, legible on any photo. */
+  tagHeight: 28,
+  tagPaddingX: 10,
+  /** Width of one character of a tag, to tell if a tag fits in its tile. */
+  tagCharWidth: 9,
+  /** Distance of the zoom reset button from the corner of the preview. */
+  zoomResetInset: 8,
 } as const;
 
 /** Touch-lock button over the camera: a ring fills clockwise during the long press. */

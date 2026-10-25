@@ -1,7 +1,7 @@
-import { type Project, samePlacement } from "@ar-darwin/core";
+import { cameraCrop, type Project, samePlacement } from "@ar-darwin/core";
 import { cameraBackdropColor } from "@ar-darwin/ui";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { t } from "../i18n";
 import { CameraNotice } from "./CameraNotice";
@@ -25,6 +25,23 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
   const image = useProjectImage(project.sourceUri);
   const session = useProjectCameraSession(project, image.status === "ready");
   const [choice, setChoice] = useState<"last" | "pin" | null>(null);
+
+  // A split project traces its current tile, not the whole image (a project that was never split,
+  // or whose grid no longer fits the image, shows all of it).
+  const readyImage = image.status === "ready" ? image.image : null;
+  const crop = useMemo(() => {
+    if (readyImage === null) return null;
+    try {
+      return cameraCrop(
+        { width: readyImage.width(), height: readyImage.height() },
+        project.split,
+        project.currentTileId,
+      );
+    } catch (error) {
+      console.warn(`ProjectCameraScreen: could not crop project ${project.id}`, error);
+      return null;
+    }
+  }, [readyImage, project.split, project.currentTileId, project.id]);
 
   // A pinned position that differs from where the image was left: ask which one to open with,
   // before the camera mounts, so the image is placed once, where it was chosen.
@@ -78,7 +95,8 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
 
   return (
     <CameraOverlayScreen
-      image={image.status === "ready" ? image.image : null}
+      image={readyImage}
+      crop={crop}
       initialOpacity={session.initialOpacity}
       initialPlacement={placement}
       initialPin={initialPin}

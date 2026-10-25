@@ -1,4 +1,4 @@
-import type { CameraIssueKind, ImageAdjustments } from "@ar-darwin/core";
+import type { CameraCrop, CameraIssueKind, ImageAdjustments } from "@ar-darwin/core";
 import { classifyCameraIssue, isIgnorableCameraError } from "@ar-darwin/core";
 import {
   cameraBackdropColor,
@@ -39,6 +39,8 @@ const opacityText = percentFormat(1);
 type CameraOverlayScreenProps = {
   /** The image to trace, decoded; `null` while it loads. */
   image: SkImage | null;
+  /** Trace only this part of the image (a tile); absent = all of it. Keep it stable. */
+  crop?: CameraCrop | null;
   /** Starting overlay opacity, 0–1. Read once. */
   initialOpacity?: number;
   /** Where the image was left last time; absent fits it. Read once. */
@@ -82,6 +84,7 @@ type CameraOverlayScreenProps = {
  */
 export function CameraOverlayScreen({
   image,
+  crop,
   initialOpacity = opacity.overlayImage,
   initialPlacement,
   onPlacementSettle,
@@ -229,6 +232,7 @@ export function CameraOverlayScreen({
               <OverlayCanvas
                 ref={canvas}
                 image={image}
+                crop={crop}
                 opacity={imageOpacity}
                 locked={locked}
                 magnetEnabled={magnetOn}

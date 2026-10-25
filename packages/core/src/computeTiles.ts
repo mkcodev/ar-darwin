@@ -65,6 +65,23 @@ export function maxOverlapPx(
 }
 
 /**
+ * Shortest tile side, measured only on the axes that are actually cut (like {@link maxOverlapPx},
+ * which is half of it, rounded down). 0 for 1×1. The base the splitter's overlap percentage is
+ * taken from. Throws if the input is invalid.
+ */
+export function shortestTileSide(
+  image: { width: number; height: number },
+  rows: number,
+  cols: number,
+): number {
+  const { xs, ys } = validatedGrid("shortestTileSide", image, rows, cols);
+  const sides: number[] = [];
+  if (xs.length > 2) sides.push(minSpan(xs));
+  if (ys.length > 2) sides.push(minSpan(ys));
+  return sides.length === 0 ? 0 : Math.min(...sides);
+}
+
+/**
  * Splits an image into rows × cols tiles, ordered by rows, left to right.
  *
  * - `row` and `col` are 0-based; `id` is the row letter plus the 1-based column ("A1", "B3").

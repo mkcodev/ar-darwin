@@ -18,6 +18,8 @@ export const haptics = {
   lockToggle: { kind: "impact", style: "medium" },
   /** Next tile in the camera, or a tile picked in the splitter. */
   tileChange: { kind: "selection" },
+  /** A quick grid picked in the splitter (the rows/columns steppers vibrate on their own). */
+  splitGrid: { kind: "selection" },
   /** One fine-adjust step. Not fired on long-press repeats. */
   nudgeStep: { kind: "selection" },
   /** A value hits its limit (max overlap, 10 rows, minimum scale). */

@@ -42,8 +42,10 @@ export function SegmentedControl<V extends string>({
   const plan = springPlan(spring.snappy, reduce);
   const [textWidths, setTextWidths] = useState<Record<number, number>>({});
   const measured = Object.keys(textWidths).length === options.length;
+  // Measured widths are fractional: rounded up, or the widest label misses its own segment by a
+  // hair and wraps onto a second line.
   const segmentWidth = measured
-    ? Math.max(touchTarget, Math.max(...Object.values(textWidths)) + space[4] * 2)
+    ? Math.max(touchTarget, Math.ceil(Math.max(...Object.values(textWidths))) + space[4] * 2)
     : undefined;
   const index = Math.max(
     0,
@@ -78,8 +80,8 @@ export function SegmentedControl<V extends string>({
               styles.thumb,
               {
                 width: segmentWidth - segmented.thumbInset * 2,
-                backgroundColor: c.bg.raised,
-                borderColor: c.border.strong,
+                backgroundColor: c.accent.subtle,
+                borderColor: c.accent.default,
               },
               thumbStyle,
             ]}
@@ -97,6 +99,7 @@ export function SegmentedControl<V extends string>({
               style={[styles.segment, segmentWidth !== undefined && { width: segmentWidth }]}
             >
               <Text
+                numberOfLines={1}
                 onLayout={(e) => {
                   const w = e.nativeEvent.layout.width;
                   setTextWidths((prev) => (prev[i] === w ? prev : { ...prev, [i]: w }));
