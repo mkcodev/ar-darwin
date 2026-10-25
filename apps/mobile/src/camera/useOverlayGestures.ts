@@ -245,8 +245,24 @@ export function useOverlayGestures({
     return restoreTransform(placed.transform, placed.viewport, canvasSize.value);
   };
 
-  /** What the canvas paints: the magnetized transform while a finger is down, else the raw. */
-  const shown = useDerivedValue<Transform>(() => magnet.value ?? current());
+  /**
+   * What the canvas paints: the magnetized transform while a finger is down, else the raw.
+   * Reads the raw shared values right here and not through `current()`: a derived value only
+   * re-runs for the shared values its own body names, and going through a helper left it stuck
+   * on its first value (scale 1 at the origin: the photo at natural size) until the first drag.
+   */
+  const shown = useDerivedValue<Transform>(() => {
+    const snapped = magnet.value;
+    if (snapped !== null) return snapped;
+    return {
+      x: x.value,
+      y: y.value,
+      scale: scale.value,
+      rotation: rotation.value,
+      flipX: flipX.value,
+      flipY: flipY.value,
+    };
+  });
   /** Forgets everything the magnet remembers about the current touches. */
   const clearMagnet = () => {
     "worklet";
