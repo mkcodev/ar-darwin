@@ -22,10 +22,13 @@ type CameraToolsProps = {
   onToggleNudge: () => void;
   adjustOpen: boolean;
   onOpenAdjust: () => void;
+  /** Moves the menu (and the fine-adjust pad) to the other side: the drawing hand changes. */
+  onSwapSides: () => void;
 };
 
 /**
- * The camera's tool rail: mirror H/V, torch, the fine-adjust pad and image adjustments, in a
+ * The camera's tool rail: mirror H/V, torch, the fine-adjust pad, image adjustments and the
+ * button that moves the menu to the other side, in a
  * vertical pill on the free hand's side, under the lock. It stays while locked (torch,
  * adjustments and opening the pad still work; the mirror would move the image, so it is dimmed),
  * so nothing around it moves when the lock engages. It retreats with the rest of the menu.
@@ -42,6 +45,7 @@ export function CameraTools({
   onToggleNudge,
   adjustOpen,
   onOpenAdjust,
+  onSwapSides,
 }: CameraToolsProps) {
   const insets = useSafeAreaInsets();
   return (
@@ -92,6 +96,13 @@ export function CameraTools({
         tone="camera"
         pressed={adjustOpen}
         onPress={onOpenAdjust}
+      />
+      {/* Last in the rail. It does not move the image, so the lock leaves it active. */}
+      <IconButton
+        icon="swapSides"
+        label={t("camera.menu.swapSides")}
+        tone="camera"
+        onPress={onSwapSides}
       />
     </FloatingPill>
   );

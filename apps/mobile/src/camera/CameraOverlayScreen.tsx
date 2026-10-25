@@ -31,6 +31,7 @@ import { Slider } from "../components/Slider";
 import { percentFormat } from "../format";
 import { t } from "../i18n";
 import { useAppSettings } from "../settings/AppSettingsProvider";
+import { useHandedness } from "../theme/HandednessProvider";
 import { CameraIssueNotice } from "./CameraIssueNotice";
 import { CameraPermissionGate } from "./CameraPermissionGate";
 import { CameraTools } from "./CameraTools";
@@ -104,7 +105,8 @@ export function CameraOverlayScreen({
   const insets = useSafeAreaInsets();
   const imageOpacity = useSharedValue<number>(initialOpacity);
   const locked = useSharedValue(false);
-  const { magnetEnabled } = useAppSettings();
+  const { magnetEnabled, setDrawingHand } = useAppSettings();
+  const { hand } = useHandedness();
   const magnetOn = useSharedValue(magnetEnabled);
   useEffect(() => {
     magnetOn.value = magnetEnabled;
@@ -291,6 +293,7 @@ export function CameraOverlayScreen({
                   setNudgeOpen(false);
                   setAdjustOpen(true);
                 }}
+                onSwapSides={() => setDrawingHand(hand === "right" ? "left" : "right")}
               />
               <View
                 style={styles.controls}
