@@ -192,19 +192,33 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     imagen entera. La posición y el pin guardados son del trozo en que se hicieron: `UPDATE_PROJECT_SPLIT`
     los borra si cambian la división o el trozo desde el divisor (sin migración), y la cámara encaja el
     trozo nuevo.
-  - **Siguiente trozo (issue #86).** Con más de un trozo, la píldora de abajo lleva encima del slider
-    la `TileBar`: `TileMinimap` (la rejilla en miniatura, con la forma de la imagen y el trozo actual
-    relleno de acento; oculto al lector de pantalla), el nombre del trozo («B2», «Trozo B2 de 4» para
-    TalkBack) y el botón «Siguiente trozo» (`Button` `tone="camera"`), bajo la mano libre. Funciona
-    con el candado. `ProjectCameraScreen` guarda el trozo en su estado; `nextTileId` (core) avanza por
-    filas y de la última vuelve a A1. Cambiar de trozo cambia `crop` con la misma imagen y
-    `OverlayCanvas` pone `keepOnImageResize`: `useOverlayGestures` conserva x, y, escala, giro y espejo en
-    vez de encajar, así el zoom, la posición y el pin (y el imán hacia él) siguen donde estaban; la
-    opacidad es un shared value de la pantalla y tampoco cambia. La cámara guarda `current_tile_id` en
-    el acto (`CameraState.currentTileId`, `UPDATE_PROJECT_CAMERA`) **sin** borrar posición ni pin. Al
-    volver al divisor, `useSplitterDraft` espera a la cola de guardados y relee el trozo del
-    proyecto (salvo que se haya elegido otro entre medias), para que su siguiente guardado no pise el
-    de la cámara.
+  - **Moverse entre trozos (issue #86).** Con más de un trozo, la píldora de abajo lleva encima del
+    slider la `TileBar`: un chip con `TileMinimap` (la rejilla en miniatura, con la forma de la imagen y
+    el trozo actual relleno de acento), el nombre («B2») y un chevron; la flecha «Trozo anterior»
+    (`IconButton`) y «Siguiente», la acción principal (`Button` `tone="camera"` `compact`; texto
+    visible corto «Siguiente», lo que lee TalkBack es «Siguiente trozo»). Van bajo la mano libre,
+    con «Siguiente» en el borde. Caben en 360 px: el chip mide ~94, la flecha 48 y «Siguiente» ~131
+    sobre ~288 útiles. Funcionan con el candado.
+  - **Elegir trozo (`TilePicker`).** Tocar el chip abre un `BottomSheet` (`dragFrom="handle"`: solo se
+    cierra arrastrando el asa o el título, así el scroll de la rejilla no lo cierra) con todos los
+    trozos: un solo `Canvas` Skia dibuja el pedazo de foto de cada celda (recorte al ras de
+    `computeTiles`, con mipmaps) y encima hay un `Pressable` por celda con su nombre. Las celdas tienen
+    la proporción de un trozo y su lado menor mide al menos `tilePicker.minCell` (44): lo calcula
+    `tilePickerLayout` (core), que encaja la rejilla en el hueco del panel y, si no cabe (hasta 10×10),
+    la deja en 44 y marca el scroll del eje que sobra; se abre desplazada al trozo actual. El actual lleva
+    contorno bermellón y TalkBack dice «Trozo B2, actual». Mientras está abierto, el menú no se oculta
+    (`menuPaused` de `CameraOverlayScreen`, que se suma a las pausas de `useMenuIdle`). Con «reducir
+    movimiento» el panel solo se desvanece (el `BottomSheet` ya lo hace).
+  - **Qué conserva el cambio.** Anterior, siguiente y celda pasan por `goToTile` en
+    `ProjectCameraScreen`: guarda el trozo en su estado, avisa a la sesión y vibra con `tileChange`.
+    `nextTileId` y `previousTileId` (core) recorren la rejilla por filas y dan la vuelta en los
+    extremos. Cambiar de trozo cambia `crop` con la misma imagen y `OverlayCanvas` pone
+    `keepOnImageResize`: `useOverlayGestures` conserva x, y, escala, giro y espejo en vez de encajar,
+    así el zoom, la posición y el pin (y el imán hacia él) siguen donde estaban; la opacidad es un
+    shared value de la pantalla y tampoco cambia. La cámara guarda `current_tile_id` en el acto
+    (`CameraState.currentTileId`, `UPDATE_PROJECT_CAMERA`) **sin** borrar posición ni pin. Al volver al
+    divisor, `useSplitterDraft` espera a la cola de guardados y relee el trozo del proyecto (salvo que
+    se haya elegido otro entre medias), para que su siguiente guardado no pise el de la cámara.
   - `OverlayCanvas` + `useOverlayGestures`: la imagen no se dibuja (opacidad 0, flag `placed`) hasta
     tener tamaño de lienzo **y** dimensiones reales de la imagen. Entonces restaura la colocación
     guardada con `restoreTransform` o encaja con `fitTransform`. Un cambio posterior de lienzo mueve

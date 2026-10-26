@@ -1,4 +1,10 @@
-import { cameraCrop, nextTileId, type Project, samePlacement } from "@ar-darwin/core";
+import {
+  cameraCrop,
+  nextTileId,
+  type Project,
+  previousTileId,
+  samePlacement,
+} from "@ar-darwin/core";
 import { cameraBackdropColor } from "@ar-darwin/ui";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
@@ -8,6 +14,7 @@ import { playHaptic } from "../theme/playHaptic";
 import { CameraNotice } from "./CameraNotice";
 import { CameraOverlayScreen } from "./CameraOverlayScreen";
 import { TileBar } from "./TileBar";
+import { TilePicker } from "./TilePicker";
 import type { OverlayPlacement } from "./useOverlayGestures";
 import { useProjectCameraSession } from "./useProjectCameraSession";
 import { useProjectImage } from "./useProjectImage";
@@ -29,6 +36,7 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
   const [choice, setChoice] = useState<"last" | "pin" | null>(null);
   // The camera moves between tiles on its own; the session saves each one.
   const [tileId, setTileId] = useState(project.currentTileId);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // A split project traces its current tile, not the whole image (a project that was never split,
   // or whose grid no longer fits the image, shows all of it).
@@ -47,26 +55,39 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
     }
   }, [readyImage, project.split, tileId, project.id]);
 
-  // «Siguiente trozo»: the next sheet, with the zoom, opacity and position as they are.
+  // Next, previous or a cell of the picker: another sheet, with the zoom, rotation, mirror, opacity
+  // and pin as they are (`OverlayCanvas` keeps the placement when only the crop changes).
   const split = project.split;
-  const goToNextTile = () => {
-    if (split === undefined || crop === null) return;
-    const next = nextTileId(split, crop.tileId);
-    setTileId(next);
-    session.onTileChange(next);
+  const goToTile = (id: string) => {
+    setTileId(id);
+    session.onTileChange(id);
     playHaptic("tileChange");
   };
-  const tileBar =
-    readyImage !== null && split !== undefined && crop !== null && split.rows * split.cols > 1 ? (
-      <TileBar
-        rows={split.rows}
-        cols={split.cols}
-        aspect={readyImage.width() / readyImage.height()}
-        tileId={crop.tileId}
-        nextId={nextTileId(split, crop.tileId)}
-        onNext={goToNextTile}
-      />
-    ) : null;
+  const hasTiles =
+    readyImage !== null && split !== undefined && crop !== null && split.rows * split.cols > 1;
+  const tileBar = hasTiles ? (
+    <TileBar
+      rows={split.rows}
+      cols={split.cols}
+      aspect={readyImage.width() / readyImage.height()}
+      tileId={crop.tileId}
+      previousId={previousTileId(split, crop.tileId)}
+      nextId={nextTileId(split, crop.tileId)}
+      onPrevious={() => goToTile(previousTileId(split, crop.tileId))}
+      onNext={() => goToTile(nextTileId(split, crop.tileId))}
+      onOpenPicker={() => setPickerOpen(true)}
+    />
+  ) : null;
+  const tilePicker = hasTiles ? (
+    <TilePicker
+      open={pickerOpen}
+      onClose={() => setPickerOpen(false)}
+      image={readyImage}
+      split={split}
+      currentId={crop.tileId}
+      onPick={goToTile}
+    />
+  ) : null;
 
   // A pinned position that differs from where the image was left: ask which one to open with,
   // before the camera mounts, so the image is placed once, where it was chosen.
@@ -131,6 +152,8 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
       initialAdjustments={session.initialAdjustments}
       onAdjustmentsSettle={session.onAdjustmentsSettle}
       tileBar={tileBar}
+      menuPaused={pickerOpen}
+      overlay={tilePicker}
     />
   );
 }

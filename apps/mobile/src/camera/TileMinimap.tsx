@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
 
 /** The longest side of the minimap. */
-const SIDE = space[10] + space[1];
+const SIDE = space[8] + space[1];
 /** Space between cells, so a tile reads as its own sheet. */
 const GAP = 2;
 /** Cells this small are drawn square-cornered: a radius would round them into dots. */

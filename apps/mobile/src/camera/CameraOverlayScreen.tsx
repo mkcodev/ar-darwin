@@ -57,6 +57,8 @@ type CameraOverlayScreenProps = {
   initialPin?: OverlayPlacement | null;
   /** The position was pinned (or re-pinned). */
   onPinChange?: (placement: OverlayPlacement | null) => void;
+  /** A sheet of the screen is open (the tile picker): the menu stays shown. */
+  menuPaused?: boolean;
   /** The tile bar of a split project: above the slider, and usable while locked. */
   tileBar?: ReactNode;
   /** Extra controls under the slider; hidden (keeping their space) while locked. */
@@ -97,6 +99,7 @@ export function CameraOverlayScreen({
   onAdjustmentsSettle,
   initialPin,
   onPinChange,
+  menuPaused = false,
   tileBar,
   extraControls,
   overlay,
@@ -140,7 +143,10 @@ export function CameraOverlayScreen({
     poke: pokeMenu,
     hide: hideMenu,
     reset: resetMenu,
-  } = useMenuIdle(signature.menuIdleMs, touching || sliderActive || nudgeHolding || adjustOpen);
+  } = useMenuIdle(
+    signature.menuIdleMs,
+    touching || sliderActive || nudgeHolding || adjustOpen || menuPaused,
+  );
 
   // The menu answers to taps on the canvas (`OverlayCanvas` `onCanvasTap`: one finger, no drift, on
   // the canvas and not on a control). On the empty part of the screen it toggles: it hides a shown
