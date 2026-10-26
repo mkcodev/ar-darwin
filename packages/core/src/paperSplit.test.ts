@@ -1,13 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { MAX_SPLIT } from "./models";
 import {
-  computePaperTiles,
-  maxPaperOverlapMm,
+  MAX_SPLIT,
   type Orientation,
-  PAPER_SIZES,
-  type PaperSheet,
   type PaperSize,
   type PaperSplitConfig,
+  SplitConfigSchema,
+} from "./models";
+import {
+  computePaperTiles,
+  isPaperGridTooLargeError,
+  maxPaperOverlapMm,
+  PAPER_SIZES,
+  PaperGridTooLargeError,
+  type PaperSheet,
   type PaperTiles,
 } from "./paperSplit";
 
@@ -482,5 +487,89 @@ describe("computePaperTiles input limits", () => {
     expect(() =>
       computePaperTiles({ width: 1000, height: 100 }, config("A4", "portrait", 500, 0)),
     ).toThrow(/^(?!.*less overlap)/s);
+  });
+});
+
+describe("PaperGridTooLargeError", () => {
+  const image = { width: 4000, height: 3000 };
+
+  function thrown(cfg: PaperSplitConfig): unknown {
+    try {
+      computePaperTiles(image, cfg);
+    } catch (error) {
+      return error;
+    }
+    return undefined;
+  }
+
+  it("says which axis overflows, how many sheets it needs and the widest drawing that fits", () => {
+    const error = thrown(config("A4", "portrait", 1000));
+    expect(error).toBeInstanceOf(PaperGridTooLargeError);
+    expect(error).toBeInstanceOf(Error);
+    if (!isPaperGridTooLargeError(error)) throw new Error("not a PaperGridTooLargeError");
+    expect(error.axis).toBe("columns");
+    expect(error.needed).toBeGreaterThan(MAX_SPLIT);
+    expect(error.message).toMatch(/^computePaperTiles: 1000 cm wide needs/);
+    // The width it suggests really fits.
+    expect(error.maxWidthCm).toBeGreaterThan(0);
+    expect(() =>
+      computePaperTiles(image, config("A4", "portrait", error.maxWidthCm)),
+    ).not.toThrow();
+  });
+
+  it("reports the rows when the drawing is too tall", () => {
+    let error: unknown;
+    try {
+      computePaperTiles({ width: 100, height: 5000 }, config("A4", "portrait", 100));
+    } catch (e) {
+      error = e;
+    }
+    if (!isPaperGridTooLargeError(error)) throw new Error("not a PaperGridTooLargeError");
+    expect(error.axis).toBe("rows");
+    expect(error.needed).toBe(169);
+  });
+
+  it("reports 0 when no width fits an image that elongated", () => {
+    const tall = { width: 1, height: 100_000 };
+    let error: unknown;
+    try {
+      computePaperTiles(tall, config("A4", "portrait", 50));
+    } catch (e) {
+      error = e;
+    }
+    if (!isPaperGridTooLargeError(error)) throw new Error("not a PaperGridTooLargeError");
+    expect(error.maxWidthCm).toBe(0);
+  });
+
+  it("is recognised by its code when instanceof is lost", () => {
+    expect(isPaperGridTooLargeError({ code: "PAPER_GRID_TOO_LARGE" })).toBe(true);
+    expect(isPaperGridTooLargeError(new Error("computePaperTiles: nope"))).toBe(false);
+    expect(isPaperGridTooLargeError(null)).toBe(false);
+  });
+
+  it("is not thrown for invalid input", () => {
+    expect(isPaperGridTooLargeError(thrown(config("A4", "portrait", -1)))).toBe(false);
+  });
+});
+
+describe("SplitConfigSchema.paper", () => {
+  const manual = { rows: 2, cols: 2, overlapPx: 10, showOverlapTint: true };
+
+  it("accepts a manual split without paper (every project saved so far)", () => {
+    expect(SplitConfigSchema.parse(manual)).toEqual(manual);
+  });
+
+  it("accepts a split made by paper size", () => {
+    const paper = { paper: "A3", orientation: "landscape", widthCm: 90, overlapMm: 12 };
+    expect(SplitConfigSchema.parse({ ...manual, paper })).toEqual({ ...manual, paper });
+  });
+
+  it("rejects a paper config that does not make sense", () => {
+    const bad = { paper: "A5", orientation: "landscape", widthCm: 90, overlapMm: 12 };
+    expect(SplitConfigSchema.safeParse({ ...manual, paper: bad }).success).toBe(false);
+    expect(
+      SplitConfigSchema.safeParse({ ...manual, paper: { ...bad, paper: "A4", widthCm: 0 } })
+        .success,
+    ).toBe(false);
   });
 });

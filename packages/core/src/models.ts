@@ -59,12 +59,34 @@ export type Placement = z.infer<typeof PlacementSchema>;
 
 export const MAX_SPLIT = 10;
 
+export const PaperSizeSchema = z.enum(["A4", "A3", "Letter"]);
+export type PaperSize = z.infer<typeof PaperSizeSchema>;
+
+export const OrientationSchema = z.enum(["portrait", "landscape"]);
+export type Orientation = z.infer<typeof OrientationSchema>;
+
+export const PaperSplitConfigSchema = z.object({
+  paper: PaperSizeSchema,
+  orientation: OrientationSchema,
+  /** Final drawing width in cm; capped at a kilometre, far above anything that fits 10 sheets. */
+  widthCm: z.number().positive().max(100_000),
+  /** Strip shared by neighbouring sheets, in mm. 0 = sheets touch. */
+  overlapMm: z.number().nonnegative(),
+});
+export type PaperSplitConfig = z.infer<typeof PaperSplitConfigSchema>;
+
 export const SplitConfigSchema = z.object({
   rows: z.int().min(1).max(MAX_SPLIT),
   cols: z.int().min(1).max(MAX_SPLIT),
   /** Extra pixels each tile takes from its neighbours. 0 = flush cut. */
   overlapPx: z.int().nonnegative(),
   showOverlapTint: z.boolean(),
+  /**
+   * Set when the split was made by paper size («Folios»). `rows`, `cols` and `overlapPx` then hold
+   * what `computePaperTiles` gave for the image, so everything that only needs the grid keeps
+   * working. Absent = a manual split.
+   */
+  paper: PaperSplitConfigSchema.optional(),
 });
 export type SplitConfig = z.infer<typeof SplitConfigSchema>;
 

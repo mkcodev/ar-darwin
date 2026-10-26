@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   clamp,
   fractionOfRange,
+  holdStepFactor,
   inkDiameter,
   largeTitleCollapse,
   largeTitleOverscrollScale,
@@ -62,6 +63,26 @@ describe("fractionOfRange", () => {
     expect(fractionOfRange(25, 0, 100)).toBe(0.25);
     expect(fractionOfRange(150, 0, 100)).toBe(1);
     expect(fractionOfRange(5, 5, 5)).toBe(0);
+  });
+});
+
+describe("holdStepFactor", () => {
+  it("moves one step at a time at first, then five, then ten", () => {
+    expect(holdStepFactor(0)).toBe(1);
+    expect(holdStepFactor(9)).toBe(1);
+    expect(holdStepFactor(10)).toBe(5);
+    expect(holdStepFactor(24)).toBe(5);
+    expect(holdStepFactor(25)).toBe(10);
+    expect(holdStepFactor(500)).toBe(10);
+  });
+
+  it("never slows down as the hold goes on", () => {
+    let last = 0;
+    for (let i = 0; i < 100; i++) {
+      const factor = holdStepFactor(i);
+      expect(factor).toBeGreaterThanOrEqual(last);
+      last = factor;
+    }
   });
 });
 

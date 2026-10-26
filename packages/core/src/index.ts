@@ -16,6 +16,7 @@ export * from "./previewZoom";
 export * from "./project";
 export * from "./splitConfig";
 export * from "./splitPreview";
+export * from "./splitTiles";
 export * from "./storage/migrations";
 export * from "./storage/queries";
 export * from "./storage/rows";

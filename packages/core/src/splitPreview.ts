@@ -1,5 +1,7 @@
 import { computeTiles, maxOverlapPx } from "./computeTiles";
 import type { Rect, Size, SplitConfig } from "./models";
+import { computePaperTiles } from "./paperSplit";
+import { splitTiles } from "./splitTiles";
 
 export type ScreenPoint = { x: number; y: number };
 
@@ -24,14 +26,73 @@ export type SplitPreviewLayout = {
   gap: number;
   rows: number;
   cols: number;
+  /** A split by paper size: the tiles are sheets, which can reach past the image. */
+  paper: boolean;
   tiles: PreviewTile[];
 };
+
+/**
+ * The preview of a split by paper size. The scale fits the sheets *separated* (`tileGap` screen px
+ * between them), and the grid of sheets, not the image, is what sits centred in the frame: the image
+ * is placed on it wherever `computePaperTiles` put it. Neighbouring sheets overlap when joined, so
+ * pulling them apart by `tileGap` plus the overlap leaves exactly `tileGap` between them.
+ */
+function paperPreviewLayout(
+  image: { width: number; height: number },
+  config: SplitConfig,
+  paper: NonNullable<SplitConfig["paper"]>,
+  frame: Size,
+  tileGap: number,
+): SplitPreviewLayout {
+  const plan = computePaperTiles(image, paper);
+  const tiles = splitTiles(image, config);
+  const sheetW = plan.sheetMm.width * plan.pxPerMm;
+  const sheetH = plan.sheetMm.height * plan.pxPerMm;
+  const overlap = plan.overlapMm * plan.pxPerMm;
+  const fitW = (frame.width - (plan.cols - 1) * tileGap) / (plan.cols * sheetW);
+  const fitH = (frame.height - (plan.rows - 1) * tileGap) / (plan.rows * sheetH);
+  const scale = Math.max(Math.min(fitW, fitH), 0);
+  const gap = tileGap + overlap * scale;
+  const spanW = plan.cols * sheetW - (plan.cols - 1) * overlap;
+  const spanH = plan.rows * sheetH - (plan.rows - 1) * overlap;
+  const first = plan.sheets[0]?.rect ?? { x: 0, y: 0, width: sheetW, height: sheetH };
+  const origin = {
+    x: (frame.width - spanW * scale) / 2 - first.x * scale,
+    y: (frame.height - spanH * scale) / 2 - first.y * scale,
+  };
+  const toScreen = (r: Rect): Rect => ({
+    x: origin.x + r.x * scale,
+    y: origin.y + r.y * scale,
+    width: r.width * scale,
+    height: r.height * scale,
+  });
+  return {
+    scale,
+    origin,
+    gap,
+    rows: plan.rows,
+    cols: plan.cols,
+    paper: true,
+    tiles: tiles.map((tile) => ({
+      id: tile.id,
+      row: tile.row,
+      col: tile.col,
+      rect: toScreen(tile.rect),
+      coreRect: toScreen(tile.coreRect),
+      offset: {
+        x: (tile.col - (plan.cols - 1) / 2) * gap,
+        y: (tile.row - (plan.rows - 1) / 2) * gap,
+      },
+    })),
+  };
+}
 
 /**
  * Lays the split out inside `frame` for the splitter's preview. The scale fits the image with
  * its tiles *separated* (a gap of `tileGap` screen px between crops, plus twice the overlap so
  * each tinted strip reads as a band of its own), so the separated state never leaves the frame
- * and the joined one sits centred inside it. Throws like computeTiles for an invalid split.
+ * and the joined one sits centred inside it. A split by paper size lays out its sheets instead
+ * (`paperPreviewLayout`). Throws like computeTiles for an invalid split.
  */
 export function splitPreviewLayout(
   image: { width: number; height: number },
@@ -39,6 +100,9 @@ export function splitPreviewLayout(
   frame: Size,
   tileGap: number,
 ): SplitPreviewLayout {
+  if (config.paper !== undefined) {
+    return paperPreviewLayout(image, config, config.paper, frame, tileGap);
+  }
   const tiles = computeTiles(image, config);
   const overlap = Math.min(config.overlapPx, maxOverlapPx(image, config.rows, config.cols));
   const fitW =
@@ -63,6 +127,7 @@ export function splitPreviewLayout(
     gap,
     rows: config.rows,
     cols: config.cols,
+    paper: false,
     tiles: tiles.map((tile) => ({
       id: tile.id,
       row: tile.row,

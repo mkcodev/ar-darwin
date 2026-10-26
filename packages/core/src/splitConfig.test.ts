@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { maxOverlapPx, shortestTileSide } from "./computeTiles";
+import { SplitConfigSchema } from "./models";
+import { computePaperTiles } from "./paperSplit";
 import {
   cameraCrop,
   configFromDraft,
   DEFAULT_OVERLAP_PERCENT,
+  DEFAULT_PAPER_OVERLAP_MM,
+  DEFAULT_PAPER_WIDTH_CM,
   defaultSplitDraft,
   draftFromConfig,
   hasCuts,
@@ -12,10 +16,14 @@ import {
   nextTileId,
   overlapPercent,
   overlapPxForPercent,
+  PAPER_WIDTH_PRESETS_CM,
+  paperSummary,
   pickedTileId,
   previousTileId,
   SPLIT_PRESETS,
+  type SplitDraft,
   sheetCount,
+  splitPlan,
 } from "./splitConfig";
 
 const IMAGE = { width: 1200, height: 900 };
@@ -91,11 +99,16 @@ describe("overlapPercent", () => {
 describe("the splitter draft", () => {
   it("opens 2×2 with extended edges at 8 % and the tint on", () => {
     expect(defaultSplitDraft()).toEqual({
+      mode: "manual",
       rows: 2,
       cols: 2,
       edges: "extended",
       overlapPercent: 8,
       showOverlapTint: true,
+      paper: "A4",
+      orientation: "portrait",
+      widthCm: DEFAULT_PAPER_WIDTH_CM,
+      overlapMm: DEFAULT_PAPER_OVERLAP_MM,
     });
     expect(DEFAULT_OVERLAP_PERCENT).toBe(8);
   });
@@ -122,6 +135,7 @@ describe("the splitter draft", () => {
   it("reopens a stored config: extended is overlapPx > 0", () => {
     const config = { rows: 3, cols: 2, overlapPx: 30, showOverlapTint: false };
     expect(draftFromConfig(IMAGE, config)).toEqual({
+      ...defaultSplitDraft(),
       rows: 3,
       cols: 2,
       edges: "extended",
@@ -141,6 +155,178 @@ describe("the splitter draft", () => {
   it("keeps the config the draft came from", () => {
     const config = { rows: 3, cols: 4, overlapPx: 24, showOverlapTint: true };
     expect(configFromDraft(IMAGE, draftFromConfig(IMAGE, config))).toEqual(config);
+  });
+});
+
+describe("the splitter draft by paper size", () => {
+  const paperDraft = (patch: Partial<SplitDraft> = {}): SplitDraft => ({
+    ...defaultSplitDraft(),
+    mode: "paper",
+    widthCm: 42,
+    overlapMm: 10,
+    ...patch,
+  });
+
+  it("opens in manual mode with A4 upright, two sheets wide, 10 mm of overlap", () => {
+    const draft = defaultSplitDraft();
+    expect(draft).toMatchObject({ mode: "manual", paper: "A4", orientation: "portrait" });
+    expect(draft.widthCm).toBe(41);
+    expect(draft.overlapMm).toBe(10);
+  });
+
+  it("plans a manual draft as configFromDraft, without sheets", () => {
+    const plan = splitPlan(IMAGE, defaultSplitDraft());
+    expect(plan).toEqual({
+      ok: true,
+      config: configFromDraft(IMAGE, defaultSplitDraft()),
+      sheets: null,
+    });
+    expect(plan.ok && "paper" in plan.config).toBe(false);
+  });
+
+  it("plans a paper draft from computePaperTiles and stores the derived grid", () => {
+    const plan = splitPlan(IMAGE, paperDraft());
+    if (!plan.ok) throw new Error("expected a plan");
+    const sheets = computePaperTiles(IMAGE, {
+      paper: "A4",
+      orientation: "portrait",
+      widthCm: 42,
+      overlapMm: 10,
+    });
+    expect(plan.sheets).toEqual(sheets);
+    expect(plan.config).toEqual({
+      rows: sheets.rows,
+      cols: sheets.cols,
+      overlapPx: Math.round(10 * sheets.pxPerMm),
+      showOverlapTint: true,
+      paper: { paper: "A4", orientation: "portrait", widthCm: 42, overlapMm: 10 },
+    });
+    expect(SplitConfigSchema.safeParse(plan.config).success).toBe(true);
+  });
+
+  it("keeps the overlap that was asked for, even when the sheets cap it", () => {
+    const plan = splitPlan(IMAGE, paperDraft({ overlapMm: 500 }));
+    if (!plan.ok) throw new Error("expected a plan");
+    expect(plan.config.paper?.overlapMm).toBe(500);
+    expect(plan.sheets?.overlapMm).toBeLessThan(500);
+  });
+
+  it("says why the drawing does not fit instead of throwing", () => {
+    const plan = splitPlan(IMAGE, paperDraft({ widthCm: 1000 }));
+    if (plan.ok) throw new Error("expected a failure");
+    expect(plan.axis).toBe("columns");
+    expect(plan.needed).toBeGreaterThan(10);
+    expect(plan.maxWidthCm).toBeGreaterThan(0);
+    // The width it suggests plans fine.
+    expect(splitPlan(IMAGE, paperDraft({ widthCm: plan.maxWidthCm })).ok).toBe(true);
+  });
+
+  it("still throws for input that is not a size problem", () => {
+    expect(() => splitPlan(IMAGE, paperDraft({ widthCm: 0 }))).toThrow(/^computePaperTiles:/);
+  });
+
+  it("reopens a stored paper split in paper mode with its values", () => {
+    const plan = splitPlan(
+      IMAGE,
+      paperDraft({ paper: "A3", orientation: "landscape", widthCm: 80 }),
+    );
+    if (!plan.ok) throw new Error("expected a plan");
+    const draft = draftFromConfig(IMAGE, plan.config);
+    expect(draft).toMatchObject({
+      mode: "paper",
+      paper: "A3",
+      orientation: "landscape",
+      widthCm: 80,
+      overlapMm: 10,
+    });
+    // And it plans the same config again.
+    const again = splitPlan(IMAGE, draft);
+    expect(again.ok && again.config).toEqual(plan.config);
+  });
+
+  it("opens a manual split in manual mode with the paper defaults ready", () => {
+    const draft = draftFromConfig(IMAGE, {
+      rows: 2,
+      cols: 2,
+      overlapPx: 0,
+      showOverlapTint: true,
+    });
+    expect(draft).toMatchObject({ mode: "manual", paper: "A4", widthCm: 41, overlapMm: 10 });
+  });
+
+  it("keeps the manual values while the draft is in paper mode", () => {
+    const draft = paperDraft({ rows: 3, cols: 4, edges: "flush" });
+    expect(configFromDraft(IMAGE, draft)).toEqual({
+      rows: 3,
+      cols: 4,
+      overlapPx: 0,
+      showOverlapTint: true,
+    });
+  });
+
+  it("sums up the mural: its size in cm and the number of sheets", () => {
+    const plan = splitPlan(IMAGE, paperDraft());
+    if (!plan.ok || plan.sheets === null) throw new Error("expected sheets");
+    // 1200 × 900 px at 42 cm wide: 42 × 31.5 cm.
+    expect(paperSummary(plan.sheets)).toEqual({
+      widthCm: 42,
+      heightCm: 31.5,
+      count: plan.sheets.count,
+    });
+  });
+});
+
+describe("PAPER_WIDTH_PRESETS_CM", () => {
+  it("are whole, growing widths that A4 upright can lay out for a usual photo", () => {
+    expect([...PAPER_WIDTH_PRESETS_CM]).toEqual([...PAPER_WIDTH_PRESETS_CM].sort((a, b) => a - b));
+    for (const widthCm of PAPER_WIDTH_PRESETS_CM) {
+      expect(Number.isInteger(widthCm)).toBe(true);
+      const draft = { ...defaultSplitDraft(), mode: "paper" as const, widthCm };
+      expect(splitPlan(IMAGE, draft).ok).toBe(true);
+    }
+  });
+});
+
+describe("cameraCrop of a split by paper size", () => {
+  const draft: SplitDraft = {
+    ...defaultSplitDraft(),
+    mode: "paper",
+    widthCm: 42,
+    overlapMm: 10,
+  };
+
+  it("is the sheet, which can reach past the image", () => {
+    const plan = splitPlan(IMAGE, draft);
+    if (!plan.ok || plan.sheets === null) throw new Error("expected sheets");
+    const sheet = plan.sheets.sheets[0];
+    const crop = cameraCrop(IMAGE, plan.config, "A1");
+    expect(crop?.tileId).toBe("A1");
+    expect(crop?.rect).toEqual(sheet?.rect);
+    // The sheet is taller than the image here: the window starts above it.
+    expect(crop?.rect.y).toBeLessThan(0);
+  });
+
+  it("marks the strip shared with each neighbour, and only on interior sides", () => {
+    const plan = splitPlan(IMAGE, draft);
+    if (!plan.ok || plan.sheets === null) throw new Error("expected sheets");
+    const overlap = plan.sheets.overlapMm * plan.sheets.pxPerMm;
+    const first = cameraCrop(IMAGE, plan.config, "A1");
+    const last = cameraCrop(IMAGE, plan.config, `B${plan.sheets.cols}`);
+    if (first === null || last === null) throw new Error("expected crops");
+    // Top-left sheet: a neighbour on its right and below, none on its left and above.
+    expect(first.core.x).toBe(0);
+    expect(first.core.y).toBe(0);
+    expect(first.core.width).toBeCloseTo(first.rect.width - overlap, 6);
+    expect(first.core.height).toBeCloseTo(first.rect.height - overlap, 6);
+    // Bottom-right sheet: the other way round.
+    expect(last.core.x).toBeCloseTo(overlap, 6);
+    expect(last.core.y).toBeCloseTo(overlap, 6);
+  });
+
+  it("falls back to A1 for a tile that is not in the grid, like a manual split", () => {
+    const plan = splitPlan(IMAGE, draft);
+    if (!plan.ok) throw new Error("expected a plan");
+    expect(cameraCrop(IMAGE, plan.config, "Z9")?.tileId).toBe("A1");
   });
 });
 

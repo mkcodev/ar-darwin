@@ -1,5 +1,15 @@
 import * as z from "zod";
-import { ImageSizeSchema, MAX_SPLIT, type Rect } from "./models";
+import {
+  ImageSizeSchema,
+  MAX_SPLIT,
+  type Orientation,
+  OrientationSchema,
+  type PaperSize,
+  PaperSizeSchema,
+  type PaperSplitConfig,
+  PaperSplitConfigSchema,
+  type Rect,
+} from "./models";
 
 /** Sheet sizes in mm, portrait (width × height). */
 export const PAPER_SIZES = {
@@ -7,23 +17,6 @@ export const PAPER_SIZES = {
   A3: { width: 297, height: 420 },
   Letter: { width: 215.9, height: 279.4 },
 } as const;
-
-export const PaperSizeSchema = z.enum(["A4", "A3", "Letter"]);
-export type PaperSize = z.infer<typeof PaperSizeSchema>;
-
-export const OrientationSchema = z.enum(["portrait", "landscape"]);
-export type Orientation = z.infer<typeof OrientationSchema>;
-
-export const PaperSplitConfigSchema = z.object({
-  paper: PaperSizeSchema,
-  orientation: OrientationSchema,
-  /** Final width of the whole drawing, across all sheets, in cm. Height follows the image. */
-  /** Final drawing width in cm; capped at a kilometre, far above anything that fits 10 sheets. */
-  widthCm: z.number().positive().max(100_000),
-  /** Strip shared by neighbouring sheets, in mm. 0 = sheets touch. */
-  overlapMm: z.number().nonnegative(),
-});
-export type PaperSplitConfig = z.infer<typeof PaperSplitConfigSchema>;
 
 export type PaperSheet = {
   /** Row letter + 1-based column number, same as computeTiles: "A1", "A2", "B1"... */
@@ -68,7 +61,8 @@ function parseOrThrow<T>(fn: string, schema: z.ZodType<T>, value: unknown): T {
   return result.data;
 }
 
-function sheetSizeMm(
+/** One sheet in mm, rotated by the orientation. */
+export function paperSheetMm(
   paper: PaperSize,
   orientation: Orientation,
 ): { width: number; height: number } {
@@ -95,11 +89,47 @@ function spanMm(count: number, sheet: number, overlap: number): number {
  */
 export function maxPaperOverlapMm(paper: PaperSize, orientation: Orientation): number {
   const fn = "maxPaperOverlapMm";
-  const sheet = sheetSizeMm(
+  const sheet = paperSheetMm(
     parseOrThrow(fn, PaperSizeSchema, paper),
     parseOrThrow(fn, OrientationSchema, orientation),
   );
   return Math.min(sheet.width, sheet.height) / 2;
+}
+
+/** `PaperGridTooLargeError.code`: stable tag that survives a bundler that breaks `instanceof`. */
+export const PAPER_GRID_TOO_LARGE_CODE = "PAPER_GRID_TOO_LARGE";
+
+/**
+ * The drawing at the requested width would need more than {@link MAX_SPLIT} sheets on an axis. The
+ * screen turns the fields into its own warning; `message` is the English text for logs and tests.
+ */
+export class PaperGridTooLargeError extends Error {
+  readonly code = PAPER_GRID_TOO_LARGE_CODE;
+
+  constructor(
+    message: string,
+    /** The axis that overflows. */
+    readonly axis: "columns" | "rows",
+    /** Sheets that axis would need. */
+    readonly needed: number,
+    /** Widest drawing (cm, 0.1 steps) that still fits {@link MAX_SPLIT} sheets each way; 0 = none. */
+    readonly maxWidthCm: number,
+  ) {
+    super(message);
+    this.name = "PaperGridTooLargeError";
+    // Subclassing Error can lose the prototype when a transform turns classes into functions.
+    Object.setPrototypeOf(this, PaperGridTooLargeError.prototype);
+  }
+}
+
+/** True for a `PaperGridTooLargeError`, also if it crossed a boundary that broke `instanceof`. */
+export function isPaperGridTooLargeError(error: unknown): error is PaperGridTooLargeError {
+  if (error instanceof PaperGridTooLargeError) return true;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === PAPER_GRID_TOO_LARGE_CODE
+  );
 }
 
 function tooManySheetsError(
@@ -109,7 +139,7 @@ function tooManySheetsError(
   image: { width: number; height: number },
   sheet: { width: number; height: number },
   overlap: number,
-): Error {
+): PaperGridTooLargeError {
   // Widest drawing (cm) that still fits MAX_SPLIT × MAX_SPLIT sheets, for this image's shape.
   const byWidth = spanMm(MAX_SPLIT, sheet.width, overlap);
   const byHeight = (spanMm(MAX_SPLIT, sheet.height, overlap) * image.width) / image.height;
@@ -122,8 +152,11 @@ function tooManySheetsError(
     overlap > 0
       ? "less overlap, a bigger sheet or another orientation"
       : "a bigger sheet or another orientation";
-  return new Error(
+  return new PaperGridTooLargeError(
     `computePaperTiles: ${config.widthCm} cm wide needs ${needed} ${axis} of ${config.paper} ${config.orientation}, but the limit is ${MAX_SPLIT}. ${advice}, ${options}`,
+    axis,
+    needed,
+    maxWidthCm,
   );
 }
 
@@ -151,7 +184,7 @@ export function computePaperTiles(
   const size = parseOrThrow(fn, ImageSizeSchema, image);
   const parsed = parseOrThrow(fn, PaperSplitConfigSchema, config);
 
-  const sheet = sheetSizeMm(parsed.paper, parsed.orientation);
+  const sheet = paperSheetMm(parsed.paper, parsed.orientation);
   const overlap = Math.min(parsed.overlapMm, maxPaperOverlapMm(parsed.paper, parsed.orientation));
 
   const imageWidthMm = parsed.widthCm * 10;

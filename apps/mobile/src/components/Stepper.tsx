@@ -1,4 +1,4 @@
-import { stepValue } from "@ar-darwin/core";
+import { holdStepFactor, stepValue } from "@ar-darwin/core";
 import { hairline, radius, space, toNativeTextStyle, typography } from "@ar-darwin/ui";
 import type { ComponentProps } from "react";
 import { useRef } from "react";
@@ -13,6 +13,10 @@ type StepperProps = {
   value: number;
   min: number;
   max: number;
+  /** How much one press adds or takes away. Default 1. */
+  step?: number;
+  /** Holding a button speeds up: `step`, then five, then ten times it (`holdStepFactor`, core). */
+  accelerate?: boolean;
   onChange: (value: number) => void;
   format?: (value: number) => string;
   decreaseLabel: string;
@@ -28,6 +32,8 @@ export function Stepper({
   value,
   min,
   max,
+  step: stepSize = 1,
+  accelerate = false,
   onChange,
   format = String,
   decreaseLabel,
@@ -37,10 +43,15 @@ export function Stepper({
   const c = theme.color;
   const latest = useRef(value);
   latest.current = value;
+  /** Repeats of the hold in progress; a plain press starts again from 0. */
+  const repeats = useRef(0);
 
   /** One step; false once the value sits on its limit, which ends a held repeat. */
   const step = (delta: number) => (repeat: boolean) => {
-    const { next, hitLimit } = stepValue(latest.current, delta, min, max);
+    // A press is one step; the repeats of a hold speed up when asked to (`holdStepFactor`).
+    repeats.current = repeat ? repeats.current + 1 : 0;
+    const factor = accelerate ? holdStepFactor(repeats.current - 1) : 1;
+    const { next, hitLimit } = stepValue(latest.current, delta * stepSize * factor, min, max);
     if (hitLimit) {
       if (!repeat) playHaptic("limitReached");
       return false;

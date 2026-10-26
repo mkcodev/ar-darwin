@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SplitConfig } from "./models";
+import { computePaperTiles } from "./paperSplit";
 import { separatedCenter, splitPreviewLayout, tileAtPoint } from "./splitPreview";
 
 const IMAGE = { width: 1200, height: 900 };
@@ -127,5 +128,83 @@ describe("tileAtPoint", () => {
     };
     expect(tileAtPoint(layout, midGap)).toBeNull();
     expect(tileAtPoint(layout, { x: -5, y: -5 })).toBeNull();
+  });
+});
+
+describe("splitPreviewLayout of a split by paper size", () => {
+  const paperConfig = (patch: Partial<NonNullable<SplitConfig["paper"]>> = {}): SplitConfig => {
+    const paper = {
+      paper: "A4" as const,
+      orientation: "portrait" as const,
+      widthCm: 42,
+      overlapMm: 10,
+      ...patch,
+    };
+    const sheets = computePaperTiles(IMAGE, paper);
+    return {
+      rows: sheets.rows,
+      cols: sheets.cols,
+      overlapPx: Math.round(sheets.overlapMm * sheets.pxPerMm),
+      showOverlapTint: true,
+      paper,
+    };
+  };
+
+  it("lays out one tile per sheet and says it is a paper layout", () => {
+    const cfg = paperConfig();
+    const layout = splitPreviewLayout(IMAGE, cfg, FRAME, GAP);
+    expect(layout.paper).toBe(true);
+    expect(layout.tiles).toHaveLength(cfg.rows * cfg.cols);
+    expect(splitPreviewLayout(IMAGE, config(), FRAME, GAP).paper).toBe(false);
+  });
+
+  it("fits the separated sheets in the frame, with exactly the gap between neighbours", () => {
+    for (const patch of [
+      {},
+      { overlapMm: 0 },
+      { paper: "A3" as const, orientation: "landscape" as const },
+      { widthCm: 90, overlapMm: 25 },
+    ]) {
+      const layout = splitPreviewLayout(IMAGE, paperConfig(patch), FRAME, GAP);
+      const b = separatedBounds(layout);
+      expect(b.left).toBeGreaterThanOrEqual(-1e-6);
+      expect(b.top).toBeGreaterThanOrEqual(-1e-6);
+      expect(b.right).toBeLessThanOrEqual(FRAME.width + 1e-6);
+      expect(b.bottom).toBeLessThanOrEqual(FRAME.height + 1e-6);
+      const [a, next] = layout.tiles;
+      if (a !== undefined && next !== undefined && layout.cols > 1) {
+        const between = next.rect.x + next.offset.x - (a.rect.x + a.rect.width + a.offset.x);
+        expect(between).toBeCloseTo(GAP, 6);
+      }
+    }
+  });
+
+  it("centres the grid of sheets, not the image, in the frame", () => {
+    const layout = splitPreviewLayout(IMAGE, paperConfig(), FRAME, GAP);
+    const xs = layout.tiles.flatMap((t) => [t.rect.x, t.rect.x + t.rect.width]);
+    const ys = layout.tiles.flatMap((t) => [t.rect.y, t.rect.y + t.rect.height]);
+    expect((Math.min(...xs) + Math.max(...xs)) / 2).toBeCloseTo(FRAME.width / 2, 6);
+    expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo(FRAME.height / 2, 6);
+  });
+
+  it("puts the image where computePaperTiles centred it on the sheets", () => {
+    const layout = splitPreviewLayout(IMAGE, paperConfig(), FRAME, GAP);
+    const sheets = computePaperTiles(
+      IMAGE,
+      paperConfig().paper as NonNullable<SplitConfig["paper"]>,
+    );
+    const first = sheets.sheets[0];
+    const tile = layout.tiles[0];
+    if (first === undefined || tile === undefined) throw new Error("no sheets");
+    // The first sheet starts at its rect on the image, scaled and placed from the origin.
+    expect(tile.rect.x).toBeCloseTo(layout.origin.x + first.rect.x * layout.scale, 6);
+    expect(tile.rect.width).toBeCloseTo(first.rect.width * layout.scale, 6);
+  });
+
+  it("finds the sheet under a point", () => {
+    const layout = splitPreviewLayout(IMAGE, paperConfig(), FRAME, GAP);
+    const tile = layout.tiles[1];
+    if (tile === undefined) throw new Error("no sheets");
+    expect(tileAtPoint(layout, separatedCenter(tile))).toBe(tile.id);
   });
 });

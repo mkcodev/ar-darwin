@@ -1,9 +1,12 @@
 import {
-  computeTiles,
+  type Rect,
   type SplitConfig,
+  splitGridAspect,
+  splitTiles,
   type Tile,
   type TilePickerLayout,
   tilePickerLayout,
+  tileThumbnailRect,
 } from "@ar-darwin/core";
 import {
   bottomSheet,
@@ -25,6 +28,7 @@ import {
   RoundedRect,
   type SkImage,
   Skia,
+  Rect as SkiaRect,
 } from "@shopify/react-native-skia";
 import { type ReactNode, useMemo, useRef } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
@@ -36,7 +40,8 @@ import { useTheme } from "../theme/ThemeProvider";
 const idText = toNativeTextStyle(typography.value);
 const TITLE_BLOCK = typography.title.lineHeight + space[4];
 
-type Cell = { tile: Tile; x: number; y: number };
+/** A tile in the grid: where its cell is, and the part of the photo its thumbnail shows. */
+type Cell = { tile: Tile; x: number; y: number; view: Rect };
 
 type TilePickerProps = {
   open: boolean;
@@ -65,7 +70,7 @@ export function TilePicker({ open, onClose, image, split, currentId, onPick }: T
   const imageHeight = image.height();
 
   const tiles = useMemo(
-    () => computeTiles({ width: imageWidth, height: imageHeight }, split),
+    () => splitTiles({ width: imageWidth, height: imageHeight }, split),
     [imageWidth, imageHeight, split],
   );
 
@@ -85,13 +90,13 @@ export function TilePicker({ open, onClose, image, split, currentId, onPick }: T
       tilePickerLayout({
         rows: split.rows,
         cols: split.cols,
-        aspect: imageWidth / imageHeight,
+        aspect: splitGridAspect({ width: imageWidth, height: imageHeight }, split),
         maxWidth,
         maxHeight,
         minCell: tilePicker.minCell,
         gap: tilePicker.gap,
       }),
-    [split.rows, split.cols, imageWidth, imageHeight, maxWidth, maxHeight],
+    [split, imageWidth, imageHeight, maxWidth, maxHeight],
   );
 
   const cells = useMemo<Cell[]>(
@@ -100,8 +105,9 @@ export function TilePicker({ open, onClose, image, split, currentId, onPick }: T
         tile,
         x: tile.col * (layout.cellWidth + tilePicker.gap),
         y: tile.row * (layout.cellHeight + tilePicker.gap),
+        view: tileThumbnailRect(split, tile),
       })),
-    [tiles, layout.cellWidth, layout.cellHeight],
+    [tiles, split, layout.cellWidth, layout.cellHeight],
   );
 
   const current = cells.find((cell) => cell.tile.id === currentId);
@@ -125,6 +131,7 @@ export function TilePicker({ open, onClose, image, split, currentId, onPick }: T
           cells={cells}
           layout={layout}
           currentId={currentId}
+          paper={split.paper !== undefined}
           onPress={(id) => {
             if (id !== currentId) onPick(id);
             onClose();
@@ -197,21 +204,26 @@ type GridProps = {
   cells: Cell[];
   layout: TilePickerLayout;
   currentId: string;
+  /** The tiles are sheets of paper (a split by paper size). */
+  paper: boolean;
   onPress: (id: string) => void;
 };
 
-function Grid({ image, cells, layout, currentId, onPress }: GridProps) {
+function Grid({ image, cells, layout, currentId, paper, onPress }: GridProps) {
   const { theme } = useTheme();
   const c = theme.color.camera;
+  // A sheet of paper reaches past the photo: its blank part is painted so the cell reads as a sheet.
+  const sheet = paper ? theme.color.bg.raised : null;
 
   return (
     <View style={{ width: layout.width, height: layout.height }}>
       <Canvas style={StyleSheet.absoluteFill}>
-        {cells.map(({ tile, x, y }) => (
+        {cells.map(({ tile, x, y, view }) => (
           <CellImage
             key={tile.id}
             image={image}
-            tile={tile}
+            view={view}
+            sheet={sheet}
             x={x}
             y={y}
             width={layout.cellWidth}
@@ -273,7 +285,10 @@ function Grid({ image, cells, layout, currentId, onPress }: GridProps) {
 
 type CellImageProps = {
   image: SkImage;
-  tile: Tile;
+  /** The part of the photo this cell shows, in image px (it can reach past the photo). */
+  view: Rect;
+  /** Fill under the photo for a sheet of paper, or null. */
+  sheet: string | null;
   x: number;
   y: number;
   width: number;
@@ -284,9 +299,19 @@ type CellImageProps = {
   edge: string;
 };
 
-/** One cell inside the canvas: the tile's flush crop of the photo, and its outline. */
-function CellImage({ image, tile, x, y, width, height, isCurrent, accent, edge }: CellImageProps) {
-  const { coreRect: core } = tile;
+/** One cell inside the canvas: the tile's part of the photo, and its outline. */
+function CellImage({
+  image,
+  view: core,
+  sheet,
+  x,
+  y,
+  width,
+  height,
+  isCurrent,
+  accent,
+  edge,
+}: CellImageProps) {
   const clip = useMemo(
     () =>
       Skia.RRectXY(
@@ -303,6 +328,7 @@ function CellImage({ image, tile, x, y, width, height, isCurrent, accent, edge }
   return (
     <>
       <Group clip={clip}>
+        {sheet !== null && <SkiaRect x={x} y={y} width={width} height={height} color={sheet} />}
         <Image
           image={image}
           x={x - core.x * sx}
