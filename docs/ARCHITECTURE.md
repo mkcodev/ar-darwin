@@ -412,6 +412,8 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - Rutas hoy: `/` Biblioteca, `/project/[id]/camera` cámara del proyecto, `/project/[id]/split`
   divisor, `/settings` Ajustes, `/dev/design` y `/dev/camera` (solo desarrollo o `spikesEnabled`).
   Cada tarea añade la suya (ficha del proyecto, onboarding).
+  Las rutas `dev/*` cargan su pantalla con `require()` tras una condición escrita en línea
+  (`__DEV__` / `process.env.EXPO_PUBLIC_SPIKES`, que Metro pliega; una constante importada como `spikesEnabled` no): así un bundle de producción no lleva el spike, la galería ni las imágenes de prueba (~4,6 MB).
   Typed routes activas (`experiments.typedRoutes`): `router.push` y `href` comprueban la ruta.
 - Cabeceras:
   - Principales (Biblioteca; Retos más adelante): `headerShown: false`, `LargeTitle` (titular en
