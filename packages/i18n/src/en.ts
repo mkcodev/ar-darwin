@@ -247,6 +247,8 @@ export const en = {
     },
     widthCm: "Final width",
     widthValue: "{value} cm",
+    widthPresets: "Usual widths",
+    widthPresetLabel: "Final width of {value} cm",
     narrower: "Narrower",
     wider: "Wider",
     overlapMm: "Overlap between sheets",

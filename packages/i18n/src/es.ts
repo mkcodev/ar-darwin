@@ -248,6 +248,8 @@ export const es = {
     },
     widthCm: "Ancho final",
     widthValue: "{value} cm",
+    widthPresets: "Anchos habituales",
+    widthPresetLabel: "Ancho final de {value} cm",
     narrower: "Menos ancho",
     wider: "Más ancho",
     overlapMm: "Solape entre folios",

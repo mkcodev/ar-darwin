@@ -29,6 +29,7 @@ import { PresetChips } from "./PresetChips";
 import { SplitPreview } from "./SplitPreview";
 import { SplitSummary } from "./SplitSummary";
 import { useSplitterDraft } from "./useSplitterDraft";
+import { WidthChips } from "./WidthChips";
 
 type SplitterEditorProps = {
   project: Project;
@@ -194,6 +195,7 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
                 value={draft.widthCm}
                 min={1}
                 max={MAX_WIDTH_CM}
+                accelerate
                 onChange={(widthCm) => update({ widthCm })}
                 format={(value) => t("splitter.widthValue", { value })}
                 decreaseLabel={t("splitter.narrower")}
@@ -210,6 +212,7 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
                 increaseLabel={t("splitter.moreOverlapMm")}
               />
             </View>
+            <WidthChips widthCm={draft.widthCm} onSelect={(widthCm) => update({ widthCm })} />
             <Toggle
               label={t("splitter.tint")}
               checked={draft.showOverlapTint}
