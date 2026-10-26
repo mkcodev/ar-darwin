@@ -54,6 +54,18 @@ export function stepValue(value: number, delta: number, min: number, max: number
 }
 
 /**
+ * Stepper held down: how many steps one repeat takes, given how many repeats came before it. The
+ * first ten move one step at a time, the next fifteen five at a time and from then on ten, so a
+ * long way (a drawing 150 cm wide) takes seconds and the last stretch is still precise.
+ */
+export function holdStepFactor(repeatsSoFar: number): number {
+  "worklet";
+  if (repeatsSoFar >= 25) return 10;
+  if (repeatsSoFar >= 10) return 5;
+  return 1;
+}
+
+/**
  * Bottom sheet released after a drag of `offsetY` px (down is positive) at `velocityY` px/s:
  * it closes past `threshold` (a fraction of its height) or faster than `closeVelocity`.
  */

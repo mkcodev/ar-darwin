@@ -16,6 +16,7 @@ import {
   nextTileId,
   overlapPercent,
   overlapPxForPercent,
+  PAPER_WIDTH_PRESETS_CM,
   paperSummary,
   pickedTileId,
   previousTileId,
@@ -272,6 +273,17 @@ describe("the splitter draft by paper size", () => {
       heightCm: 31.5,
       count: plan.sheets.count,
     });
+  });
+});
+
+describe("PAPER_WIDTH_PRESETS_CM", () => {
+  it("are whole, growing widths that A4 upright can lay out for a usual photo", () => {
+    expect([...PAPER_WIDTH_PRESETS_CM]).toEqual([...PAPER_WIDTH_PRESETS_CM].sort((a, b) => a - b));
+    for (const widthCm of PAPER_WIDTH_PRESETS_CM) {
+      expect(Number.isInteger(widthCm)).toBe(true);
+      const draft = { ...defaultSplitDraft(), mode: "paper" as const, widthCm };
+      expect(splitPlan(IMAGE, draft).ok).toBe(true);
+    }
   });
 });
 
