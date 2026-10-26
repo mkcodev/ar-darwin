@@ -20,4 +20,5 @@ export * from "./storage/queries";
 export * from "./storage/rows";
 export * from "./storage/settings";
 export * from "./tap";
+export * from "./tilePickerLayout";
 export * from "./transform";
