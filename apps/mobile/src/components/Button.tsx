@@ -42,6 +42,10 @@ type ButtonProps = {
   disabled?: boolean;
   /** Stretches across its container (a main action at the foot of a screen). */
   fullWidth?: boolean;
+  /** Less side padding, for a button that shares a row (the camera's tile bar). */
+  compact?: boolean;
+  /** What the screen reader says when it differs from the visible text (a shortened label). */
+  accessibilityLabel?: string;
   accessibilityHint?: string;
 };
 
@@ -59,6 +63,8 @@ export function Button({
   onPress,
   disabled = false,
   fullWidth = false,
+  compact = false,
+  accessibilityLabel,
   accessibilityHint,
 }: ButtonProps) {
   const { theme } = useTheme();
@@ -175,7 +181,7 @@ export function Button({
       <Animated.View
         accessible
         accessibilityRole="button"
-        accessibilityLabel={children}
+        accessibilityLabel={accessibilityLabel ?? children}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled }}
         accessibilityActions={[{ name: "activate" }]}
@@ -189,6 +195,7 @@ export function Button({
           styles.button,
           { backgroundColor: look.bg, borderColor: look.border },
           fullWidth && styles.fullWidth,
+          compact && styles.compact,
           disabled && styles.disabled,
         ]}
       >
@@ -217,6 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     overflow: "hidden",
   },
+  compact: { paddingHorizontal: space[3] },
   disabled: { opacity: opacity.disabled },
   ink: { position: "absolute", borderRadius: radius.pill },
   label: {
