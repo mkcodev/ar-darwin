@@ -550,6 +550,15 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 - El lado más corto de un trozo, medido igual que `maxOverlapPx` (solo en los ejes con corte; 0 con 1×1).
   Es la base del grosor en %: `maxOverlapPx` es su mitad redondeada hacia abajo.
 
+### `computePaperTiles(image, config): PaperTiles`
+
+- Divide la imagen en folios de papel real (`paperSplit.ts`). `config = { paper: "A4" | "A3" | "Letter", orientation: "portrait" | "landscape", widthCm, overlapMm }`; `widthCm` es el ancho final de todo el dibujo (el alto sale de la proporción de la imagen), así que `mmPerPx = widthCm * 10 / image.width`. `PAPER_SIZES` es un registro: añadir A5 o A2 es una línea.
+- Rejilla mínima que cubre el dibujo: por eje, `n = 1 + ceil((total - folio) / (folio - overlapMm))`. La rejilla cubre `n * folio - (n - 1) * overlapMm` mm y el sobrante se reparte a partes iguales a cada lado: la imagen queda centrada.
+- Cada `PaperSheet` lleva `id`/`row`/`col` con la misma convención que `computeTiles` (por filas, de izquierda a derecha; `A1`, `B3`), `rect` (ventana del folio en px de imagen, con la proporción del papel; puede salirse de la imagen, con `x`/`y` negativos o más allá del tamaño) e `imageRect` (su intersección con la imagen, donde está la foto). Folios vecinos se solapan exactamente `overlapMm` (`overlapMm * pxPerMm` px).
+- El resultado trae también `rows`, `cols`, `count`, `mmPerPx`, `pxPerMm`, `overlapMm` aplicado, `sheetMm` (folio ya girado) e `imageMm`.
+- Decisiones: los folios son el papel completo, **sin** restar márgenes imprimibles; `overlapMm` se limita (no lanza) a `maxPaperOverlapMm(paper, orientation)`, la mitad del lado corto del folio, y el valor aplicado va en `overlapMm`.
+- Valida con Zod: imagen de lados enteros > 0, `widthCm` finito > 0, `overlapMm` finito ≥ 0, papel y orientación conocidos. Si no, o si la rejilla supera `MAX_SPLIT` (10) por eje, lanza un `Error` que empieza por `computePaperTiles:` y sugiere el ancho máximo. No son worklets (usan Zod).
+
 ### Divisor de la UI (`splitConfig.ts`, `splitPreview.ts`, `previewZoom.ts`)
 
 - `splitConfig.ts`: `overlapPxForPercent` / `overlapPercent` (px de imagen ↔ % del lado más corto, tope
