@@ -61,7 +61,8 @@ function parseOrThrow<T>(fn: string, schema: z.ZodType<T>, value: unknown): T {
   return result.data;
 }
 
-function sheetSizeMm(
+/** One sheet in mm, rotated by the orientation. */
+export function paperSheetMm(
   paper: PaperSize,
   orientation: Orientation,
 ): { width: number; height: number } {
@@ -88,7 +89,7 @@ function spanMm(count: number, sheet: number, overlap: number): number {
  */
 export function maxPaperOverlapMm(paper: PaperSize, orientation: Orientation): number {
   const fn = "maxPaperOverlapMm";
-  const sheet = sheetSizeMm(
+  const sheet = paperSheetMm(
     parseOrThrow(fn, PaperSizeSchema, paper),
     parseOrThrow(fn, OrientationSchema, orientation),
   );
@@ -183,7 +184,7 @@ export function computePaperTiles(
   const size = parseOrThrow(fn, ImageSizeSchema, image);
   const parsed = parseOrThrow(fn, PaperSplitConfigSchema, config);
 
-  const sheet = sheetSizeMm(parsed.paper, parsed.orientation);
+  const sheet = paperSheetMm(parsed.paper, parsed.orientation);
   const overlap = Math.min(parsed.overlapMm, maxPaperOverlapMm(parsed.paper, parsed.orientation));
 
   const imageWidthMm = parsed.widthCm * 10;
