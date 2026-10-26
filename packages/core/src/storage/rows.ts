@@ -162,12 +162,15 @@ export function projectRowParams(row: ProjectRow): SqlValue[] {
 /**
  * What the project camera saves (UPDATE_PROJECT_CAMERA). `transformViewport` is absent until the
  * image has been placed once (status and time can be saved before): the project stays unplaced.
+ * `currentTileId` is always given (`undefined` = none picked): the camera moves between tiles, and
+ * a save that left it out would erase the pick.
  */
 export type CameraState = Pick<
   Project,
   "transform" | "opacity" | "imageAdjustments" | "pinnedPlacement" | "status" | "timeSpentMs"
 > & {
   transformViewport?: Size;
+  currentTileId: string | undefined;
 };
 
 /** Positional parameters for UPDATE_PROJECT_SPLIT; `now` becomes `updated_at`. */
@@ -188,6 +191,7 @@ export function cameraStateParams(id: string, state: CameraState, now: Date): Sq
     json(state.pinnedPlacement),
     state.opacity,
     adjustmentsJson(state.imageAdjustments),
+    state.currentTileId ?? null,
     state.status,
     state.timeSpentMs,
     now.toISOString(),

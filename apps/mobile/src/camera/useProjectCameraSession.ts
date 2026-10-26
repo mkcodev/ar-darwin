@@ -32,13 +32,16 @@ export type ProjectCameraSession = {
   onAdjustmentsSettle: (adjustments: ImageAdjustments) => void;
   /** The position was pinned (or re-pinned), or the pin removed (`null`). */
   onPinChange: (placement: OverlayPlacement | null) => void;
+  /** The person moved on to another tile: saved at once. */
+  onTileChange: (tileId: string) => void;
 };
 
 /**
  * Keeps a project in sync with its camera while `active` (its image is up: never for a missing
- * image): `pending → in_progress` on open (saved straight away), the settled transform, opacity and image adjustments saved after `SAVE_DEBOUNCE_MS` of quiet, and the time
- * spent counted only while this screen is focused and the app in the foreground. Leaving the
- * screen, going to the background or unmounting saves at once. Every write goes through
+ * image): `pending → in_progress` on open (saved straight away), the settled transform, opacity,
+ * image adjustments and pin saved after `SAVE_DEBOUNCE_MS` of quiet, a change of tile saved at
+ * once, and the time spent counted only while this screen is focused and the app in the
+ * foreground. Leaving the screen, going to the background or unmounting saves at once. Every write goes through
  * `enqueueCameraSave`, which outlives the screen and keeps them in order.
  */
 export function useProjectCameraSession(project: Project, active: boolean): ProjectCameraSession {
@@ -63,6 +66,7 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
     opacity: project.opacity,
     imageAdjustments: project.imageAdjustments,
     pinnedPlacement: project.pinnedPlacement,
+    currentTileId: project.currentTileId,
     status: statusOnOpen(project.status),
     timeSpentMs: project.timeSpentMs,
   });
@@ -159,6 +163,16 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
     [saveSoon],
   );
 
+  // Saved at once, not after the debounce: the splitter underneath reads the tile when the camera
+  // closes, and a deliberate change is never part of a burst.
+  const onTileChange = useCallback(
+    (currentTileId: string) => {
+      state.current = { ...state.current, currentTileId };
+      saveNow();
+    },
+    [saveNow],
+  );
+
   return {
     initialPlacement: initial.placement,
     initialOpacity: initial.opacity,
@@ -168,5 +182,6 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
     onOpacitySettle,
     onAdjustmentsSettle,
     onPinChange,
+    onTileChange,
   };
 }

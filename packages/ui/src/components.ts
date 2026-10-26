@@ -105,6 +105,20 @@ export const splitter = {
   zoomResetInset: 8,
 } as const;
 
+/** Tile picker of the camera: the whole grid in a sheet, one cell per tile. */
+export const tilePicker = {
+  /** Shortest side of a cell: the touch target. */
+  minCell: 44,
+  gap: 4,
+  cellRadius: 8,
+  /** Outline of the tile being traced. */
+  currentWidth: 3,
+  /** Name tag («B2») in a corner of each cell. */
+  tagHeight: 22,
+  tagPaddingX: 6,
+  tagInset: 4,
+} as const;
+
 /** Touch-lock button over the camera: a ring fills clockwise during the long press. */
 export const lockButton = {
   size: 56,

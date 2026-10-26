@@ -148,12 +148,18 @@ export function OverlayCanvas({
   const [pinned, setPinned] = useState(initialPin != null);
   const canvasSize = useSharedValue<Size>(ZERO_SIZE);
   const imageSize = useSharedValue<Size>(ZERO_SIZE);
+  const keepOnImageResize = useSharedValue(false);
 
+  // Another tile of the same picture keeps the placement; a different image is fitted again. The
+  // flag is written before the size so the placement reaction (UI thread) sees it with the change.
+  const lastImage = useRef<SkImage | null>(null);
   useEffect(() => {
+    keepOnImageResize.value = image !== null && image === lastImage.current;
+    lastImage.current = image;
     if (!image) imageSize.value = ZERO_SIZE;
     else if (crop) imageSize.value = { width: crop.rect.width, height: crop.rect.height };
     else imageSize.value = { width: image.width(), height: image.height() };
-  }, [image, crop, imageSize]);
+  }, [image, crop, imageSize, keepOnImageResize]);
 
   const {
     gesture,
@@ -174,6 +180,7 @@ export function OverlayCanvas({
   } = useOverlayGestures({
     imageSize,
     canvasSize,
+    keepOnImageResize,
     locked,
     magnetEnabled,
     initial,

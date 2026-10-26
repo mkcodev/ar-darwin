@@ -30,6 +30,11 @@ import { Icon } from "./Icon";
 type ButtonProps = {
   /** `danger`: destructive actions (delete), in the theme's danger colour. */
   variant?: "primary" | "secondary" | "ghost" | "danger";
+  /**
+   * `camera`: for a button inside a camera pill, which is dark in both themes. Redraws `primary`
+   * and `secondary` with the camera's colours; the other variants look the same.
+   */
+  tone?: "theme" | "camera";
   /** Leading icon, coloured like the label. */
   icon?: IconName;
   children: string;
@@ -37,6 +42,10 @@ type ButtonProps = {
   disabled?: boolean;
   /** Stretches across its container (a main action at the foot of a screen). */
   fullWidth?: boolean;
+  /** Less side padding, for a button that shares a row (the camera's tile bar). */
+  compact?: boolean;
+  /** What the screen reader says when it differs from the visible text (a shortened label). */
+  accessibilityLabel?: string;
   accessibilityHint?: string;
 };
 
@@ -48,11 +57,14 @@ type ButtonProps = {
  */
 export function Button({
   variant = "secondary",
+  tone = "theme",
   icon,
   children,
   onPress,
   disabled = false,
   fullWidth = false,
+  compact = false,
+  accessibilityLabel,
   accessibilityHint,
 }: ButtonProps) {
   const { theme } = useTheme();
@@ -99,9 +111,32 @@ export function Button({
       inkAlpha: opacity.ink,
     },
   }[variant];
+  const cam = c.camera;
+  const camera = {
+    primary: {
+      bg: cam.accent,
+      text: cam.onAccent,
+      border: "transparent",
+      ink: cam.accentPressed,
+      inkAlpha: 1,
+    },
+    secondary: {
+      bg: cam.pillSolid,
+      text: cam.text,
+      border: cam.pillEdge,
+      ink: cam.text,
+      inkAlpha: opacity.pressFill,
+    },
+  };
+  const base =
+    tone === "camera" && (variant === "primary" || variant === "secondary")
+      ? camera[variant]
+      : palette;
   const look = disabled
-    ? { ...palette, bg: c.bg.raised, text: c.text.muted, border: c.border.subtle }
-    : palette;
+    ? tone === "camera"
+      ? { ...base, bg: cam.pillSolid, text: cam.muted, border: cam.pillEdge }
+      : { ...base, bg: c.bg.raised, text: c.text.muted, border: c.border.subtle }
+    : base;
 
   const press = () => onPress?.();
 
@@ -146,7 +181,7 @@ export function Button({
       <Animated.View
         accessible
         accessibilityRole="button"
-        accessibilityLabel={children}
+        accessibilityLabel={accessibilityLabel ?? children}
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled }}
         accessibilityActions={[{ name: "activate" }]}
@@ -160,6 +195,7 @@ export function Button({
           styles.button,
           { backgroundColor: look.bg, borderColor: look.border },
           fullWidth && styles.fullWidth,
+          compact && styles.compact,
           disabled && styles.disabled,
         ]}
       >
@@ -188,6 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     overflow: "hidden",
   },
+  compact: { paddingHorizontal: space[3] },
   disabled: { opacity: opacity.disabled },
   ink: { position: "absolute", borderRadius: radius.pill },
   label: {

@@ -17,6 +17,11 @@ function enqueue(what: string, id: string, save: () => Promise<void>): Promise<v
   return tail;
 }
 
+/** Resolves once every save queued so far has been written (or has failed and been logged). */
+export function whenSavesSettle(): Promise<void> {
+  return tail;
+}
+
 /** Queues a save of `state`, stamped with the time it was queued. */
 export function enqueueCameraSave(
   db: SQLiteDatabase,

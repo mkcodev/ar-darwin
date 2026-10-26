@@ -422,6 +422,7 @@ describe("project repository SQL", () => {
         transform: { ...IDENTITY_TRANSFORM, x: 180, y: 360, scale: 0.3, rotation: 5 },
         viewport: { width: 400, height: 800 },
       },
+      currentTileId: "B2",
       status: "in_progress" as const,
       timeSpentMs: 12345,
     };
@@ -452,6 +453,7 @@ describe("project repository SQL", () => {
           transform: pinned.transform,
           opacity: pinned.opacity,
           pinnedPlacement: undefined,
+          currentTileId: undefined,
           status: "in_progress",
           timeSpentMs: 0,
         },
@@ -472,6 +474,7 @@ describe("project repository SQL", () => {
         {
           transform: project.transform,
           opacity: project.opacity,
+          currentTileId: undefined,
           status: "in_progress",
           timeSpentMs: 1500,
         },
@@ -493,6 +496,7 @@ describe("project repository SQL", () => {
         transform: IDENTITY_TRANSFORM,
         transformViewport: { width: 400, height: 800 },
         opacity: 2,
+        currentTileId: undefined,
         status: "in_progress",
         timeSpentMs: 0,
       },
@@ -596,7 +600,7 @@ describe("project repository SQL", () => {
     });
   });
 
-  it("the camera's save leaves the split and the current tile alone", () => {
+  it("the camera's save leaves the split alone and stores the tile it traces", () => {
     const db = openMigrated();
     const split = { rows: 2, cols: 3, overlapPx: 12, showOverlapTint: true };
     const project = newProject("p", "2026-10-10T10:00:00.000Z", { split, currentTileId: "A3" });
@@ -607,13 +611,50 @@ describe("project repository SQL", () => {
         {
           transform: IDENTITY_TRANSFORM,
           opacity: 0.5,
+          currentTileId: "B1",
           status: "in_progress",
           timeSpentMs: 800,
         },
         new Date("2026-10-10T12:00:00.000Z"),
       ),
     );
-    expect(load(db, project.id)).toMatchObject({ split, currentTileId: "A3" });
+    expect(load(db, project.id)).toMatchObject({ split, currentTileId: "B1" });
+  });
+
+  it("moving to another tile in the camera keeps the placement and the pin", () => {
+    const db = openMigrated();
+    const split = { rows: 2, cols: 2, overlapPx: 0, showOverlapTint: false };
+    const pinned = {
+      transform: { ...IDENTITY_TRANSFORM, x: 180, y: 360, scale: 0.3 },
+      viewport: { width: 400, height: 800 },
+    };
+    const project = newProject("p", "2026-10-10T10:00:00.000Z", {
+      split,
+      currentTileId: "A1",
+      transformViewport: { width: 400, height: 800 },
+      pinnedPlacement: pinned,
+    });
+    save(db, project);
+    db.prepare(UPDATE_PROJECT_CAMERA).run(
+      ...cameraStateParams(
+        project.id,
+        {
+          transform: project.transform,
+          transformViewport: project.transformViewport,
+          opacity: project.opacity,
+          pinnedPlacement: pinned,
+          currentTileId: "A2",
+          status: "in_progress",
+          timeSpentMs: 0,
+        },
+        new Date("2026-10-10T12:00:00.000Z"),
+      ),
+    );
+    expect(load(db, project.id)).toMatchObject({
+      currentTileId: "A2",
+      transformViewport: { width: 400, height: 800 },
+      pinnedPlacement: pinned,
+    });
   });
 
   it("rejects a link to a category that does not exist", () => {

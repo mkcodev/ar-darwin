@@ -15,6 +15,8 @@ export const cameraColors: ColorTokens["camera"] = {
   text: paper.text,
   muted: graphite[400],
   accent: vermilion[500],
+  accentPressed: vermilion[550],
+  onAccent: vermilion.onDark,
   guide: nonPhotoBlue[300],
   guideCase: graphite.case,
   guideTint: "rgba(127, 211, 247, 0.30)",

@@ -121,6 +121,44 @@ export function pickedTileId(
   return currentTileId !== undefined && isTileInGrid(config, currentTileId) ? currentTileId : "A1";
 }
 
+/** Position of `id` in reading order (A1 = 0, A2 = 1, … B1 = `cols`, …). `id` must be in the grid. */
+function tileIndex(config: Pick<SplitConfig, "rows" | "cols">, id: string): number {
+  const row = id.charCodeAt(0) - "A".charCodeAt(0);
+  const col = Number(id.slice(1)) - 1;
+  return row * config.cols + col;
+}
+
+/** The id at `index` in reading order. */
+function tileIdAt(config: Pick<SplitConfig, "rows" | "cols">, index: number): string {
+  return `${String.fromCharCode(65 + Math.floor(index / config.cols))}${(index % config.cols) + 1}`;
+}
+
+/**
+ * The tile after the picked one, in reading order (A1, A2, … B1, …), wrapping from the last back
+ * to A1. A1 when none is picked or the saved one no longer exists in the grid. A 1×1 grid has only
+ * A1, so it stays on it.
+ */
+export function nextTileId(
+  config: Pick<SplitConfig, "rows" | "cols">,
+  currentTileId: string | undefined,
+): string {
+  const index = tileIndex(config, pickedTileId(config, currentTileId));
+  return tileIdAt(config, (index + 1) % sheetCount(config));
+}
+
+/**
+ * The tile before the picked one, in reading order, wrapping from A1 to the last tile. A1 when none
+ * is picked or the saved one no longer exists in the grid, so the previous is the last.
+ */
+export function previousTileId(
+  config: Pick<SplitConfig, "rows" | "cols">,
+  currentTileId: string | undefined,
+): string {
+  const index = tileIndex(config, pickedTileId(config, currentTileId));
+  const count = sheetCount(config);
+  return tileIdAt(config, (index + count - 1) % count);
+}
+
 /** What the camera shows of a split project: one tile of the image, as the image it traces. */
 export type CameraCrop = {
   /** The tile's final crop, in image px (extended edges included). */
