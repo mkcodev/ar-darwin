@@ -1,4 +1,11 @@
-import { t } from "./i18n";
+import { locale, t } from "./i18n";
+
+const decimal = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+
+/** A number with up to one decimal, written the way the app's language does («59,4» / «59.4»). */
+export function formatDecimal(value: number): string {
+  return decimal.format(value);
+}
 
 /**
  * A worklet that writes a value as a percentage with the locale's own text around the number

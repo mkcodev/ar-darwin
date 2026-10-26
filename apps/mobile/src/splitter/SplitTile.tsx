@@ -24,6 +24,8 @@ export type SplitPreviewColors = {
   cutCase: string;
   /** Outline of the tile picked last. */
   current: string;
+  /** The blank sheet, where a sheet reaches past the photo (a split by paper size). */
+  sheet: string;
 };
 
 type SplitTileProps = {
@@ -35,6 +37,8 @@ type SplitTileProps = {
   progress: SharedValue<number>;
   showTint: boolean;
   isCurrent: boolean;
+  /** The tile is a sheet of paper: its blank part is painted, so the sheet reads as a whole. */
+  paper: boolean;
   colors: SplitPreviewColors;
 };
 
@@ -53,6 +57,7 @@ export function SplitTile({
   progress,
   showTint,
   isCurrent,
+  paper,
   colors,
 }: SplitTileProps) {
   const { rect, coreRect: core } = tile;
@@ -96,6 +101,15 @@ export function SplitTile({
   return (
     <Group transform={place}>
       <Group clip={clip}>
+        {paper && (
+          <Rect
+            x={rect.x}
+            y={rect.y}
+            width={rect.width}
+            height={rect.height}
+            color={colors.sheet}
+          />
+        )}
         <Image
           image={image}
           x={imageFrame.x}

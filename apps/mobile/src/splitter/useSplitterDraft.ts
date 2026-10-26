@@ -6,6 +6,8 @@ import {
   type Project,
   type SplitConfig,
   type SplitDraft,
+  type SplitPlan,
+  splitPlan,
 } from "@ar-darwin/core";
 import { useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
@@ -18,8 +20,13 @@ const SAVE_DELAY_MS = 400;
 
 export type SplitterDraft = {
   draft: SplitDraft;
-  /** What is drawn and stored: `draft` as image px. */
+  /**
+   * What is drawn and stored: `draft` as image px. While the drawing does not fit its sheets (`plan`
+   * says so) it stays at the last config that did, and nothing new is stored.
+   */
   config: SplitConfig;
+  /** What the draft asks for: its config, or why a split by paper size does not fit. */
+  plan: SplitPlan;
   currentTileId: string | undefined;
   update: (patch: Partial<SplitDraft>) => void;
   /**
@@ -44,7 +51,15 @@ export function useSplitterDraft(project: Project, image: ImageSize): SplitterDr
     project.split ? draftFromConfig(image, project.split) : defaultSplitDraft(),
   );
   const [currentTileId, setCurrentTileId] = useState(project.currentTileId);
-  const config = useMemo(() => configFromDraft(image, draft), [image, draft]);
+  const plan = useMemo(() => splitPlan(image, draft), [image, draft]);
+  const lastFit = useRef<SplitConfig | null>(null);
+  const config = useMemo(() => {
+    if (plan.ok) {
+      lastFit.current = plan.config;
+      return plan.config;
+    }
+    return lastFit.current ?? configFromDraft(image, draft);
+  }, [plan, image, draft]);
 
   const latest = useRef({ config, currentTileId });
   latest.current = { config, currentTileId };
@@ -119,5 +134,5 @@ export function useSplitterDraft(project: Project, image: ImageSize): SplitterDr
     [flush],
   );
 
-  return { draft, config, currentTileId, update, pickTile };
+  return { draft, config, plan, currentTileId, update, pickTile };
 }

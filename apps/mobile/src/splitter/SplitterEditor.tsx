@@ -1,4 +1,14 @@
-import { hasCuts, MAX_SPLIT, type Project, pickedTileId, sheetCount } from "@ar-darwin/core";
+import {
+  hasCuts,
+  MAX_SPLIT,
+  maxPaperOverlapMm,
+  type Orientation,
+  type PaperSize,
+  type Project,
+  pickedTileId,
+  type SplitMode,
+  sheetCount,
+} from "@ar-darwin/core";
 import { hairline, radius, space, toNativeTextStyle, typography } from "@ar-darwin/ui";
 import type { SkImage } from "@shopify/react-native-skia";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -27,18 +37,32 @@ type SplitterEditorProps = {
 
 type Frame = { width: number; height: number };
 
+/** The widest drawing the stepper reaches: 10 m, far past what 10 A3 sheets cover. */
+const MAX_WIDTH_CM = 1000;
+
+/** The most overlap a sheet takes (half its shortest side), in whole mm for the stepper. */
+function maxOverlapFor(paper: PaperSize, orientation: Orientation): number {
+  return Math.floor(maxPaperOverlapMm(paper, orientation));
+}
+
 /**
  * The splitter with its image decoded: live preview, summary and controls. Every control edits the
  * draft; the preview, the summary and the saved split all come from it. A tap on a tile picks it
  * (A1 until one is), and the button under the controls, «Calcar B2», stores it and opens the camera
- * on that tile.
+ * on that tile. A selector chooses how the image is cut: by hand (rows, columns, edges) or by paper
+ * size («Folios»: sheet, orientation, final width in cm and overlap in mm, from which the grid
+ * follows). A drawing that needs more than 10 sheets on an axis is explained in the summary, nothing
+ * is stored and «Calcar» waits.
  */
 export function SplitterEditor({ project, image }: SplitterEditorProps) {
   const { theme } = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const imageSize = useMemo(() => ({ width: image.width(), height: image.height() }), [image]);
-  const { draft, config, currentTileId, update, pickTile } = useSplitterDraft(project, imageSize);
+  const { draft, config, plan, currentTileId, update, pickTile } = useSplitterDraft(
+    project,
+    imageSize,
+  );
   const [frame, setFrame] = useState<Frame | null>(null);
   const c = theme.color;
 
@@ -79,6 +103,19 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
 
   const cuts = hasCuts(config);
   const extended = draft.edges === "extended";
+  const isPaper = draft.mode === "paper";
+  const maxOverlapMm = maxOverlapFor(draft.paper, draft.orientation);
+  // The other sheet or orientation may take less overlap than the one that was set.
+  const choosePaper = (paper: PaperSize) =>
+    update({
+      paper,
+      overlapMm: Math.min(draft.overlapMm, maxOverlapFor(paper, draft.orientation)),
+    });
+  const chooseOrientation = (orientation: Orientation) =>
+    update({
+      orientation,
+      overlapMm: Math.min(draft.overlapMm, maxOverlapFor(draft.paper, orientation)),
+    });
 
   return (
     <View style={styles.screen}>
@@ -97,12 +134,21 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
               config={config}
               currentTileId={picked}
               frame={frame}
-              separationKey={`${draft.rows}x${draft.cols}-${draft.edges}`}
+              separationKey={
+                isPaper
+                  ? `paper-${config.rows}x${config.cols}-${draft.paper}-${draft.orientation}`
+                  : `${draft.rows}x${draft.cols}-${draft.edges}`
+              }
               onPickTile={choose}
             />
           )}
         </View>
-        <SplitSummary config={config} overlapPercent={draft.overlapPercent} />
+        <SplitSummary
+          config={config}
+          overlapPercent={draft.overlapPercent}
+          plan={plan}
+          draft={draft}
+        />
         {sheetCount(config) > 1 && (
           <Text style={[styles.help, { color: c.text.muted }]}>{t("splitter.pickHelp")}</Text>
         )}
@@ -112,56 +158,118 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
         contentContainerStyle={styles.controlsContent}
         keyboardShouldPersistTaps="handled"
       >
-        <PresetChips
-          rows={draft.rows}
-          cols={draft.cols}
-          maxRows={maxRows}
-          maxCols={maxCols}
-          onSelect={(rows, cols) => update({ rows, cols })}
+        <SegmentedControl<SplitMode>
+          label={t("splitter.mode.label")}
+          options={[
+            { value: "manual", label: t("splitter.mode.manual") },
+            { value: "paper", label: t("splitter.mode.paper") },
+          ]}
+          value={draft.mode}
+          onChange={(mode) => update({ mode })}
         />
-        <View style={styles.steppers}>
-          <Stepper
-            label={t("splitter.rows")}
-            value={draft.rows}
-            min={1}
-            max={maxRows}
-            onChange={(rows) => update({ rows })}
-            decreaseLabel={t("splitter.fewerRows")}
-            increaseLabel={t("splitter.moreRows")}
-          />
-          <Stepper
-            label={t("splitter.cols")}
-            value={draft.cols}
-            min={1}
-            max={maxCols}
-            onChange={(cols) => update({ cols })}
-            decreaseLabel={t("splitter.fewerCols")}
-            increaseLabel={t("splitter.moreCols")}
-          />
-        </View>
-        {cuts && (
-          <SegmentedControl
-            label={t("splitter.edges")}
-            options={[
-              { value: "flush", label: t("splitter.flush") },
-              { value: "extended", label: t("splitter.extendedShort") },
-            ]}
-            value={draft.edges}
-            onChange={(edges) => update({ edges })}
-          />
-        )}
-        {cuts && extended && (
+        {isPaper ? (
           <>
-            <OverlapControl
-              percent={percent}
-              committed={draft.overlapPercent}
-              onCommit={commitPercent}
+            <SegmentedControl<PaperSize>
+              label={t("splitter.paper.label")}
+              options={[
+                { value: "A4", label: t("splitter.paper.A4") },
+                { value: "A3", label: t("splitter.paper.A3") },
+                { value: "Letter", label: t("splitter.paper.Letter") },
+              ]}
+              value={draft.paper}
+              onChange={choosePaper}
             />
+            <SegmentedControl<Orientation>
+              label={t("splitter.orientation.label")}
+              options={[
+                { value: "portrait", label: t("splitter.orientation.portrait") },
+                { value: "landscape", label: t("splitter.orientation.landscape") },
+              ]}
+              value={draft.orientation}
+              onChange={chooseOrientation}
+            />
+            <View style={styles.steppers}>
+              <Stepper
+                label={t("splitter.widthCm")}
+                value={draft.widthCm}
+                min={1}
+                max={MAX_WIDTH_CM}
+                onChange={(widthCm) => update({ widthCm })}
+                format={(value) => t("splitter.widthValue", { value })}
+                decreaseLabel={t("splitter.narrower")}
+                increaseLabel={t("splitter.wider")}
+              />
+              <Stepper
+                label={t("splitter.overlapMm")}
+                value={draft.overlapMm}
+                min={0}
+                max={maxOverlapMm}
+                onChange={(overlapMm) => update({ overlapMm })}
+                format={(value) => t("splitter.overlapMmValue", { value })}
+                decreaseLabel={t("splitter.lessOverlapMm")}
+                increaseLabel={t("splitter.moreOverlapMm")}
+              />
+            </View>
             <Toggle
               label={t("splitter.tint")}
               checked={draft.showOverlapTint}
               onChange={(showOverlapTint) => update({ showOverlapTint })}
             />
+          </>
+        ) : (
+          <>
+            <PresetChips
+              rows={draft.rows}
+              cols={draft.cols}
+              maxRows={maxRows}
+              maxCols={maxCols}
+              onSelect={(rows, cols) => update({ rows, cols })}
+            />
+            <View style={styles.steppers}>
+              <Stepper
+                label={t("splitter.rows")}
+                value={draft.rows}
+                min={1}
+                max={maxRows}
+                onChange={(rows) => update({ rows })}
+                decreaseLabel={t("splitter.fewerRows")}
+                increaseLabel={t("splitter.moreRows")}
+              />
+              <Stepper
+                label={t("splitter.cols")}
+                value={draft.cols}
+                min={1}
+                max={maxCols}
+                onChange={(cols) => update({ cols })}
+                decreaseLabel={t("splitter.fewerCols")}
+                increaseLabel={t("splitter.moreCols")}
+              />
+            </View>
+            {cuts && (
+              <SegmentedControl
+                label={t("splitter.edges")}
+                options={[
+                  { value: "flush", label: t("splitter.flush") },
+                  { value: "extended", label: t("splitter.extendedShort") },
+                ]}
+                value={draft.edges}
+                onChange={(edges) => update({ edges })}
+              />
+            )}
+            {cuts && extended && (
+              <>
+                <OverlapControl
+                  percent={percent}
+                  committed={draft.overlapPercent}
+                  onCommit={commitPercent}
+                />
+                <Toggle
+                  label={t("splitter.tint")}
+                  checked={draft.showOverlapTint}
+                  onChange={(showOverlapTint) => update({ showOverlapTint })}
+                />
+              </>
+            )}
           </>
         )}
       </ScrollView>
@@ -179,7 +287,8 @@ export function SplitterEditor({ project, image }: SplitterEditorProps) {
           variant="primary"
           icon="camera"
           fullWidth
-          accessibilityHint={t("splitter.startHint")}
+          disabled={!plan.ok}
+          accessibilityHint={plan.ok ? t("splitter.startHint") : t("splitter.startBlocked")}
           onPress={start}
         >
           {t("splitter.start", { id: picked })}
@@ -197,5 +306,5 @@ const styles = StyleSheet.create({
   controlsContent: { padding: space[4], gap: space[4] },
   action: { paddingHorizontal: space[4], paddingTop: space[3], borderTopWidth: hairline },
   help: { ...toNativeTextStyle(typography.label), textAlign: "center" },
-  steppers: { flexDirection: "row", gap: space[6] },
+  steppers: { flexDirection: "row", flexWrap: "wrap", columnGap: space[6], rowGap: space[4] },
 });

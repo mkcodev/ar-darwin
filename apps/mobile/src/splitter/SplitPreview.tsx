@@ -128,6 +128,7 @@ export function SplitPreview({
       cut: c.guide.default,
       cutCase: c.camera.guideCase,
       current: c.accent.default,
+      sheet: c.bg.raised,
     }),
     [c],
   );
@@ -147,6 +148,7 @@ export function SplitPreview({
                   progress={progress[i] ?? fade}
                   showTint={config.showOverlapTint}
                   isCurrent={tile.id === currentTileId}
+                  paper={layout.paper}
                   colors={colors}
                 />
               ))}
