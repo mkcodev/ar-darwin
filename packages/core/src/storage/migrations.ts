@@ -111,15 +111,52 @@ ${seedCategories}
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;
 
-/** Migrations still to run on a database at `currentVersion`, in order. */
+/** `SchemaTooNewError.code`: stable tag that survives a bundler that breaks `instanceof`. */
+export const SCHEMA_TOO_NEW_CODE = "SCHEMA_TOO_NEW";
+
+/**
+ * The database was written by a newer app than this one (e.g. an older build installed over newer
+ * data). Nothing is wrong with the data: the app must not touch it, only tell the person to update.
+ */
+export class SchemaTooNewError extends Error {
+  readonly code = SCHEMA_TOO_NEW_CODE;
+
+  constructor(
+    /** `PRAGMA user_version` found in the database. */
+    readonly databaseVersion: number,
+    /** Latest version this app knows (`LATEST_SCHEMA_VERSION`). */
+    readonly appVersion: number,
+  ) {
+    super(
+      `pendingMigrations: database is at version ${databaseVersion}, newer than this app (${appVersion})`,
+    );
+    this.name = "SchemaTooNewError";
+    // Subclassing Error can lose the prototype when a transform turns classes into functions.
+    Object.setPrototypeOf(this, SchemaTooNewError.prototype);
+  }
+}
+
+/** True for a `SchemaTooNewError`, also if it crossed a boundary that broke `instanceof`. */
+export function isSchemaTooNewError(error: unknown): error is SchemaTooNewError {
+  if (error instanceof SchemaTooNewError) return true;
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === SCHEMA_TOO_NEW_CODE
+  );
+}
+
+/**
+ * Migrations still to run on a database at `currentVersion`, in order.
+ * Throws `SchemaTooNewError` if the database is newer than the app, and a plain `Error` if the
+ * version is not a non-negative integer.
+ */
 export function pendingMigrations(currentVersion: number): readonly Migration[] {
   if (!Number.isInteger(currentVersion) || currentVersion < 0) {
     throw new Error(`pendingMigrations: invalid schema version ${currentVersion}`);
   }
   if (currentVersion > LATEST_SCHEMA_VERSION) {
-    throw new Error(
-      `pendingMigrations: database is at version ${currentVersion}, newer than this app (${LATEST_SCHEMA_VERSION})`,
-    );
+    throw new SchemaTooNewError(currentVersion, LATEST_SCHEMA_VERSION);
   }
   return MIGRATIONS.slice(currentVersion);
 }

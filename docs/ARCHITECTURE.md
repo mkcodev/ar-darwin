@@ -409,6 +409,16 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - `AppStack` también monta `SQLiteProvider` sobre una vista con `bg.canvas`, la barra de estado del
   tema y el `ThemeProvider` de React Navigation con los colores de `packages/ui`: ningún fotograma en
   blanco entre la splash, las migraciones y la primera pantalla.
+- Si la base no se abre o no migra (issue #81), `SQLiteProvider` relanza el error (`onError` explícito
+  en `AppStack`) y lo recoge el `ErrorBoundary` que exporta `app/_layout.tsx`, que pinta
+  `components/StartupErrorScreen` en lugar de todo el layout: sin providers, solo React Native plano,
+  `darkTheme` de `packages/ui` y textos de `startupError.*` (packages/i18n). Fuentes: las de
+  `packages/ui` si ya están registradas, y las del sistema si no. El error `SchemaTooNewError` de core
+  (`user_version` mayor que `LATEST_SCHEMA_VERSION`, detectado con `isSchemaTooNewError`) muestra el
+  texto «datos de una versión más nueva»; cualquier otro, el genérico. Solo ofrece «Reintentar»
+  (`retry` del router remonta el layout y reabre la base): nunca borra ni reinicia la base, son datos
+  de la persona. Un fallo de migración deja la base en la versión anterior (transacción), así que
+  reintentar es seguro.
 - Rutas hoy: `/` Biblioteca, `/project/[id]/camera` cámara del proyecto, `/project/[id]/split`
   divisor, `/settings` Ajustes, `/dev/design` y `/dev/camera` (solo desarrollo o `spikesEnabled`).
   Cada tarea añade la suya (ficha del proyecto, onboarding).
@@ -706,7 +716,8 @@ Migraciones: `MIGRATIONS` es una lista numerada desde 1; la versión de la base 
 `migrateDbIfNeeded` en `onInit`, antes de pintar ninguna pantalla: activa WAL y claves foráneas, y
 ejecuta cada migración pendiente (`pendingMigrations(version)`) junto con su `PRAGMA user_version = N`
 en una sola transacción, así que un cierre a medias deja la base en la versión anterior. Si la base es
-más nueva que la app, `pendingMigrations` lanza. Para cambiar el esquema: añadir una migración nueva
+más nueva que la app, `pendingMigrations` lanza `SchemaTooNewError` (tipado, con `databaseVersion` y
+`appVersion`; ver «Navegación» para la pantalla de recuperación). Para cambiar el esquema: añadir una migración nueva
 al final, nunca editar una publicada, y ampliar `storage.test.ts`. La v1 crea las tres tablas y
 siembra las 6 categorías de serie con su clave i18n (`categories.<id>`); `categoryLabel`
 (apps/mobile) traduce con `t(defaultCategoryKey(id))`, que no compila si falta alguna clave en

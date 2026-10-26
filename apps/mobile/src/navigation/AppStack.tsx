@@ -9,6 +9,16 @@ import { useTheme } from "../theme/ThemeProvider";
 import { useStackScreenOptions } from "./useStackScreenOptions";
 
 /**
+ * A database that fails to open or migrate must reach the root layout's `ErrorBoundary`
+ * (`app/_layout.tsx`, the recovery screen), so the provider rethrows it. That is also its default;
+ * it is explicit here so nobody adds a handler that swallows the error and leaves a blank app.
+ * Module-level so the memoized provider sees the same function on every render.
+ */
+function rethrowDatabaseError(error: Error): never {
+  throw error;
+}
+
+/**
  * The app's only navigator: one native stack, no tabs (docs/ARCHITECTURE.md, «Navegación»).
  * React Navigation gets the packages/ui colours too, so its own surfaces (the root behind the
  * screens, modals) never fall back to its white default.
@@ -39,7 +49,11 @@ export function AppStack() {
       {/* The canvas shows between the splash and the end of the migrations, not a white frame. */}
       <View style={[styles.root, { backgroundColor: c.bg.canvas }]}>
         {/* Renders nothing until the migrations ran; the splash is already gone by then. */}
-        <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDbIfNeeded}>
+        <SQLiteProvider
+          databaseName={DATABASE_NAME}
+          onInit={migrateDbIfNeeded}
+          onError={rethrowDatabaseError}
+        >
           <AppSettingsProvider>
             <Stack screenOptions={screenOptions} />
           </AppSettingsProvider>

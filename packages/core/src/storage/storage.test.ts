@@ -5,9 +5,12 @@ import { DEFAULT_CATEGORY_IDS, IDENTITY_TRANSFORM, type Project } from "../model
 import { createProject, createProjectId } from "../project";
 import {
   DEFAULT_CATEGORY_STYLES,
+  isSchemaTooNewError,
   LATEST_SCHEMA_VERSION,
   MIGRATIONS,
   pendingMigrations,
+  SCHEMA_TOO_NEW_CODE,
+  SchemaTooNewError,
   setSchemaVersionSql,
 } from "./migrations";
 import {
@@ -123,6 +126,51 @@ describe("pendingMigrations", () => {
     expect(() => pendingMigrations(LATEST_SCHEMA_VERSION + 1)).toThrow(/^pendingMigrations:/);
     expect(() => pendingMigrations(-1)).toThrow(/^pendingMigrations:/);
     expect(() => pendingMigrations(1.5)).toThrow(/^pendingMigrations:/);
+  });
+
+  it("throws a typed SchemaTooNewError, with both versions, for a newer database", () => {
+    const found = LATEST_SCHEMA_VERSION + 3;
+    let thrown: unknown;
+    try {
+      pendingMigrations(found);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(SchemaTooNewError);
+    expect(thrown).toBeInstanceOf(Error);
+    expect(isSchemaTooNewError(thrown)).toBe(true);
+    if (!isSchemaTooNewError(thrown)) return;
+    expect(thrown.code).toBe(SCHEMA_TOO_NEW_CODE);
+    expect(thrown.name).toBe("SchemaTooNewError");
+    expect(thrown.databaseVersion).toBe(found);
+    expect(thrown.appVersion).toBe(LATEST_SCHEMA_VERSION);
+  });
+
+  it("keeps an invalid version a generic error, not a SchemaTooNewError", () => {
+    for (const bad of [-1, 1.5, Number.NaN]) {
+      let thrown: unknown;
+      try {
+        pendingMigrations(bad);
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toBeInstanceOf(Error);
+      expect(isSchemaTooNewError(thrown)).toBe(false);
+    }
+  });
+});
+
+describe("isSchemaTooNewError", () => {
+  it("recognises the error by its code when instanceof is lost", () => {
+    expect(isSchemaTooNewError({ code: SCHEMA_TOO_NEW_CODE })).toBe(true);
+  });
+
+  it("rejects other errors and non-errors", () => {
+    expect(isSchemaTooNewError(new Error("database is locked"))).toBe(false);
+    expect(isSchemaTooNewError(Object.assign(new Error("x"), { code: "SQLITE_BUSY" }))).toBe(false);
+    for (const value of [null, undefined, "SCHEMA_TOO_NEW", 42, {}]) {
+      expect(isSchemaTooNewError(value)).toBe(false);
+    }
   });
 });
 
