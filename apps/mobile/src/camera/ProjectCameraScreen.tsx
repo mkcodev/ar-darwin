@@ -4,6 +4,7 @@ import {
   type Project,
   previousTileId,
   samePlacement,
+  splitGridAspect,
 } from "@ar-darwin/core";
 import { cameraBackdropColor } from "@ar-darwin/ui";
 import { StatusBar } from "expo-status-bar";
@@ -69,7 +70,7 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
     <TileBar
       rows={split.rows}
       cols={split.cols}
-      aspect={readyImage.width() / readyImage.height()}
+      aspect={splitGridAspect({ width: readyImage.width(), height: readyImage.height() }, split)}
       tileId={crop.tileId}
       previousId={previousTileId(split, crop.tileId)}
       nextId={nextTileId(split, crop.tileId)}
