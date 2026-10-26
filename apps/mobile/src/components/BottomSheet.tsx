@@ -39,6 +39,11 @@ type BottomSheetProps = {
    * of the camera image); a tap outside still closes the sheet and never reaches what is behind.
    */
   scrim?: boolean;
+  /**
+   * Where a drag closes the sheet from. `"sheet"` (default): anywhere on it. `"handle"`: only the
+   * handle and the title, for a body that scrolls (a drag in it must scroll, not close).
+   */
+  dragFrom?: "sheet" | "handle";
   children: ReactNode;
 };
 
@@ -50,7 +55,8 @@ type BottomSheetProps = {
  * closing animation ends. Reduced motion: sheet and scrim fade together, dragging still works.
  *
  * It covers its parent (absolute, `zIndex.sheet`): render it at the root of the screen, outside
- * any ScrollView. Android's back button and the iOS escape gesture close it.
+ * any ScrollView. Android's back button and the iOS escape gesture close it. A body that scrolls
+ * asks for `dragFrom="handle"`.
  */
 export function BottomSheet({
   open,
@@ -58,6 +64,7 @@ export function BottomSheet({
   title,
   handleLabel,
   scrim = true,
+  dragFrom = "sheet",
   children,
 }: BottomSheetProps) {
   const [mounted, setMounted] = useState(open);
@@ -71,6 +78,7 @@ export function BottomSheet({
       title={title}
       handleLabel={handleLabel}
       scrim={scrim}
+      dragFrom={dragFrom}
     >
       {children}
     </SheetBody>
@@ -86,6 +94,7 @@ function SheetBody({
   title,
   handleLabel,
   scrim,
+  dragFrom,
   children,
 }: SheetBodyProps) {
   const { theme } = useTheme();
@@ -164,6 +173,60 @@ function SheetBody({
     transform: [{ translateY: y.value }],
   }));
 
+  const header = (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={handleLabel}
+        onPress={onClose}
+        style={styles.handleArea}
+      >
+        <View style={[styles.handle, { backgroundColor: c.border.strong }]} />
+      </Pressable>
+      <Text
+        ref={titleRef}
+        accessibilityRole="header"
+        style={[styles.title, { color: c.text.primary }]}
+      >
+        {title}
+      </Text>
+    </>
+  );
+
+  const panel = (
+    <Animated.View
+      accessibilityViewIsModal
+      onAccessibilityEscape={onClose}
+      onLayout={(e) => {
+        const h = e.nativeEvent.layout.height;
+        height.value = h;
+        if (!measured) {
+          if (full) y.value = h;
+          setMeasured(true);
+        }
+      }}
+      style={[
+        styles.sheet,
+        {
+          maxHeight: window.height * bottomSheet.maxHeightRatio,
+          paddingBottom: space[8] + insets.bottom,
+          backgroundColor: c.bg.surface,
+          borderColor: c.border.subtle,
+        },
+        panelStyle,
+      ]}
+    >
+      {dragFrom === "handle" ? (
+        <GestureDetector gesture={drag}>
+          <View>{header}</View>
+        </GestureDetector>
+      ) : (
+        header
+      )}
+      <View style={styles.body}>{children}</View>
+    </Animated.View>
+  );
+
   return (
     <View style={styles.root} pointerEvents={open ? "auto" : "none"}>
       <Animated.View style={[styles.fill, scrim && { backgroundColor: c.bg.overlay }, scrimStyle]}>
@@ -174,47 +237,7 @@ function SheetBody({
           importantForAccessibility="no-hide-descendants"
         />
       </Animated.View>
-      <GestureDetector gesture={drag}>
-        <Animated.View
-          accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
-          onLayout={(e) => {
-            const h = e.nativeEvent.layout.height;
-            height.value = h;
-            if (!measured) {
-              if (full) y.value = h;
-              setMeasured(true);
-            }
-          }}
-          style={[
-            styles.sheet,
-            {
-              maxHeight: window.height * bottomSheet.maxHeightRatio,
-              paddingBottom: space[8] + insets.bottom,
-              backgroundColor: c.bg.surface,
-              borderColor: c.border.subtle,
-            },
-            panelStyle,
-          ]}
-        >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={handleLabel}
-            onPress={onClose}
-            style={styles.handleArea}
-          >
-            <View style={[styles.handle, { backgroundColor: c.border.strong }]} />
-          </Pressable>
-          <Text
-            ref={titleRef}
-            accessibilityRole="header"
-            style={[styles.title, { color: c.text.primary }]}
-          >
-            {title}
-          </Text>
-          <View style={styles.body}>{children}</View>
-        </Animated.View>
-      </GestureDetector>
+      {dragFrom === "sheet" ? <GestureDetector gesture={drag}>{panel}</GestureDetector> : panel}
     </View>
   );
 }
