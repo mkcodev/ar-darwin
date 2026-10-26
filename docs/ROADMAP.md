@@ -67,8 +67,16 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
       candado no se retiran (`useMenuIdle`, issue #72)
 - [ ] Modo inmersivo al bloquear: ocultar la barra de navegación de Android (`expo-navigation-bar`,
       requiere nuevo development build)
-- [ ] Pantalla del divisor con vista previa en vivo (Prompt 6)
-- [ ] Minimapa y botón Siguiente trozo en la cámara
+- [x] Pantalla del divisor con vista previa en vivo: grosor en % del trozo (8 % por defecto), chips de
+      rejilla, resumen «N folios · solape X %», zoom con pellizco, nombres A1… en pastilla y cabecera
+      preparada para «Manual | Folios» (Prompt 6, issue #76)
+- [ ] Divisor: tamaño real. Papel A4/A3/Carta, orientación y ancho final en cm: cada trozo sale con
+      proporción de folio, la imagen centrada y el solape en mm. Lógica pura en core con tests,
+      compartida con la PWA (adelanta los dos «divisor por tamaño de papel» de la fase 2)
+- [ ] Progreso por trozo: marcar hecho, «4/9»; migración v7 `completed_tiles`. Se une a «Minimapa y
+      Siguiente trozo»
+- [x] Minimapa y botón Siguiente trozo en la cámara: indicador del trozo, vuelta a A1 tras el último,
+      zoom, opacidad y pin intactos, también con el candado (`TileBar`, `nextTileId`, issue #86)
 - [ ] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja, reducir movimiento, idioma
 - [ ] Onboarding de 3 pantallas y permiso de cámara explicado (es/en)
 - [ ] Pasada de `impeccable` y `web-design-guidelines` sobre cada pantalla (Prompt 7)

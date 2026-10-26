@@ -17,17 +17,19 @@ type ProjectActionsSheetProps = {
   /** Where the sheet opens: the screen reader's «Delete» action goes straight to the confirmation. */
   initialStep: ProjectActionsStep;
   onClose: () => void;
+  onSplit: (project: Project) => void;
   onDelete: (project: Project) => void;
 };
 
 /**
- * A project's actions. Only «Delete» for now (renaming will live in the project's page), and it
- * asks for confirmation inside the sheet, without a system dialog.
+ * A project's actions: «Split» opens its splitter, «Delete» (renaming will live in the project's
+ * page) asks for confirmation inside the sheet, without a system dialog.
  */
 export function ProjectActionsSheet({
   project,
   initialStep,
   onClose,
+  onSplit,
   onDelete,
 }: ProjectActionsSheetProps) {
   const { theme } = useTheme();
@@ -67,9 +69,14 @@ export function ProjectActionsSheet({
           </View>
         </View>
       ) : (
-        <Button variant="danger" icon="trash" onPress={() => setStep("confirmDelete")}>
-          {t("library.actions.delete")}
-        </Button>
+        <View style={styles.block}>
+          <Button variant="secondary" icon="split" onPress={() => onSplit(shown)}>
+            {t("library.actions.split")}
+          </Button>
+          <Button variant="danger" icon="trash" onPress={() => setStep("confirmDelete")}>
+            {t("library.actions.delete")}
+          </Button>
+        </View>
       )}
     </BottomSheet>
   );

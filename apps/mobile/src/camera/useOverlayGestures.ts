@@ -43,6 +43,11 @@ export type Flips = Pick<Transform, "flipX" | "flipY">;
 type Options = {
   imageSize: SharedValue<Size>;
   canvasSize: SharedValue<Size>;
+  /**
+   * While true, an image whose size changes keeps its transform instead of being fitted again: the
+   * crop moved to another tile of the same picture, and the sheet stays where and how big it was.
+   */
+  keepOnImageResize: SharedValue<boolean>;
   /** Touch lock (#19): while true, every gesture below is a no-op and the image stays put. */
   locked: SharedValue<boolean>;
   /** The magnet (Settings): while false, gestures write the raw transform and nothing snaps. */
@@ -117,7 +122,7 @@ const NO_STEP: GestureStep = {
  * the canvas and the image have real sizes. Then `initial` is restored onto this canvas with
  * `restoreTransform`, or the image is fitted. Later, a new canvas size (split screen, a foldable)
  * moves the current transform with `restoreTransform`, and a new image (the spike's test images)
- * is fitted again.
+ * is fitted again (unless `keepOnImageResize` says it is another tile of the same picture).
  *
  * Touch lock (#19): each handler bails out on `locked.value` before touching the transform, so a
  * finger already dragging when the lock engages stops dead instead of finishing its move.
@@ -148,6 +153,7 @@ const NO_STEP: GestureStep = {
 export function useOverlayGestures({
   imageSize,
   canvasSize,
+  keepOnImageResize,
   locked,
   magnetEnabled,
   initial,
@@ -474,8 +480,10 @@ export function useOverlayGestures({
         );
         placed.value = true;
       } else if (image.width !== lastImage.width || image.height !== lastImage.height) {
-        const fit = fitTransform(image, canvas);
-        write({ ...fit, flipX: flipX.value, flipY: flipY.value });
+        if (!keepOnImageResize.value) {
+          const fit = fitTransform(image, canvas);
+          write({ ...fit, flipX: flipX.value, flipY: flipY.value });
+        }
       } else if (canvas.width !== lastCanvas.width || canvas.height !== lastCanvas.height) {
         write(restoreTransform(current(), lastCanvas, canvas));
       } else {

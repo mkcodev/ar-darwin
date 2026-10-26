@@ -60,6 +60,8 @@ export const icons = {
   swapSides: [path("M4 8h14M14 4l4 4-4 4"), path("M20 16H6M10 12l-4 4 4 4")],
   arrowUp: [path("M12 19V5M6 11l6-6 6 6")],
   arrowDown: [path("M12 5v14M6 13l6 6 6-6")],
+  // A chevron on a control that opens something upwards (the tile picker).
+  chevronUp: [path("M6 15l6-6 6 6")],
   arrowLeft: [path("M19 12H5M11 6l-6 6 6 6")],
   arrowRight: [path("M5 12h14M13 6l6 6-6 6")],
   rotateCw: [path("M19.5 12a7.5 7.5 0 1 1-2.2-5.3"), path("M20 4v4h-4")],

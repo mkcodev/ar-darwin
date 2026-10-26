@@ -1,4 +1,4 @@
-import type { CameraIssueKind, ImageAdjustments } from "@ar-darwin/core";
+import type { CameraCrop, CameraIssueKind, ImageAdjustments } from "@ar-darwin/core";
 import { classifyCameraIssue, isIgnorableCameraError } from "@ar-darwin/core";
 import {
   cameraBackdropColor,
@@ -39,6 +39,8 @@ const opacityText = percentFormat(1);
 type CameraOverlayScreenProps = {
   /** The image to trace, decoded; `null` while it loads. */
   image: SkImage | null;
+  /** Trace only this part of the image (a tile); absent = all of it. Keep it stable. */
+  crop?: CameraCrop | null;
   /** Starting overlay opacity, 0–1. Read once. */
   initialOpacity?: number;
   /** Where the image was left last time; absent fits it. Read once. */
@@ -55,6 +57,10 @@ type CameraOverlayScreenProps = {
   initialPin?: OverlayPlacement | null;
   /** The position was pinned (or re-pinned). */
   onPinChange?: (placement: OverlayPlacement | null) => void;
+  /** A sheet of the screen is open (the tile picker): the menu stays shown. */
+  menuPaused?: boolean;
+  /** The tile bar of a split project: above the slider, and usable while locked. */
+  tileBar?: ReactNode;
   /** Extra controls under the slider; hidden (keeping their space) while locked. */
   extraControls?: ReactNode;
   /** Drawn over everything, also while locked (e.g. the spike's fps meter). */
@@ -65,6 +71,8 @@ type CameraOverlayScreenProps = {
  * The camera with an image over it, shared by the project camera and the spike (`/dev/camera`):
  * camera preview, overlay (`OverlayCanvas`), opacity slider, tools (`CameraTools`: mirror, torch,
  * image adjustments in `ImageAdjustSheet`), touch lock, keep-awake and the camera's error notices.
+ * A split project adds its tile bar (`TileBar`) in the bottom pill; changing the tile changes
+ * `crop` and the image keeps its placement (`OverlayCanvas`).
  * The slider and the tools are floating pills that retreat after `signature.menuIdleMs` without
  * touches (`useMenuIdle`), and so does the fine-adjust pad; the lock stays where it is.
  * The torch is vision-camera's `torchMode`, only passed when the device has one (setting it on a
@@ -82,6 +90,7 @@ type CameraOverlayScreenProps = {
  */
 export function CameraOverlayScreen({
   image,
+  crop,
   initialOpacity = opacity.overlayImage,
   initialPlacement,
   onPlacementSettle,
@@ -90,6 +99,8 @@ export function CameraOverlayScreen({
   onAdjustmentsSettle,
   initialPin,
   onPinChange,
+  menuPaused = false,
+  tileBar,
   extraControls,
   overlay,
 }: CameraOverlayScreenProps) {
@@ -132,7 +143,10 @@ export function CameraOverlayScreen({
     poke: pokeMenu,
     hide: hideMenu,
     reset: resetMenu,
-  } = useMenuIdle(signature.menuIdleMs, touching || sliderActive || nudgeHolding || adjustOpen);
+  } = useMenuIdle(
+    signature.menuIdleMs,
+    touching || sliderActive || nudgeHolding || adjustOpen || menuPaused,
+  );
 
   // The menu answers to taps on the canvas (`OverlayCanvas` `onCanvasTap`: one finger, no drift, on
   // the canvas and not on a control). On the empty part of the screen it toggles: it hides a shown
@@ -229,6 +243,7 @@ export function CameraOverlayScreen({
               <OverlayCanvas
                 ref={canvas}
                 image={image}
+                crop={crop}
                 opacity={imageOpacity}
                 locked={locked}
                 magnetEnabled={magnetOn}
@@ -286,6 +301,7 @@ export function CameraOverlayScreen({
                   label={t("camera.menu.top")}
                   style={styles.bar}
                 >
+                  {tileBar}
                   <View style={styles.sliderSlot}>
                     <Slider
                       label={t("camera.opacity")}

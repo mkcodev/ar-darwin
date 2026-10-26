@@ -44,6 +44,10 @@ export type ColorTokens = {
     text: string;
     muted: string;
     accent: string;
+    /** Pressed state of `accent`. */
+    accentPressed: string;
+    /** Text on `accent` (graphite: white is only 3.2:1 on it). */
+    onAccent: string;
     guide: string;
     guideCase: string;
     guideTint: string;

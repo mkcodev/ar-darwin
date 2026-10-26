@@ -16,7 +16,10 @@ import {
   SELECT_PROJECT,
   SELECT_PROJECT_CATEGORIES,
   SELECT_PROJECTS,
+  type SplitConfig,
+  splitParams,
   UPDATE_PROJECT_CAMERA,
+  UPDATE_PROJECT_SPLIT,
   UPSERT_PROJECT,
 } from "@ar-darwin/core";
 import type { SQLiteDatabase } from "expo-sqlite";
@@ -101,6 +104,20 @@ export async function saveCameraState(
   now: Date = new Date(),
 ): Promise<void> {
   await db.runAsync(UPDATE_PROJECT_CAMERA, cameraStateParams(id, state, now));
+}
+
+/**
+ * What the splitter saves: the grid and the tile last picked, in one UPDATE that stamps
+ * `updatedAt`. Through `enqueueSplitSave`, never directly, so saves land in order with the camera's.
+ */
+export async function saveSplit(
+  db: SQLiteDatabase,
+  id: string,
+  split: SplitConfig,
+  currentTileId: string | undefined,
+  now: Date = new Date(),
+): Promise<void> {
+  await db.runAsync(UPDATE_PROJECT_SPLIT, splitParams(id, split, currentTileId, now));
 }
 
 export async function listCategories(db: SQLiteDatabase): Promise<Category[]> {

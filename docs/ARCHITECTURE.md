@@ -183,6 +183,42 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     deriva en el hilo de UI la `<ColorMatrix>` de la imagen con `adjustmentColorMatrix` (core).
     Invertir y Restablecer animan con el muelle `gentle` (saltan con reducir movimiento). Cada
     cambio asentado (soltar, alternar, restablecer) llama a `onAdjustmentsSettle`.
+  - **Trozo de un proyecto dividido.** `cameraCrop` (core) da el recorte del trozo elegido
+    (`rect` en px de imagen y `core` relativo a él); `ProjectCameraScreen` se lo pasa a `OverlayCanvas`
+    (`crop`), que lo trata como «la imagen»: `imageSize` es el tamaño del recorte, así que encaje,
+    gestos, imán, pin y reset no cambian. Se dibuja la imagen desplazada y recortada, y el anillo entre el
+    recorte y el recorte al ras (la franja que el trozo toma del vecino) se tiñe con `camera.guideTint`.
+    Un proyecto dividido muestra siempre su trozo actual, también desde la biblioteca; sin división, la
+    imagen entera. La posición y el pin guardados son del trozo en que se hicieron: `UPDATE_PROJECT_SPLIT`
+    los borra si cambian la división o el trozo desde el divisor (sin migración), y la cámara encaja el
+    trozo nuevo.
+  - **Moverse entre trozos (issue #86).** Con más de un trozo, la píldora de abajo lleva encima del
+    slider la `TileBar`: un chip con `TileMinimap` (la rejilla en miniatura, con la forma de la imagen y
+    el trozo actual relleno de acento), el nombre («B2») y un chevron; la flecha «Trozo anterior»
+    (`IconButton`) y «Siguiente», la acción principal (`Button` `tone="camera"` `compact`; texto
+    visible corto «Siguiente», lo que lee TalkBack es «Siguiente trozo»). Van bajo la mano libre,
+    con «Siguiente» en el borde. Caben en 360 px: el chip mide ~94, la flecha 48 y «Siguiente» ~131
+    sobre ~288 útiles. Funcionan con el candado.
+  - **Elegir trozo (`TilePicker`).** Tocar el chip abre un `BottomSheet` (`dragFrom="handle"`: solo se
+    cierra arrastrando el asa o el título, así el scroll de la rejilla no lo cierra) con todos los
+    trozos: un solo `Canvas` Skia dibuja el pedazo de foto de cada celda (recorte al ras de
+    `computeTiles`, con mipmaps) y encima hay un `Pressable` por celda con su nombre. Las celdas tienen
+    la proporción de un trozo y su lado menor mide al menos `tilePicker.minCell` (44): lo calcula
+    `tilePickerLayout` (core), que encaja la rejilla en el hueco del panel y, si no cabe (hasta 10×10),
+    la deja en 44 y marca el scroll del eje que sobra; se abre desplazada al trozo actual. El actual lleva
+    contorno bermellón y TalkBack dice «Trozo B2, actual». Mientras está abierto, el menú no se oculta
+    (`menuPaused` de `CameraOverlayScreen`, que se suma a las pausas de `useMenuIdle`). Con «reducir
+    movimiento» el panel solo se desvanece (el `BottomSheet` ya lo hace).
+  - **Qué conserva el cambio.** Anterior, siguiente y celda pasan por `goToTile` en
+    `ProjectCameraScreen`: guarda el trozo en su estado, avisa a la sesión y vibra con `tileChange`.
+    `nextTileId` y `previousTileId` (core) recorren la rejilla por filas y dan la vuelta en los
+    extremos. Cambiar de trozo cambia `crop` con la misma imagen y `OverlayCanvas` pone
+    `keepOnImageResize`: `useOverlayGestures` conserva x, y, escala, giro y espejo en vez de encajar,
+    así el zoom, la posición y el pin (y el imán hacia él) siguen donde estaban; la opacidad es un
+    shared value de la pantalla y tampoco cambia. La cámara guarda `current_tile_id` en el acto
+    (`CameraState.currentTileId`, `UPDATE_PROJECT_CAMERA`) **sin** borrar posición ni pin. Al volver al
+    divisor, `useSplitterDraft` espera a la cola de guardados y relee el trozo del proyecto (salvo que
+    se haya elegido otro entre medias), para que su siguiente guardado no pise el de la cámara.
   - `OverlayCanvas` + `useOverlayGestures`: la imagen no se dibuja (opacidad 0, flag `placed`) hasta
     tener tamaño de lienzo **y** dimensiones reales de la imagen. Entonces restaura la colocación
     guardada con `restoreTransform` o encaja con `fitTransform`. Un cambio posterior de lienzo mueve
@@ -324,6 +360,46 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - Iconos: `SkiaIcon` es un elemento Skia (va dentro de un `<Canvas>`), un `Path` por trazo para
   recortar cada uno con `end` en el «trazo vivo»; `Icon` lo envuelve en su propio `<Canvas>`.
 
+## Pantalla del divisor (issue #76)
+
+- Ruta `/project/[id]/split`, abierta con «Dividir» en la hoja de acciones del proyecto. Carga el
+  proyecto como la cámara; `SplitterScreen` decodifica la imagen con `useProjectImage` y monta
+  `SplitterEditor` cuando está lista (si falta, aviso y volver). Todo vive en `apps/mobile/src/splitter/`.
+- **Borrador en %.** `useSplitterDraft` edita un `SplitDraft` de core (filas, columnas,
+  `edges: "flush" | "extended"`, `overlapPercent`, tinte) y de él sale el `SplitConfig` que se dibuja y
+  se guarda (`configFromDraft`). El grosor se muestra en % del lado más corto de un trozo en los ejes
+  con corte (`shortestTileSide`; el máximo es siempre 50 %, el tope de `maxOverlapPx`) y se guarda en
+  px de imagen. Al cambiar filas o columnas se conserva el %, no los px; en al ras o en 1×1 el % se
+  recuerda mientras la pantalla siga abierta (solo se guarda `overlapPx`: al reabrir un corte al ras
+  vuelve el 8 %). «Extendidos» al reabrir es `overlapPx > 0`. Por defecto, 2×2 con bordes
+  extendidos al 8 % y tinte activo.
+- **Guardado.** `UPDATE_PROJECT_SPLIT` (`split`, `current_tile_id`, `updated_at`; sin migración) es
+  aparte de `UPDATE_PROJECT_CAMERA`: ninguna pantalla pisa lo de la otra. `enqueueSplitSave` usa la misma
+  cola que `enqueueCameraSave` (las dos escriben la misma fila). Los cambios se guardan tras 400 ms de
+  calma y al salir; abrir la pantalla y salir sin tocar nada no escribe. Tocar un trozo guarda
+  `currentTileId` en el acto.
+- **Vista previa.** Un solo `Canvas` Skia con la geometría de `splitPreviewLayout` (core): el factor de
+  escala encaja la imagen con los trozos *ya separados* en el marco (hueco `splitter.tileGap` más el doble
+  del solape), así la separación nunca se sale. Cada `SplitTile` recorta la imagen, tiñe la zona extendida
+  (anillo `rect − coreRect`, `guide.tint`) y dibuja el corte original discontinuo sobre los lados
+  extendidos. Los nombres (`TileTag`) son pastillas oscuras con los colores de la cámara, texto real sobre
+  el Canvas: los toques los gestiona la vista previa (`pointerEvents="none"`) y un lector de pantalla abre
+  el trozo con su acción «activate».
+- **Separación.** Al cambiar filas, columnas o modo, cada trozo vuelve a unirse y se separa con el muelle
+  `gentle`, `stagger` ms después del anterior (un `SharedValue` por trozo, hasta 100). Con «reducir
+  movimiento» aparecen ya separados con un fundido corto. Cambiar el grosor no la repite.
+- **Zoom.** Pellizco y arrastre (`useSplitPreviewGestures`, matemática de worklets en
+  `packages/core/src/previewZoom.ts`) entre 1× y `splitter.maxZoom`; se queda al soltar y aparece un botón
+  de restablecer mientras haya zoom. Cambiar filas, columnas o modo lo restablece. Un toque elige el
+  trozo al instante, con o sin zoom (`previewContentPoint` deshace el zoom y `tileAtPoint` busca el trozo). El
+  slider del grosor mueve un `SharedValue`; a React solo llega cada % entero.
+- **Elegir y calcar.** Tocar un trozo lo elige (`currentTileId`, se guarda en el acto, vibra con
+  `tileChange` y queda con borde de acento); mientras no haya ninguno, o si el guardado ya no existe en
+  la rejilla, el elegido es A1 (`pickedTileId`). El botón fijo «Calcar B2», al pie de la pantalla, espera
+  a que el guardado haya terminado (la cámara carga el proyecto al abrirse) y abre la cámara con **ese
+  trozo**. La cabecera deja un hueco
+  (`SplitterHeader`, `modeSwitcher`) para el selector «Manual | Folios» de «Divisor: tamaño real».
+
 ## Navegación (Expo Router, issue #34)
 
 - Un solo navegador: el native-stack raíz (`src/navigation/AppStack.tsx`, montado por
@@ -333,8 +409,9 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - `AppStack` también monta `SQLiteProvider` sobre una vista con `bg.canvas`, la barra de estado del
   tema y el `ThemeProvider` de React Navigation con los colores de `packages/ui`: ningún fotograma en
   blanco entre la splash, las migraciones y la primera pantalla.
-- Rutas hoy: `/` Biblioteca, `/project/[id]/camera` cámara del proyecto, `/settings` Ajustes,
-  `/dev/design` y `/dev/camera` (solo desarrollo o `spikesEnabled`). Cada tarea añade la suya (ficha del proyecto, cámara, divisor, onboarding).
+- Rutas hoy: `/` Biblioteca, `/project/[id]/camera` cámara del proyecto, `/project/[id]/split`
+  divisor, `/settings` Ajustes, `/dev/design` y `/dev/camera` (solo desarrollo o `spikesEnabled`).
+  Cada tarea añade la suya (ficha del proyecto, onboarding).
   Typed routes activas (`experiments.typedRoutes`): `router.push` y `href` comprueban la ruta.
 - Cabeceras:
   - Principales (Biblioteca; Retos más adelante): `headerShown: false`, `LargeTitle` (titular en
@@ -468,7 +545,23 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 - Límite del solape, por eje con cortes: ancho mínimo de los `coreRect` si `cols > 1`, alto mínimo si `rows > 1`; devuelve `floor(menor / 2)`. Con 1×1, 0.
 - Misma validación que `computeTiles`. La UI lo usa como máximo del slider del borde extendido.
 
-Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone`, `radiansToDegrees`, `normalizeRotation` y los helpers internos) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones, y sin constantes externas en valores por defecto de parámetros (el plugin de worklets no las captura). `worklet.test.ts` lo comprueba en CI (también para `frameStats.ts`, `controls.ts` e `imageAdjustments.ts`), porque Vitest ejecuta JS normal y esos fallos solo aparecen en el móvil.
+### `shortestTileSide(image, rows, cols): number`
+
+- El lado más corto de un trozo, medido igual que `maxOverlapPx` (solo en los ejes con corte; 0 con 1×1).
+  Es la base del grosor en %: `maxOverlapPx` es su mitad redondeada hacia abajo.
+
+### Divisor de la UI (`splitConfig.ts`, `splitPreview.ts`, `previewZoom.ts`)
+
+- `splitConfig.ts`: `overlapPxForPercent` / `overlapPercent` (px de imagen ↔ % del lado más corto, tope
+  `maxOverlapPx`), `SplitDraft` con `defaultSplitDraft`, `draftFromConfig` y `configFromDraft`,
+  `SPLIT_PRESETS` (1×2, 2×2, 2×3, 3×3, 4×4), `sheetCount` y `hasCuts`.
+- `splitPreview.ts`: `splitPreviewLayout(image, config, frame, tileGap)` devuelve la escala, el origen y,
+  por trozo, `rect`/`coreRect` en px de pantalla con los trozos unidos y el `offset` al separarse;
+  `tileAtPoint` y `separatedCenter`. Lanza como `computeTiles` si la división no es válida.
+- `previewZoom.ts` (worklets): `pinchPreview`, `panPreview`, `clampPreviewPan`, `previewContentPoint`,
+  `isPreviewZoomed`.
+
+Todas las funciones de `transform.ts` (`snapTransform`, `nudge`, `fitTransform`, `applyGesture`, `rotationDeadZone`, `radiansToDegrees`, `normalizeRotation` y los helpers internos) empiezan con la directiva `"worklet"` para poder llamarse desde Reanimated: solo matemáticas sobre objetos planos, sin Zod ni excepciones, y sin constantes externas en valores por defecto de parámetros (el plugin de worklets no las captura). `worklet.test.ts` lo comprueba en CI (también para `frameStats.ts`, `controls.ts`, `imageAdjustments.ts` y `previewZoom.ts`), porque Vitest ejecuta JS normal y esos fallos solo aparecen en el móvil.
 
 ### `adjustmentColorMatrix(brightness, contrast, invert): number[]`
 

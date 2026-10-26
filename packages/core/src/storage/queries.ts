@@ -32,7 +32,9 @@ ON CONFLICT (id) DO UPDATE SET
 /**
  * Params: cameraStateParams(id, state, now). What the project camera saves: transform and the
  * canvas it is relative to always go together, plus the pinned placement, opacity, image
- * adjustments, status and time spent.
+ * adjustments, the tile being traced, status and time spent. The tile changes here when the
+ * person moves on in the camera; the placement is kept on purpose (the sheets sit in the same
+ * place on the table), unlike a pick made in the splitter (UPDATE_PROJECT_SPLIT).
  */
 export const UPDATE_PROJECT_CAMERA = `
 UPDATE projects SET
@@ -41,10 +43,30 @@ UPDATE projects SET
   pinned_placement = ?,
   opacity = ?,
   image_adjustments = ?,
+  current_tile_id = ?,
   status = ?,
   time_spent_ms = ?,
   updated_at = ?
 WHERE id = ?`;
+
+/**
+ * Params: splitParams(id, split, currentTileId, now). What the splitter saves: the grid and the
+ * tile last picked (the camera also saves the tile, as it moves between them). The placement the
+ * camera saved (position and pin) belongs to the tile it was made on, so it is cleared when the
+ * split or the tile changes, and the camera fits the new tile when it opens; saving the same two
+ * again keeps it.
+ * (SQLite evaluates every right-hand side against the old row, so `split` below is the old one.)
+ */
+export const UPDATE_PROJECT_SPLIT = `
+UPDATE projects SET
+  transform_viewport = CASE WHEN split IS ?1 AND current_tile_id IS ?2
+    THEN transform_viewport ELSE NULL END,
+  pinned_placement = CASE WHEN split IS ?1 AND current_tile_id IS ?2
+    THEN pinned_placement ELSE NULL END,
+  split = ?1,
+  current_tile_id = ?2,
+  updated_at = ?3
+WHERE id = ?4`;
 
 export const SELECT_PROJECTS = "SELECT * FROM projects ORDER BY updated_at DESC, id";
 
