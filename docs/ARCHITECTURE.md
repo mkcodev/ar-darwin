@@ -398,7 +398,31 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   la rejilla, el elegido es A1 (`pickedTileId`). El botón fijo «Calcar B2», al pie de la pantalla, espera
   a que el guardado haya terminado (la cámara carga el proyecto al abrirse) y abre la cámara con **ese
   trozo**. La cabecera deja un hueco
-  (`SplitterHeader`, `modeSwitcher`) para el selector «Manual | Folios» de «Divisor: tamaño real».
+  (`SplitterHeader`, `modeSwitcher`) que de momento no se usa: el selector va en la pantalla.
+- **Manual | Folios (issue #88).** Un `SegmentedControl` arriba de los controles elige cómo se corta.
+  *Manual*: filas, columnas y bordes, como siempre. *Folios*: papel (A4, A3, Carta), orientación,
+  ancho final (`Stepper` en cm, 1 cm por paso) y solape (`Stepper` en mm, de 0 a la mitad del lado
+  corto del folio), más el interruptor del tinte; las filas y columnas salen de `computePaperTiles`.
+  El borrador guarda los dos modos a la vez (cambiar de uno a otro y volver no pierde nada). El
+  resumen dice «Mural de X × Y cm · N folios» (el tamaño del dibujo, no el de la rejilla) y, debajo, el
+  papel y el solape. Si el dibujo necesita más de 10 folios en un eje (`PaperGridTooLargeError` →
+  `splitPlan` devuelve `ok: false`), el resumen se cambia por un aviso con rol de alerta (eje,
+  cuántos haría falta y el ancho máximo que cabe, o que no cabe ninguno), no se guarda nada, la vista
+  previa conserva el último reparto que cupo y «Calcar» queda deshabilitado con su pista
+  (`splitter.startBlocked`).
+- **Qué se guarda de los folios.** `SplitConfig.paper` (`{ paper, orientation, widthCm, overlapMm }`)
+  es opcional: sin él es un reparto manual (todos los proyectos anteriores). Con él, `rows`, `cols` y
+  `overlapPx` se guardan derivados de la imagen, así que los ids («B2»), `isTileInGrid`,
+  `nextTileId`/`previousTileId` y el selector de trozos no necesitan saber del modo. Sin migración
+  (columna JSON); `UPDATE_PROJECT_SPLIT` borra posición y pin al cambiar el reparto, también en folios.
+- **Folios en la vista previa y en la cámara.** `splitTiles` es la única fuente de trozos: en folios,
+  `rect` es la ventana del folio sobre la imagen (puede empezar antes o acabar después: esa parte
+  está en blanco) y `coreRect` es esa ventana sin la franja que comparte con cada vecino, así que el
+  anillo entre los dos (que la cámara y la vista previa tiñen) es el solape. `cameraCrop` recorta el
+  folio (lo que cae fuera de la foto queda transparente), `splitPreviewLayout` coloca los folios (la
+  rejilla de folios, no la imagen, queda centrada) y la vista previa y el selector de trozos pintan el
+  blanco del folio con `bg.raised`. **No** hay escala física real en la cámara (que 1 cm de papel mida 1
+  cm en pantalla): eso es el anclaje con marcadores de la fase 3.
 
 ## Navegación (Expo Router, issue #34)
 
@@ -575,10 +599,19 @@ Todas puras, sin dependencias de React ni de la plataforma, y con tests.
 
 - `splitConfig.ts`: `overlapPxForPercent` / `overlapPercent` (px de imagen ↔ % del lado más corto, tope
   `maxOverlapPx`), `SplitDraft` con `defaultSplitDraft`, `draftFromConfig` y `configFromDraft`,
-  `SPLIT_PRESETS` (1×2, 2×2, 2×3, 3×3, 4×4), `sheetCount` y `hasCuts`.
+  `SPLIT_PRESETS` (1×2, 2×2, 2×3, 3×3, 4×4), `sheetCount` y `hasCuts`. `SplitDraft` lleva también
+  el modo (`mode`, `paper`, `orientation`, `widthCm`, `overlapMm`); `splitPlan(image, draft)` da la
+  config a guardar (en folios, con `rows`/`cols`/`overlapPx` derivados) o `ok: false` con el eje, los
+  folios que harían falta y el ancho máximo; `paperSummary` da el tamaño del dibujo.
+- `splitTiles.ts`: `splitTiles(image, split)` (manual: `computeTiles`; folios: un trozo por folio, ver
+  arriba), `tileThumbnailRect` (el recorte al ras de un trozo manual, la ventana entera de un folio) y
+  `splitGridAspect` (la forma de la rejilla: la de la imagen o la de `cols × rows` folios).
 - `splitPreview.ts`: `splitPreviewLayout(image, config, frame, tileGap)` devuelve la escala, el origen y,
   por trozo, `rect`/`coreRect` en px de pantalla con los trozos unidos y el `offset` al separarse;
-  `tileAtPoint` y `separatedCenter`. Lanza como `computeTiles` si la división no es válida.
+  `tileAtPoint` y `separatedCenter`. Lanza como `computeTiles` si la división no es válida. Con
+  `config.paper` coloca los folios: la escala hace caber los folios *separados* y el hueco al separarlos
+  es `tileGap` más el solape, para que queden exactamente a `tileGap` unos de otros; el layout lleva
+  `paper: true`.
 - `previewZoom.ts` (worklets): `pinchPreview`, `panPreview`, `clampPreviewPan`, `previewContentPoint`,
   `isPreviewZoomed`.
 

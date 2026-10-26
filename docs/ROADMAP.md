@@ -73,8 +73,10 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 - [x] Divisor: tamaño real, lógica. Papel A4/A3/Carta, orientación y ancho final en cm: cada trozo
       sale con proporción de folio, la imagen centrada y el solape en mm. Pura en core con tests,
       compartida con la PWA (`computePaperTiles`, issue #78)
-- [ ] Divisor: tamaño real, pantalla. Selector «Manual | Folios» en el divisor del móvil sobre
-      `computePaperTiles` (adelanta los dos «divisor por tamaño de papel» de la fase 2)
+- [x] Divisor: tamaño real, pantalla. Selector «Manual | Folios» en el divisor del móvil sobre
+      `computePaperTiles`: papel, orientación, ancho en cm, solape en mm, «Mural de X × Y cm · N folios»
+      y aviso si pasa de 10 por eje; la cámara calca el folio (adelanta los dos «divisor por tamaño de
+      papel» de la fase 2; issue #88)
 - [ ] Progreso por trozo: marcar hecho, «4/9»; migración v7 `completed_tiles`. Se une a «Minimapa y
       Siguiente trozo»
 - [x] Minimapa y botón Siguiente trozo en la cámara: indicador del trozo, vuelta a A1 tras el último,
