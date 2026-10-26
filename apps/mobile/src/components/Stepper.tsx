@@ -13,6 +13,8 @@ type StepperProps = {
   value: number;
   min: number;
   max: number;
+  /** How much one press adds or takes away. Default 1. */
+  step?: number;
   onChange: (value: number) => void;
   format?: (value: number) => string;
   decreaseLabel: string;
@@ -28,6 +30,7 @@ export function Stepper({
   value,
   min,
   max,
+  step: stepSize = 1,
   onChange,
   format = String,
   decreaseLabel,
@@ -40,7 +43,7 @@ export function Stepper({
 
   /** One step; false once the value sits on its limit, which ends a held repeat. */
   const step = (delta: number) => (repeat: boolean) => {
-    const { next, hitLimit } = stepValue(latest.current, delta, min, max);
+    const { next, hitLimit } = stepValue(latest.current, delta * stepSize, min, max);
     if (hitLimit) {
       if (!repeat) playHaptic("limitReached");
       return false;
