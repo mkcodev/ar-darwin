@@ -64,6 +64,13 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
     session.onTileChange(id);
     playHaptic("tileChange");
   };
+  // Marking is its own tap: the check on the bar, for the tile being traced. A mark vibrates as a
+  // success, removing it as a plain selection.
+  const { completedTileIds } = session;
+  const toggleDone = (id: string) => {
+    session.onToggleTileDone(id);
+    playHaptic(completedTileIds.includes(id) ? "tileChange" : "tileDone");
+  };
   const hasTiles =
     readyImage !== null && split !== undefined && crop !== null && split.rows * split.cols > 1;
   const tileBar = hasTiles ? (
@@ -72,10 +79,12 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
       cols={split.cols}
       aspect={splitGridAspect({ width: readyImage.width(), height: readyImage.height() }, split)}
       tileId={crop.tileId}
+      completedIds={completedTileIds}
       previousId={previousTileId(split, crop.tileId)}
       nextId={nextTileId(split, crop.tileId)}
       onPrevious={() => goToTile(previousTileId(split, crop.tileId))}
       onNext={() => goToTile(nextTileId(split, crop.tileId))}
+      onToggleDone={() => toggleDone(crop.tileId)}
       onOpenPicker={() => setPickerOpen(true)}
     />
   ) : null;
@@ -86,6 +95,7 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
       image={readyImage}
       split={split}
       currentId={crop.tileId}
+      completedIds={completedTileIds}
       onPick={goToTile}
     />
   ) : null;
