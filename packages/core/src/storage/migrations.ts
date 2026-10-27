@@ -107,6 +107,11 @@ ${seedCategories}
     version: 6,
     sql: "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL);",
   },
+  {
+    // Tiles marked as traced (JSON array of ids like "B2"); NULL = none.
+    version: 7,
+    sql: "ALTER TABLE projects ADD COLUMN completed_tiles TEXT;",
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = MIGRATIONS.length;

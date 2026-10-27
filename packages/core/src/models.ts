@@ -132,6 +132,8 @@ export const ProjectSchema = z.object({
   imageAdjustments: ImageAdjustmentsSchema.optional(),
   split: SplitConfigSchema.optional(),
   currentTileId: z.string().optional(),
+  /** Tiles marked as traced («A1», «B3»), in reading order. Emptied when the grid changes. */
+  completedTileIds: z.array(z.string()),
   status: ProjectStatusSchema,
   /** Photo of the finished drawing. */
   resultPhotoUri: StoredUriSchema.optional(),

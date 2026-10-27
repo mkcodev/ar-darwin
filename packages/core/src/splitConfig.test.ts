@@ -24,6 +24,8 @@ import {
   type SplitDraft,
   sheetCount,
   splitPlan,
+  tileProgress,
+  toggleTileDone,
 } from "./splitConfig";
 
 const IMAGE = { width: 1200, height: 900 };
@@ -487,6 +489,60 @@ describe("cameraCrop", () => {
       rect: { x: 0, y: 0, width: 1200, height: 900 },
       core: { x: 0, y: 0, width: 1200, height: 900 },
       tileId: "A1",
+    });
+  });
+});
+
+describe("toggleTileDone", () => {
+  const grid = { rows: 3, cols: 3 };
+
+  it("marks a tile and unmarks it again", () => {
+    expect(toggleTileDone(grid, [], "B2")).toEqual(["B2"]);
+    expect(toggleTileDone(grid, ["B2"], "B2")).toEqual([]);
+  });
+
+  it("keeps the tiles in reading order, whatever order they were marked in", () => {
+    const marked = ["C1", "A3", "B2"].reduce<string[]>(
+      (done, id) => toggleTileDone(grid, done, id),
+      [],
+    );
+    expect(marked).toEqual(["A3", "B2", "C1"]);
+  });
+
+  it("changes nothing for an id outside the grid", () => {
+    expect(toggleTileDone(grid, ["A1"], "D1")).toEqual(["A1"]);
+    expect(toggleTileDone(grid, ["A1"], "A4")).toEqual(["A1"]);
+    expect(toggleTileDone(grid, ["A1"], "nope")).toEqual(["A1"]);
+  });
+
+  it("drops duplicates and ids the grid no longer has", () => {
+    expect(toggleTileDone({ rows: 2, cols: 2 }, ["A1", "A1", "C3", "B2"], "A2")).toEqual([
+      "A1",
+      "A2",
+      "B2",
+    ]);
+  });
+
+  it("does not change the list it was given", () => {
+    const done = ["B2"];
+    toggleTileDone(grid, done, "A1");
+    expect(done).toEqual(["B2"]);
+  });
+});
+
+describe("tileProgress", () => {
+  it("counts the tiles done out of all of them", () => {
+    expect(tileProgress({ rows: 3, cols: 3 }, [])).toEqual({ done: 0, total: 9 });
+    expect(tileProgress({ rows: 3, cols: 3 }, ["A1", "B2", "C3", "B1"])).toEqual({
+      done: 4,
+      total: 9,
+    });
+  });
+
+  it("ignores duplicates and ids outside the grid", () => {
+    expect(tileProgress({ rows: 1, cols: 2 }, ["A1", "A1", "B1", "A3"])).toEqual({
+      done: 1,
+      total: 2,
     });
   });
 });

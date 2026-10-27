@@ -27,6 +27,7 @@ const ProjectRowSchema = z.object({
   image_adjustments: z.string().nullable(),
   split: z.string().nullable(),
   current_tile_id: z.string().nullable(),
+  completed_tiles: z.string().nullable(),
   status: z.string(),
   result_photo_uri: z.string().nullable(),
   result_transform: z.string().nullable(),
@@ -106,6 +107,22 @@ function parsePinnedPlacement(text: string | null): Placement | undefined {
   return parsed.success ? parsed.data : undefined;
 }
 
+/**
+ * Like parseAdjustments, never throws: corrupt JSON, or anything that is not a list of ids, loads
+ * as no tiles done, so a bad stored value can't keep the project from opening.
+ */
+function parseCompletedTiles(text: string | null): string[] {
+  if (text === null) return [];
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  const parsed = z.array(z.string()).safeParse(value);
+  return parsed.success ? parsed.data : [];
+}
+
 function orUndefined<T>(value: T | null): T | undefined {
   return value === null ? undefined : value;
 }
@@ -122,6 +139,8 @@ export function projectToRow(project: Project): ProjectRow {
     image_adjustments: adjustmentsJson(project.imageAdjustments),
     split: json(project.split),
     current_tile_id: project.currentTileId ?? null,
+    completed_tiles:
+      project.completedTileIds.length === 0 ? null : JSON.stringify(project.completedTileIds),
     status: project.status,
     result_photo_uri: project.resultPhotoUri ?? null,
     result_transform: json(project.resultTransform),
@@ -147,6 +166,7 @@ export function projectRowParams(row: ProjectRow): SqlValue[] {
     row.image_adjustments,
     row.split,
     row.current_tile_id,
+    row.completed_tiles,
     row.status,
     row.result_photo_uri,
     row.result_transform,
@@ -167,7 +187,13 @@ export function projectRowParams(row: ProjectRow): SqlValue[] {
  */
 export type CameraState = Pick<
   Project,
-  "transform" | "opacity" | "imageAdjustments" | "pinnedPlacement" | "status" | "timeSpentMs"
+  | "transform"
+  | "opacity"
+  | "imageAdjustments"
+  | "pinnedPlacement"
+  | "completedTileIds"
+  | "status"
+  | "timeSpentMs"
 > & {
   transformViewport?: Size;
   currentTileId: string | undefined;
@@ -192,6 +218,7 @@ export function cameraStateParams(id: string, state: CameraState, now: Date): Sq
     state.opacity,
     adjustmentsJson(state.imageAdjustments),
     state.currentTileId ?? null,
+    state.completedTileIds.length === 0 ? null : JSON.stringify(state.completedTileIds),
     state.status,
     state.timeSpentMs,
     now.toISOString(),
@@ -217,6 +244,7 @@ export function projectFromRow(row: unknown, categoryIds: readonly string[]): Pr
     imageAdjustments: parseAdjustments(r.image_adjustments),
     split: parseJson(r.split, "split"),
     currentTileId: orUndefined(r.current_tile_id),
+    completedTileIds: parseCompletedTiles(r.completed_tiles),
     status: r.status,
     resultPhotoUri: orUndefined(r.result_photo_uri),
     resultTransform: parseJson(r.result_transform, "result_transform"),

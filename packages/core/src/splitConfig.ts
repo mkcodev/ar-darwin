@@ -256,6 +256,41 @@ export function previousTileId(
   return tileIdAt(config, (index + count - 1) % count);
 }
 
+/** The ids of `completed` that exist in the grid, once each, in reading order. */
+function tilesInGrid(
+  config: Pick<SplitConfig, "rows" | "cols">,
+  completed: readonly string[],
+): string[] {
+  return [...new Set(completed)]
+    .filter((id) => isTileInGrid(config, id))
+    .sort((a, b) => tileIndex(config, a) - tileIndex(config, b));
+}
+
+/**
+ * `completed` with tile `id` marked done, or unmarked if it already was. The result keeps only
+ * tiles of the grid, once each, in reading order. An `id` outside the grid changes nothing.
+ */
+export function toggleTileDone(
+  config: Pick<SplitConfig, "rows" | "cols">,
+  completed: readonly string[],
+  id: string,
+): string[] {
+  const kept = tilesInGrid(config, completed);
+  if (!isTileInGrid(config, id)) return kept;
+  return tilesInGrid(
+    config,
+    kept.includes(id) ? kept.filter((done) => done !== id) : [...kept, id],
+  );
+}
+
+/** How many tiles of the grid are done, out of how many: the «4/9». Ids outside the grid do not count. */
+export function tileProgress(
+  config: Pick<SplitConfig, "rows" | "cols">,
+  completed: readonly string[],
+): { done: number; total: number } {
+  return { done: tilesInGrid(config, completed).length, total: sheetCount(config) };
+}
+
 /** What the camera shows of a split project: one tile of the image, as the image it traces. */
 export type CameraCrop = {
   /** The tile's final crop, in image px (extended edges included). */
