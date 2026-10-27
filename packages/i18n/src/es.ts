@@ -49,6 +49,7 @@ export const es = {
     rotateCcw: "Girar a la izquierda",
     reset: "Restablecer",
     split: "Divisor",
+    check: "Hecho",
     nextTile: "Siguiente trozo",
     library: "Biblioteca",
     settings: "Ajustes",

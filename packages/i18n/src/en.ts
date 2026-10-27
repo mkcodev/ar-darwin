@@ -49,6 +49,7 @@ export const en = {
     rotateCcw: "Rotate left",
     reset: "Reset",
     split: "Splitter",
+    check: "Done",
     nextTile: "Next tile",
     library: "Library",
     settings: "Settings",
