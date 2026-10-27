@@ -81,6 +81,12 @@ export const en = {
     prevTile: "Previous tile",
     prevTileHint: "Goes back to tile {id} with the same zoom and opacity",
     tileCurrent: "Tile {id}, current",
+    tileDone: "Tile done",
+    tileDoneHint: "Marks tile {id} as traced, or removes the mark",
+    tileProgress: "{done}/{total}",
+    tileOfProgress: "Tile {id} of {count}. Done: {done}",
+    tileIsDone: "Tile {id}, done",
+    tileCurrentIsDone: "Tile {id}, current, done",
     tilePicker: {
       title: "Pick a tile",
       handle: "Drag down to close",

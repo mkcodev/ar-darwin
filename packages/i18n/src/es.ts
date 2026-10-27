@@ -81,6 +81,12 @@ export const es = {
     prevTile: "Trozo anterior",
     prevTileHint: "Vuelve al trozo {id} con el mismo zoom y la misma opacidad",
     tileCurrent: "Trozo {id}, actual",
+    tileDone: "Trozo hecho",
+    tileDoneHint: "Marca el trozo {id} como calcado, o quita la marca",
+    tileProgress: "{done}/{total}",
+    tileOfProgress: "Trozo {id} de {count}. Hechos: {done}",
+    tileIsDone: "Trozo {id}, hecho",
+    tileCurrentIsDone: "Trozo {id}, actual, hecho",
     tilePicker: {
       title: "Elegir trozo",
       handle: "Arrastra hacia abajo para cerrar",

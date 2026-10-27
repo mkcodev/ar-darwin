@@ -75,6 +75,7 @@ export const icons = {
     { type: "rect", x: 5, y: 5, width: 14, height: 14, rx: 1.5 },
     path("M12 2v20M2 12h20", true),
   ],
+  check: [path("M5 12.5l4.5 4.5L19 7")],
   nextTile: [
     { type: "rect", x: 3, y: 6, width: 9, height: 12, rx: 1.5 },
     path("M15 12h6M18 9l3 3-3 3"),
