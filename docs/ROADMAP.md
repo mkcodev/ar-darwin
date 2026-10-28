@@ -78,7 +78,7 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
       y aviso si pasa de 10 por eje; la cámara calca el folio (adelanta los dos «divisor por tamaño de
       papel» de la fase 2; issue #88)
 - [x] Progreso por trozo: marcar hecho, «4/9»; migración v7 `completed_tiles`. Se une a «Minimapa y
-      Siguiente trozo» (check en la `TileBar`, insignia en el selector, issue #90)
+      Siguiente trozo» (botón «Hecho» en la `TileBar`, insignia en el selector, issue #90)
 - [x] Minimapa y botón Siguiente trozo en la cámara: indicador del trozo, vuelta a A1 tras el último,
       zoom, opacidad y pin intactos, también con el candado (`TileBar`, `nextTileId`, issue #86)
 - [ ] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja, reducir movimiento, idioma

@@ -193,16 +193,16 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     los borra si cambian la división o el trozo desde el divisor (sin migración), y la cámara encaja el
     trozo nuevo.
   - **Moverse entre trozos (issue #86).** Con más de un trozo, la píldora de abajo lleva encima del
-    slider la `TileBar`: un chip con `TileMinimap` (la rejilla en miniatura, con la forma de la imagen,
-    el trozo actual relleno de acento y los hechos en el tono apagado), el nombre («B2») sobre el
-    progreso («4/9», `typography.label` en `camera.muted`) y un chevron; el check «Trozo hecho»
-    (`IconButton` toggle, issue #90); la flecha «Trozo anterior» (`IconButton`) y «Siguiente», la
-    acción principal (`Button` `tone="camera"` `compact`; texto visible corto «Siguiente», lo que lee
-    TalkBack es «Siguiente trozo»). Van bajo la mano libre, con «Siguiente» en el borde. El chip es lo
-    único que encoge (`flexShrink`): el contador va bajo el nombre para no ensanchar el chip; a
-    TalkBack le dice «Trozo B2 de 9. Hechos: 4». Funcionan con el candado.
-  - **Progreso por trozo (issue #90).** El check marca o desmarca el trozo actual
-    (`ProjectCameraScreen.toggleDone` → `useProjectCameraSession.onToggleTileDone`, que usa
+    slider la `TileBar`, en dos filas (cuatro controles y un chip legible no caben en una fila de un
+    móvil de 360 px). Fila 1: un chip con `TileMinimap` (la rejilla en miniatura, con la forma de la
+    imagen, el trozo actual relleno de acento y los hechos en el tono apagado), el nombre («B2») sobre el
+    progreso («4/9 hechos», `typography.label` en `camera.muted`) y un chevron; y el interruptor
+    «Hecho» (`TileDoneButton`, issue #90). Fila 2: la flecha «Trozo anterior» (`IconButton`) y
+    «Siguiente trozo», la acción principal (`Button` `tone="camera"` `fullWidth`, ocupa lo que queda). Las
+    dos filas se espejan con la mano izquierda, así «Siguiente» queda en el borde. A TalkBack el chip le
+    dice «Trozo B2 de 9. Hechos: 4». Funcionan con el candado.
+  - **Progreso por trozo (issue #90).** «Hecho» marca o desmarca el trozo actual
+    (`TileDoneButton` → `ProjectCameraScreen.toggleDone` → `useProjectCameraSession.onToggleTileDone`, que usa
     `toggleTileDone` de core y guarda en el acto, como el cambio de trozo; vibra con `tileDone` al marcar
     y `tileChange` al quitar). «Siguiente» solo avanza: no marca ni salta los hechos. `tileProgress`
     (core) da el «4/9» contando solo ids que existen en la rejilla. Los ids viven en
