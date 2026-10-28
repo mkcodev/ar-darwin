@@ -1,6 +1,6 @@
 import type { Project } from "@ar-darwin/core";
 import { duration, space, spring, toNativeTextStyle, typography } from "@ar-darwin/ui";
-import { Stack, useRouter } from "expo-router";
+import { Redirect, Stack, useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import Animated, {
@@ -21,6 +21,7 @@ import type { ImportSource } from "../library/importSources";
 import { ProjectActionsSheet, type ProjectActionsStep } from "../library/ProjectActionsSheet";
 import { ProjectCard } from "../library/ProjectCard";
 import { useProjects } from "../library/useProjects";
+import { useAppSettings } from "../settings/AppSettingsProvider";
 import { spikesEnabled } from "../spikes";
 import { springPlan } from "../theme/motion";
 import { playHaptic } from "../theme/playHaptic";
@@ -39,7 +40,7 @@ const GAP = space[3];
  * A plain ScrollView, not a FlatList: Reanimated's layout transitions (the grid closing the gap
  * of a deleted card) only work on a single-column FlatList, and a personal library stays small.
  */
-export default function Library() {
+function LibraryScreen() {
   const router = useRouter();
   const { theme } = useTheme();
   const { reduce } = useReduceMotion();
@@ -213,3 +214,13 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
 });
+
+/**
+ * The home route. While the first-run introduction was never finished it sends the person there
+ * before the Library renders (the splash is still up until the settings are read, so nothing flashes).
+ */
+export default function Index() {
+  const { onboardingDone } = useAppSettings();
+  if (!onboardingDone) return <Redirect href="/onboarding" />;
+  return <LibraryScreen />;
+}

@@ -1,5 +1,6 @@
 import {
   DEFAULT_MAGNET_ENABLED,
+  DEFAULT_ONBOARDING_DONE,
   parseBooleanSetting,
   parseChoiceSetting,
   SETTING_KEYS,
@@ -51,6 +52,10 @@ type AppSettings = {
   setLanguagePreference: (preference: LanguagePreference) => void;
   /** The saved language is not the one this run uses. */
   languageNeedsRestart: boolean;
+  /** The first-run introduction was finished or skipped. */
+  onboardingDone: boolean;
+  /** Saves that the introduction was seen: the Library stops redirecting to it. */
+  finishOnboarding: () => void;
 };
 
 const AppSettingsContext = createContext<AppSettings | null>(null);
@@ -61,6 +66,7 @@ type StoredSettings = {
   hand: Handedness;
   theme: ThemePreference;
   language: LanguagePreference;
+  onboardingDone: boolean;
 };
 
 function logWriteFailed(error: unknown): void {
@@ -82,7 +88,8 @@ function logWriteFailed(error: unknown): void {
  * here, not in the root layout). It is a local SQLite read; if it fails the defaults stay and the
  * app opens anyway.
  *
- * The language is applied once (`applyLocale`): a change made in Settings is only saved, and takes
+ * The onboarding flag is read in the same step, so a fresh install goes to the introduction without
+ * showing the Library first. The language is applied once (`applyLocale`): a change made in Settings is only saved, and takes
  * effect on the next start.
  */
 export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
@@ -97,6 +104,7 @@ export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
   const [languagePreference, setLanguageState] = useState<LanguagePreference>(
     DEFAULT_LANGUAGE_PREFERENCE,
   );
+  const [onboardingDone, setOnboardingDone] = useState(DEFAULT_ONBOARDING_DONE);
   const [ready, setReady] = useState(false);
   const touched = useRef(false);
   const handTouched = useRef(false);
@@ -106,10 +114,11 @@ export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
     (async () => {
       let stored: StoredSettings | null = null;
       try {
-        const [rawHand, rawTheme, rawLanguage] = await Promise.all([
+        const [rawHand, rawTheme, rawLanguage, rawOnboarding] = await Promise.all([
           getSetting(db, SETTING_KEYS.drawingHand),
           getSetting(db, SETTING_KEYS.themePreference),
           getSetting(db, SETTING_KEYS.language),
+          getSetting(db, SETTING_KEYS.onboardingDone),
         ]);
         stored = {
           hand: parseChoiceSetting(rawHand, HANDS, DEFAULT_HANDEDNESS),
@@ -119,6 +128,7 @@ export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
             LANGUAGE_PREFERENCES,
             DEFAULT_LANGUAGE_PREFERENCE,
           ),
+          onboardingDone: parseBooleanSetting(rawOnboarding, DEFAULT_ONBOARDING_DONE),
         };
       } catch (error: unknown) {
         if (__DEV__) console.warn("[settings] read failed", error);
@@ -130,6 +140,10 @@ export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
         setThemeRef.current(stored.theme);
         applyLocale(stored.language);
         setLanguageState(stored.language);
+        setOnboardingDone(stored.onboardingDone);
+      } else {
+        // The read failed: do not trap the person in an introduction that cannot be saved as seen.
+        setOnboardingDone(true);
       }
       setReady(true);
     })();
@@ -183,8 +197,13 @@ export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
         setSetting(db, SETTING_KEYS.language, next).catch(logWriteFailed);
       },
       languageNeedsRestart: localeFor(languagePreference) !== getLocale(),
+      onboardingDone,
+      finishOnboarding: () => {
+        setOnboardingDone(true);
+        setSetting(db, SETTING_KEYS.onboardingDone, serializeBoolean(true)).catch(logWriteFailed);
+      },
     }),
-    [db, magnetEnabled, hand, themePreference, languagePreference],
+    [db, magnetEnabled, hand, themePreference, languagePreference, onboardingDone],
   );
 
   // Nothing mounts before the stored settings are known (the splash covers the wait).
