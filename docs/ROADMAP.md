@@ -87,7 +87,8 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 - [x] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja e idioma Sistema/Español/English (se aplica
       al reabrir la app); el splash espera a leerlos (issue #98)
 - [ ] Ajustes: anulación propia de «reducir movimiento» (hoy sigue al sistema)
-- [ ] Onboarding de 3 pantallas y permiso de cámara explicado (es/en)
+- [x] Onboarding de 3 pantallas (calcar, dividir, cámara con su permiso explicado), es/en; se guarda en
+      `settings` (`onboarding_done`) y se repasa desde Ajustes (issue #100)
 - [ ] Pasada de `impeccable` y `web-design-guidelines` sobre cada pantalla (Prompt 7)
 - [ ] Flujo principal con Maestro (importar, dividir, calcar un trozo)
 

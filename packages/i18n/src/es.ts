@@ -211,10 +211,44 @@ export const es = {
       en: "English",
       restart: "El idioma cambia al volver a abrir la app.",
     },
+    onboarding: {
+      label: "Introducción",
+      action: "Ver la introducción",
+      hint: "Repasa en tres pantallas cómo calcar y dividir un dibujo.",
+    },
     magnet: {
       label: "Imán",
       description:
         "La imagen se engancha a los ejes del lienzo, a los ángulos rectos y a la posición fijada, con una guía y una vibración ligera.",
+    },
+  },
+  onboarding: {
+    progress: "{step}/{total}",
+    progressLabel: "Paso {step} de {total}",
+    skip: "Saltar",
+    skipLabel: "Saltar la introducción",
+    next: "Siguiente",
+    back: "Anterior",
+    start: "Empezar",
+    trace: {
+      title: "Calca sobre papel",
+      body: "Tu imagen se superpone a la cámara. Pon un folio debajo y dibuja encima, trazo a trazo.",
+      illustration: "Una imagen sobre un folio, dibujada con trazos",
+    },
+    split: {
+      title: "Divide en folios",
+      body: "Un dibujo grande se corta en trozos del tamaño de un folio, con solape para que casen. La cámara te lleva trozo a trozo y marcas los hechos.",
+      illustration: "Una rejilla de 3 × 3 trozos con el primero resaltado",
+    },
+    camera: {
+      title: "Permiso de cámara",
+      body: "La cámara sirve para ver tu papel en vivo con la imagen encima. Puedes concederla ahora o cuando abras un proyecto.",
+      ready: "Cámara lista",
+      readyBody: "Ya puedes calcar. Cambiarlo es posible en los ajustes del sistema.",
+      allow: "Permitir cámara",
+      openSettings: "Abrir ajustes del sistema",
+      later: "Ahora no",
+      illustration: "Una cámara",
     },
   },
   projectStatus: {
