@@ -100,7 +100,11 @@ Las tres tienen licencia OFL; los archivos y sus licencias van en `packages/ui/a
 
 ## Forma
 
-- Controles flotantes en píldora sobre la cámara.
+- Controles flotantes sobre la cámara: el raíl de herramientas y la cruz en píldora; el menú de abajo,
+  un **dock de una sola superficie** (`cameraDock`, radio 28): un único contorno de papel y, dentro, zonas
+  que se separan por tono (`camera.well`, un grafito algo más claro) y por espacio, nunca por bordes
+  anidados. Los radios interiores son concéntricos (28 − 8 de relleno = 20). Una sola acción principal en
+  bermellón; el resto, secundario.
 - Hojas inferiores con esquinas de 24 px.
 - Objetivos táctiles de 48 px como mínimo: se usan con un lápiz en la mano.
 - Espaciado en base 4.

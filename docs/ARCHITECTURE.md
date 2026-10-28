@@ -110,13 +110,13 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - Código de producto en `apps/mobile/src/camera/`; el spike (`/dev/camera`) usa los mismos
   componentes con las imágenes de prueba (`CameraSpikeScreen` es solo un envoltorio con los toggles
   de imagen y fps).
-  - `CameraOverlayScreen`: cámara, `OverlayCanvas`, slider de opacidad, `CameraTools`,
+  - `CameraOverlayScreen`: cámara, `OverlayCanvas`, `CameraDock`, `CameraTools`,
     `ImageAdjustSheet`, candado, `LockedToast`, `useKeepAwake`, `usePreventRemove` +
     `gestureEnabled` y avisos de cámara. Huecos `extraControls` (se ocultan con el candado) y
     `overlay`.
-  - **Menú flotante** (issue #72): el slider de opacidad (más los `extraControls`) va en una píldora
-    `FloatingPill` abajo y `CameraTools` en un raíl vertical, otra `FloatingPill`, en el lado de la
-    mano libre bajo el candado. Las dos y la cruz de ajuste fino se retiran 8 px y se desvanecen
+  - **Menú flotante** (issue #72): el dock (`CameraDock`, ver más abajo; lleva también los
+    `extraControls`) abajo y `CameraTools` en un raíl vertical, una `FloatingPill`, en el lado de la
+    mano libre bajo el candado. Los dos y la cruz de ajuste fino se retiran 8 px y se desvanecen
     tras `signature.menuIdleMs` (3 s) sin tocar, en el hilo de UI (`useRetreat`; con «reducir
     movimiento» solo se desvanecen). El candado no se retira nunca.
     - `useMenuIdle(ms, paused)` (`camera/useMenuIdle.ts`) es el temporizador: `idle`, `wake`, `poke` y
@@ -192,24 +192,38 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     imagen entera. La posición y el pin guardados son del trozo en que se hicieron: `UPDATE_PROJECT_SPLIT`
     los borra si cambian la división o el trozo desde el divisor (sin migración), y la cámara encaja el
     trozo nuevo.
-  - **Moverse entre trozos (issue #86).** Con más de un trozo, la píldora de abajo lleva encima del
-    slider la `TileBar`, en dos filas (cuatro controles y un chip legible no caben en una fila de un
-    móvil de 360 px). Fila 1: un chip con `TileMinimap` (la rejilla en miniatura, con la forma de la
-    imagen, el trozo actual relleno de acento y los hechos en el tono apagado), el nombre («B2») sobre el
-    progreso («4/9 hechos», `typography.label` en `camera.muted`) y un chevron; y el interruptor
-    «Hecho» (`TileDoneButton`, issue #90). Fila 2: la flecha «Trozo anterior» (`IconButton`) y
-    «Siguiente trozo», la acción principal (`Button` `tone="camera"` `fullWidth`, ocupa lo que queda). Las
-    dos filas se espejan con la mano izquierda, así «Siguiente» queda en el borde. A TalkBack el chip le
-    dice «Trozo B2 de 9. Hechos: 4». Funcionan con el candado.
-  - **Progreso por trozo (issue #90).** «Hecho» marca o desmarca el trozo actual
-    (`TileDoneButton` → `ProjectCameraScreen.toggleDone` → `useProjectCameraSession.onToggleTileDone`, que usa
-    `toggleTileDone` de core y guarda en el acto, como el cambio de trozo; vibra con `tileDone` al marcar
-    y `tileChange` al quitar). «Siguiente» solo avanza: no marca ni salta los hechos. `tileProgress`
-    (core) da el «4/9» contando solo ids que existen en la rejilla. Los ids viven en
-    `Project.completedTileIds` (columna `completed_tiles`, v7); `UPDATE_PROJECT_SPLIT` los borra si cambian
-    filas, columnas, modo, papel, orientación o ancho, y los conserva si solo cambian el solape o el tinte.
-    Fuera de alcance: contador en la tarjeta de la biblioteca, marcas en la vista previa del divisor y
-    pasar el proyecto a `done` al completar todos.
+  - **El dock de la cámara (issues #86, #90 y #94).** El menú de abajo es `CameraDock`: **una sola
+    superficie** (`cameraDock`, radio 28, filo de papel `pillEdge` como único contorno) cuyas zonas se
+    separan por tono (`camera.well`, sin bordes anidados). Mide ~122 dp en un móvil de 360 px (margen
+    `cameraDock.sideMargin` a los lados y `insets.bottom + cameraDock.bottomGap` debajo; `CameraOverlayScreen`
+    mide su alto con `onLayout` para la cruz de ajuste fino). Fila 1: `DockStatus` (minimapa con los hechos
+    en papel sólido y el actual en acento, nombre «B2» sobre «4/9», chevron; tocarlo abre el `TilePicker`;
+    a TalkBack le dice «Trozo B2 de 9. Hechos: 4» y ofrece `increment`/`decrement` para pasar de trozo) y
+    `DockOpacity` (icono, `Slider` con `tone="dock"` y el valor en un ancho fijo). Fila 2: «Anterior»
+    (`DockIconButton`; en A1 da la vuelta al último), el deshacer `↩` (solo con el trozo hecho) y la acción
+    principal (`DockPrimaryButton`), la única en bermellón. Sin trozos solo hay la fila 1. Una espina de
+    segmentos (`DockProgress`) recorre el borde superior: un segmento por trozo hasta
+    `MAX_PROGRESS_SEGMENTS` (16), una barra continua por encima; hecho = papel, el actual más alto y en
+    acento mientras está pendiente.
+  - **Qué hace la acción principal.** Lo decide `dockModel` (core): «Marcar hecho» (`pending`: marca el
+    trozo), «Siguiente trozo» (`done`: lleva a `nextPendingId`, el primer trozo PENDIENTE después del actual
+    en orden de lectura, dando la vuelta, así que puede ser uno anterior) y «Completado» (`complete`: solo
+    con todos hechos; tocarlo abre el selector). Al cambiar de estado el contenido se intercambia en el
+    sitio (el viejo sube y se funde, el nuevo sube a su sitio y su icono se dibuja) sin mover el botón.
+    Con la mano izquierda las dos filas se espejan: la acción principal y la opacidad quedan del lado del
+    pulgar. Sigue usable con el candado y se retira con el menú (`useRetreat`).
+  - **Progreso por trozo.** Marcar o desmarcar pasa por `ProjectCameraScreen.toggleDone` →
+    `useProjectCameraSession.onToggleTileDone` (`toggleTileDone` de core; se guarda en el acto, como el
+    cambio de trozo; vibra con `tileDone` al marcar y `tileChange` al quitar). `tileProgress` (core) da el
+    «4/9» contando solo ids que existen en la rejilla. Los ids viven en `Project.completedTileIds` (columna
+    `completed_tiles`, v7); `UPDATE_PROJECT_SPLIT` los borra si cambian filas, columnas, modo, papel,
+    orientación o ancho, y los conserva si solo cambian el solape o el tinte. Fuera de alcance: contador en
+    la tarjeta de la biblioteca, marcas en la vista previa del divisor y pasar el proyecto a `done`.
+  - **Celebración.** Al marcar el último trozo pendiente (`justCompleted`, core; no al abrir un proyecto ya
+    completo) la espina hace una onda escalonada (`stagger`), un anillo (`DockCelebration`, un `View` con
+    borde que escala y se funde, 600 ms) sale del botón y, 140 ms tras el háptico de éxito, suena un
+    impacto fuerte (`tilesComplete`). Con «reducir movimiento» solo quedan los hápticos. Todo con
+    Reanimated en el hilo de UI; el estado de React solo cambia al pulsar.
   - **Elegir trozo (`TilePicker`).** Tocar el chip abre un `BottomSheet` (`dragFrom="handle"`: solo se
     cierra arrastrando el asa o el título, así el scroll de la rejilla no lo cierra) con todos los
     trozos: un solo `Canvas` Skia dibuja el pedazo de foto de cada celda (recorte al ras de
@@ -283,7 +297,7 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     - Interruptor en Ajustes (`AppSettingsProvider`, activo por defecto), tabla `settings` (v6). La
       lectura no retrasa la cámara; un cambio de la persona antes de que acabe la lectura gana.
   - `NudgePad` (issue #68): cruz de 4 flechas y reset, en la esquina del lado de la mano que dibuja
-    (opuesto al raíl de herramientas), justo encima de la píldora de abajo (altura medida con
+    (opuesto al raíl de herramientas), justo encima del dock de abajo (altura medida con
     `onLayout`). Se retira con el menú (`retreated`; `useRetreat` va en una capa propia, porque el
     fundido de montaje es una animación de entrada y no puede compartir vista con una opacidad
     animada). Se abre con el botón «Ajuste fino»
