@@ -210,10 +210,44 @@ export const en = {
       en: "English",
       restart: "The language changes when you reopen the app.",
     },
+    onboarding: {
+      label: "Introduction",
+      action: "See the introduction",
+      hint: "Go through how to trace and split a drawing again, in three screens.",
+    },
     magnet: {
       label: "Magnet",
       description:
         "The image snaps to the canvas axes, to right angles and to the pinned position, with a guide and a light vibration.",
+    },
+  },
+  onboarding: {
+    progress: "{step}/{total}",
+    progressLabel: "Step {step} of {total}",
+    skip: "Skip",
+    skipLabel: "Skip the introduction",
+    next: "Next",
+    back: "Back",
+    start: "Get started",
+    trace: {
+      title: "Trace on paper",
+      body: "Your image overlays the camera. Put a sheet underneath and draw on top, stroke by stroke.",
+      illustration: "An image over a sheet of paper, drawn in strokes",
+    },
+    split: {
+      title: "Split into sheets",
+      body: "A big drawing is cut into sheet-sized tiles, with overlap so they line up. The camera takes you tile by tile and you mark the ones you finish.",
+      illustration: "A 3 × 3 grid of tiles with the first one highlighted",
+    },
+    camera: {
+      title: "Camera permission",
+      body: "The camera shows your paper live with the image on top. You can allow it now or when you open a project.",
+      ready: "Camera ready",
+      readyBody: "You can start tracing. You can change this in the system settings.",
+      allow: "Allow camera",
+      openSettings: "Open system settings",
+      later: "Not now",
+      illustration: "A camera",
     },
   },
   projectStatus: {
