@@ -429,7 +429,7 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
 - **Manual | Folios (issue #88).** Un `SegmentedControl` arriba de los controles elige cómo se corta.
   *Manual*: filas, columnas y bordes, como siempre. *Folios*: papel (A4, A3, Carta), orientación,
   ancho final (`Stepper` en cm: 1 cm por pulsación y, si se mantiene, 1 cm los diez primeros pasos,
-  luego 5 y luego 10 por paso, `holdStepFactor` en core; con los chips 50, 80, 100 y 150 cm, `WidthChips`)
+  luego 5 y luego 10 por paso, `holdStepFactor` en core; con los chips 50, 80 y 100 cm, `WidthChips`; otro ancho se ajusta con el `Stepper`)
   y solape (`Stepper` en mm, de 0 a la mitad del lado corto del folio), más el interruptor del tinte; las filas y columnas salen de `computePaperTiles`.
   El borrador guarda los dos modos a la vez (cambiar de uno a otro y volver no pierde nada). El
   resumen dice «Mural de X × Y cm · N folios» (el tamaño del dibujo, no el de la rejilla) y, debajo, el

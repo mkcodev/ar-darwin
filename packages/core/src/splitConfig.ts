@@ -10,7 +10,7 @@ export const DEFAULT_OVERLAP_PERCENT = 8;
 export const MAX_OVERLAP_PERCENT = 50;
 
 /** Quick final widths of a split by paper size, in cm. */
-export const PAPER_WIDTH_PRESETS_CM = [50, 80, 100, 150] as const;
+export const PAPER_WIDTH_PRESETS_CM = [50, 80, 100] as const;
 
 /** Quick grids of the splitter, as rows × cols. */
 export const SPLIT_PRESETS = [

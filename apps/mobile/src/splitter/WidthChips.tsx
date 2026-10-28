@@ -11,7 +11,7 @@ type WidthChipsProps = {
   onSelect: (widthCm: number) => void;
 };
 
-/** The usual final widths of a mural in one tap: 50, 80, 100 and 150 cm. */
+/** The usual final widths of a mural in one tap: 50, 80 and 100 cm; any other width is typed with the stepper. */
 export function WidthChips({ widthCm, onSelect }: WidthChipsProps) {
   return (
     <View
