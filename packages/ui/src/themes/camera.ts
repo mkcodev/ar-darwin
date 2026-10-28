@@ -12,6 +12,8 @@ export const cameraColors: ColorTokens["camera"] = {
   pillSolid: graphite[880],
   // Paper edge at 46 %: keeps 3:1 against a dark desk where the graphite fill alone does not.
   pillEdge: "rgba(241, 236, 225, 0.46)",
+  well: graphite[850],
+  wellPressed: graphite[700],
   text: paper.text,
   muted: graphite[400],
   accent: vermilion[500],

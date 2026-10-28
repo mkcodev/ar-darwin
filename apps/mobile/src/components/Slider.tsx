@@ -1,6 +1,6 @@
 import { clamp, fractionOfRange, snapToStep, valueFromTrack } from "@ar-darwin/core";
 import { radius, slider, space, toNativeTextStyle, touchTarget, typography } from "@ar-darwin/ui";
-import { type ComponentProps, useState } from "react";
+import { type ComponentProps, type ReactNode, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -29,7 +29,12 @@ type SliderProps = {
   onActiveChange?: (active: boolean) => void;
   /** Hides the visible label (it stays as the accessible name). */
   compact?: boolean;
-  tone?: "theme" | "camera";
+  /** `dock`: on a `camera.well` zone of the camera dock (its thumb ring and track follow the well). */
+  tone?: "theme" | "camera" | "dock";
+  /** Drawn before the track, on its row (an icon). Decorative: the slider keeps its own name. */
+  leading?: ReactNode;
+  /** Width of the readout, so values of different length (7 %, 100 %) line up. */
+  valueWidth?: number;
 };
 
 /**
@@ -53,6 +58,8 @@ export function Slider({
   onActiveChange,
   compact,
   tone = "theme",
+  leading,
+  valueWidth = space[12],
 }: SliderProps) {
   const { theme } = useTheme();
   const c = theme.color;
@@ -60,23 +67,32 @@ export function Slider({
   const [now, setNow] = useState(() => value.value);
 
   const look =
-    tone === "camera"
+    tone === "dock"
       ? {
-          track: c.camera.pillSolid,
+          track: c.camera.pillEdge,
           edge: c.camera.pillEdge,
           fill: c.camera.text,
-          ring: c.camera.pillSolid,
+          ring: c.camera.well,
           text: c.camera.text,
           label: c.camera.muted,
         }
-      : {
-          track: c.border.strong,
-          edge: c.border.strong,
-          fill: c.text.primary,
-          ring: c.bg.canvas,
-          text: c.text.primary,
-          label: c.text.muted,
-        };
+      : tone === "camera"
+        ? {
+            track: c.camera.pillSolid,
+            edge: c.camera.pillEdge,
+            fill: c.camera.text,
+            ring: c.camera.pillSolid,
+            text: c.camera.text,
+            label: c.camera.muted,
+          }
+        : {
+            track: c.border.strong,
+            edge: c.border.strong,
+            fill: c.text.primary,
+            ring: c.bg.canvas,
+            text: c.text.primary,
+            label: c.text.muted,
+          };
 
   const settle = (v: number) => {
     setNow(v);
@@ -146,6 +162,7 @@ export function Slider({
     >
       {!compact && <Text style={[styles.label, { color: look.label }]}>{label}</Text>}
       <View style={styles.row}>
+        {leading}
         <GestureDetector gesture={Gesture.Race(drag, jump)}>
           <View
             style={styles.touchArea}
@@ -170,7 +187,7 @@ export function Slider({
           accessible={false}
           defaultValue={format(now)}
           animatedProps={textProps}
-          style={[styles.value, { color: look.text }]}
+          style={[styles.value, { color: look.text, minWidth: valueWidth }]}
         />
       </View>
     </View>
@@ -205,7 +222,6 @@ const styles = StyleSheet.create({
   },
   value: {
     ...toNativeTextStyle(typography.value),
-    minWidth: space[12],
     padding: 0,
     textAlign: "right",
   },

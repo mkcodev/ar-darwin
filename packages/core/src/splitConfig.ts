@@ -256,6 +256,26 @@ export function previousTileId(
   return tileIdAt(config, (index + count - 1) % count);
 }
 
+/**
+ * The first tile not marked as done after the picked one, in reading order, wrapping from the last
+ * back to A1 (so it can lie before the picked tile). The picked tile itself is never returned.
+ * `undefined` when every other tile is done, which includes a 1×1 grid.
+ */
+export function nextPendingTileId(
+  config: Pick<SplitConfig, "rows" | "cols">,
+  completed: readonly string[],
+  currentTileId: string | undefined,
+): string | undefined {
+  const done = new Set(completed);
+  const count = sheetCount(config);
+  const current = tileIndex(config, pickedTileId(config, currentTileId));
+  for (let step = 1; step < count; step++) {
+    const id = tileIdAt(config, (current + step) % count);
+    if (!done.has(id)) return id;
+  }
+  return undefined;
+}
+
 /** The ids of `completed` that exist in the grid, once each, in reading order. */
 function tilesInGrid(
   config: Pick<SplitConfig, "rows" | "cols">,

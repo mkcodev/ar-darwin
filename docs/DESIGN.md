@@ -100,7 +100,11 @@ Las tres tienen licencia OFL; los archivos y sus licencias van en `packages/ui/a
 
 ## Forma
 
-- Controles flotantes en píldora sobre la cámara.
+- Controles flotantes sobre la cámara: el raíl de herramientas y la cruz en píldora; el menú de abajo,
+  un **dock de una sola superficie** (`cameraDock`, radio 28): un único contorno de papel y, dentro, zonas
+  que se separan por tono (`camera.well`, un grafito algo más claro) y por espacio, nunca por bordes
+  anidados. Los radios interiores son concéntricos (28 − 8 de relleno = 20). Una sola acción principal en
+  bermellón; el resto, secundario.
 - Hojas inferiores con esquinas de 24 px.
 - Objetivos táctiles de 48 px como mínimo: se usan con un lápiz en la mano.
 - Espaciado en base 4.
@@ -176,7 +180,7 @@ Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:
 
 ## Iconos
 
-Set propio en `packages/ui/src/icons.ts` (35 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
+Set propio en `packages/ui/src/icons.ts` (36 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
 
 Todo respeta la opción del sistema de reducir movimiento (sustituir por fundidos cortos o nada).
 

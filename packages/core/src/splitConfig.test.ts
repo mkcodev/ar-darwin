@@ -13,6 +13,7 @@ import {
   hasCuts,
   isTileInGrid,
   MAX_OVERLAP_PERCENT,
+  nextPendingTileId,
   nextTileId,
   overlapPercent,
   overlapPxForPercent,
@@ -544,5 +545,33 @@ describe("tileProgress", () => {
       done: 1,
       total: 2,
     });
+  });
+});
+
+describe("nextPendingTileId", () => {
+  const grid = { rows: 2, cols: 3 };
+
+  it("is the next tile in reading order when none is done", () => {
+    expect(nextPendingTileId(grid, [], "A1")).toBe("A2");
+    expect(nextPendingTileId(grid, [], "A3")).toBe("B1");
+  });
+
+  it("skips the tiles done", () => {
+    expect(nextPendingTileId(grid, ["A2", "A3"], "A1")).toBe("B1");
+  });
+
+  it("wraps to a pending tile before the picked one", () => {
+    expect(nextPendingTileId(grid, ["A2", "A3", "B1", "B2", "B3"], "B3")).toBe("A1");
+    expect(nextPendingTileId(grid, ["A1", "B3"], "B3")).toBe("A2");
+  });
+
+  it("is undefined when no other tile is pending", () => {
+    expect(nextPendingTileId(grid, ["A1", "A2", "A3", "B1", "B2"], "B3")).toBeUndefined();
+    expect(nextPendingTileId({ rows: 1, cols: 1 }, [], "A1")).toBeUndefined();
+  });
+
+  it("starts from A1 when no tile is picked or the picked one left the grid", () => {
+    expect(nextPendingTileId(grid, [], undefined)).toBe("A2");
+    expect(nextPendingTileId(grid, ["A2"], "Z9")).toBe("A3");
   });
 });

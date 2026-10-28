@@ -41,6 +41,10 @@ export type ColorTokens = {
     pill: string;
     pillSolid: string;
     pillEdge: string;
+    /** A zone of the dock inside its surface: a slightly lighter graphite, with no outline. */
+    well: string;
+    /** `well` while it is pressed. */
+    wellPressed: string;
     text: string;
     muted: string;
     accent: string;

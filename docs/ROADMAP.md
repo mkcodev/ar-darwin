@@ -78,9 +78,12 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
       y aviso si pasa de 10 por eje; la cámara calca el folio (adelanta los dos «divisor por tamaño de
       papel» de la fase 2; issue #88)
 - [x] Progreso por trozo: marcar hecho, «4/9»; migración v7 `completed_tiles`. Se une a «Minimapa y
-      Siguiente trozo» (botón «Hecho» en la `TileBar`, insignia en el selector, issue #90)
+      Siguiente trozo» (issue #90)
 - [x] Minimapa y botón Siguiente trozo en la cámara: indicador del trozo, vuelta a A1 tras el último,
-      zoom, opacidad y pin intactos, también con el candado (`TileBar`, `nextTileId`, issue #86)
+      zoom, opacidad y pin intactos, también con el candado (`nextTileId`, issue #86)
+- [x] Dock de la cámara: una sola superficie con estado del trozo, progreso segmentado, opacidad y una acción
+      principal que cambia («Marcar hecho» → «Siguiente trozo» al siguiente PENDIENTE → «Completado»), con
+      celebración breve al terminar; sustituye a `TileBar` (issue #94)
 - [ ] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja, reducir movimiento, idioma
 - [ ] Onboarding de 3 pantallas y permiso de cámara explicado (es/en)
 - [ ] Pasada de `impeccable` y `web-design-guidelines` sobre cada pantalla (Prompt 7)

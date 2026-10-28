@@ -23,7 +23,7 @@ import { themes } from "./index";
 import type { ColorTokens } from "./types";
 
 type Check = {
-  fg: (c: ColorTokens) => string;
+  fg: (c: ColorTokens) => string | Rgba;
   bg: (c: ColorTokens) => string | Rgba;
   min: number;
   what: string;
@@ -71,6 +71,43 @@ const UI_CHECKS: Check[] = [
     what: "camera.onAccent on camera.accentPressed",
     fg: (c) => c.camera.onAccent,
     bg: (c) => c.camera.accentPressed,
+    min: text,
+  },
+  // The camera dock tells its zones apart by tone: what is drawn on a `well` must still read.
+  {
+    what: "camera.text on camera.well",
+    fg: (c) => c.camera.text,
+    bg: (c) => c.camera.well,
+    min: text,
+  },
+  {
+    what: "camera.muted on camera.well",
+    fg: (c) => c.camera.muted,
+    bg: (c) => c.camera.well,
+    min: text,
+  },
+  {
+    what: "camera.accent on camera.well",
+    fg: (c) => c.camera.accent,
+    bg: (c) => c.camera.well,
+    min: nonText,
+  },
+  {
+    what: "camera.text on camera.wellPressed",
+    fg: (c) => c.camera.text,
+    bg: (c) => c.camera.wellPressed,
+    min: text,
+  },
+  {
+    what: "camera.pillEdge (pending segment) on camera.well",
+    fg: (c) => blendOver(c.camera.pillEdge, c.camera.well),
+    bg: (c) => c.camera.well,
+    min: nonText,
+  },
+  {
+    what: "camera.onAccent on camera.accent over the dock",
+    fg: (c) => c.camera.onAccent,
+    bg: (c) => c.camera.accent,
     min: text,
   },
   {
