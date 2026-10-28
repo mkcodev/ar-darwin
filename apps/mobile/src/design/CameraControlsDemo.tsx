@@ -7,10 +7,8 @@ import { FloatingPill } from "../components/FloatingPill";
 import { IconButton } from "../components/IconButton";
 import { LockButton } from "../components/LockButton";
 import { Slider } from "../components/Slider";
-import { percentFormat } from "../format";
+import { usePercentFormat } from "../format";
 import { t } from "../i18n";
-
-const opacityText = percentFormat(1);
 
 type CameraControlsDemoProps = { opacity: SharedValue<number> };
 
@@ -19,6 +17,7 @@ type CameraControlsDemoProps = { opacity: SharedValue<number> };
  * free hand's side that retreats on demand, and the lock (hold 1 s).
  */
 export function CameraControlsDemo({ opacity }: CameraControlsDemoProps) {
+  const opacityText = usePercentFormat(1);
   const [retreated, setRetreated] = useState(false);
   const [magnet, setMagnet] = useState(true);
   const [flash, setFlash] = useState(false);
