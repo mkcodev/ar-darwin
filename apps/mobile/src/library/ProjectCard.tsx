@@ -1,4 +1,4 @@
-import { type Project, projectThumbPath } from "@ar-darwin/core";
+import { libraryTileProgress, type Project, projectThumbPath } from "@ar-darwin/core";
 import {
   hairline,
   opacity,
@@ -13,6 +13,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { t } from "../i18n";
 import { storedFileUri } from "../storage/files";
 import { useTheme } from "../theme/ThemeProvider";
+import { CardProgress } from "./CardProgress";
 
 /** Portrait frame, like a sheet of paper: most traced images are portrait. */
 const THUMB_ASPECT = 3 / 4;
@@ -35,13 +36,20 @@ export function ProjectCard({ project, onOpen, onActions, onDelete }: ProjectCar
   const { theme } = useTheme();
   const c = theme.color;
   const statusText = t(`projectStatus.${project.status}`);
+  const progress = libraryTileProgress(project);
+  const lineText = progress
+    ? t("library.cardStatusProgress", { status: statusText, ...progress })
+    : statusText;
+  const label = progress
+    ? t("library.projectLabelProgress", { name: project.name, status: statusText, ...progress })
+    : t("library.projectLabel", { name: project.name, status: statusText });
 
   return (
     <Pressable
       onPress={() => onOpen(project)}
       onLongPress={() => onActions(project)}
       accessibilityRole="button"
-      accessibilityLabel={t("library.projectLabel", { name: project.name, status: statusText })}
+      accessibilityLabel={label}
       accessibilityHint={t("library.projectHint")}
       accessibilityActions={[
         { name: "activate" },
@@ -66,12 +74,13 @@ export function ProjectCard({ project, onOpen, onActions, onDelete }: ProjectCar
           accessible={false}
         />
       </View>
+      {progress && <CardProgress done={progress.done} total={progress.total} />}
       <View style={styles.text}>
         <Text style={[name, { color: c.text.primary }]} numberOfLines={1}>
           {project.name}
         </Text>
         <Text style={[status, { color: c.text.muted }]} numberOfLines={1}>
-          {statusText}
+          {lineText}
         </Text>
       </View>
     </Pressable>

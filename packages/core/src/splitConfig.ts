@@ -311,6 +311,18 @@ export function tileProgress(
   return { done: tilesInGrid(config, completed).length, total: sheetCount(config) };
 }
 
+/**
+ * The progress a library card shows: `null` for a project that was never split and for a 1×1 split
+ * (one tile is the whole image, not something divided), else the «4/9».
+ */
+export function libraryTileProgress(project: {
+  split?: Pick<SplitConfig, "rows" | "cols">;
+  completedTileIds: readonly string[];
+}): { done: number; total: number } | null {
+  if (!project.split || sheetCount(project.split) <= 1) return null;
+  return tileProgress(project.split, project.completedTileIds);
+}
+
 /** What the camera shows of a split project: one tile of the image, as the image it traces. */
 export type CameraCrop = {
   /** The tile's final crop, in image px (extended edges included). */
