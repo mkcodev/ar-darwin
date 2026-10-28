@@ -4,8 +4,11 @@ import type { es, MessageKey } from "./es";
 import {
   createTranslator,
   createTranslatorFrom,
+  DEFAULT_LANGUAGE_PREFERENCE,
   FALLBACK_LOCALE,
+  LANGUAGE_PREFERENCES,
   LOCALES,
+  resolveLanguagePreference,
   resolveLocale,
 } from "./translator";
 import type { KeyOf, Params, ParamsOf, Shape } from "./types";
@@ -76,6 +79,24 @@ describe("resolveLocale", () => {
   it("falls back to English", () => {
     expect(FALLBACK_LOCALE).toBe("en");
     expect(LOCALES).toEqual(["es", "en"]);
+  });
+});
+
+describe("resolveLanguagePreference", () => {
+  it("follows the system languages for «system»", () => {
+    expect(resolveLanguagePreference("system", ["es-MX", "en-US"])).toBe("es");
+    expect(resolveLanguagePreference("system", ["fr-FR"])).toBe("en");
+    expect(resolveLanguagePreference("system", [])).toBe("en");
+  });
+
+  it("ignores the system languages for a chosen one", () => {
+    expect(resolveLanguagePreference("en", ["es-ES"])).toBe("en");
+    expect(resolveLanguagePreference("es", ["en-US"])).toBe("es");
+  });
+
+  it("offers the system plus every language, system by default", () => {
+    expect(LANGUAGE_PREFERENCES).toEqual(["system", ...LOCALES]);
+    expect(DEFAULT_LANGUAGE_PREFERENCE).toBe("system");
   });
 });
 
