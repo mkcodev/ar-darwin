@@ -3,6 +3,7 @@ import { classifyCameraIssue, isIgnorableCameraError } from "@ar-darwin/core";
 import {
   cameraBackdropColor,
   cameraColors,
+  cameraDock,
   opacity,
   signature,
   space,
@@ -18,13 +19,11 @@ import { AppState, StyleSheet, Text, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Camera, useCameraDevice } from "react-native-vision-camera";
-import { FloatingPill } from "../components/FloatingPill";
 import { LockButton } from "../components/LockButton";
-import { Slider } from "../components/Slider";
-import { percentFormat } from "../format";
 import { t } from "../i18n";
 import { useAppSettings } from "../settings/AppSettingsProvider";
 import { useHandedness } from "../theme/HandednessProvider";
+import { CameraDock, type DockTiles } from "./CameraDock";
 import { CameraIssueNotice } from "./CameraIssueNotice";
 import { CameraPermissionGate } from "./CameraPermissionGate";
 import { CameraTools } from "./CameraTools";
@@ -33,8 +32,6 @@ import { LockedToast } from "./LockedToast";
 import { OverlayCanvas, type OverlayCanvasHandle } from "./OverlayCanvas";
 import { useMenuIdle } from "./useMenuIdle";
 import type { FlipAxis, Flips, OverlayPlacement } from "./useOverlayGestures";
-
-const opacityText = percentFormat(1);
 
 type CameraOverlayScreenProps = {
   /** The image to trace, decoded; `null` while it loads. */
@@ -59,8 +56,8 @@ type CameraOverlayScreenProps = {
   onPinChange?: (placement: OverlayPlacement | null) => void;
   /** A sheet of the screen is open (the tile picker): the menu stays shown. */
   menuPaused?: boolean;
-  /** The tile bar of a split project: above the slider, and usable while locked. */
-  tileBar?: ReactNode;
+  /** A split project's tiles: the dock adds its status, progress and main action; usable while locked. */
+  tiles?: DockTiles | null;
   /** Extra controls under the slider; hidden (keeping their space) while locked. */
   extraControls?: ReactNode;
   /** Drawn over everything, also while locked (e.g. the spike's fps meter). */
@@ -69,12 +66,12 @@ type CameraOverlayScreenProps = {
 
 /**
  * The camera with an image over it, shared by the project camera and the spike (`/dev/camera`):
- * camera preview, overlay (`OverlayCanvas`), opacity slider, tools (`CameraTools`: mirror, torch,
- * image adjustments in `ImageAdjustSheet`), touch lock, keep-awake and the camera's error notices.
- * A split project adds its tile bar (`TileBar`) in the bottom pill; changing the tile changes
- * `crop` and the image keeps its placement (`OverlayCanvas`).
- * The slider and the tools are floating pills that retreat after `signature.menuIdleMs` without
- * touches (`useMenuIdle`), and so does the fine-adjust pad; the lock stays where it is.
+ * camera preview, overlay (`OverlayCanvas`), the bottom dock (`CameraDock`: opacity, and for a split
+ * project the tile status, progress and main action), tools (`CameraTools`: mirror, torch, image
+ * adjustments in `ImageAdjustSheet`), touch lock, keep-awake and the camera's error notices.
+ * Changing the tile changes `crop` and the image keeps its placement (`OverlayCanvas`).
+ * The dock and the tools retreat after `signature.menuIdleMs` without touches (`useMenuIdle`), and
+ * so does the fine-adjust pad; the lock stays where it is.
  * The torch is vision-camera's `torchMode`, only passed when the device has one (setting it on a
  * device without a torch throws into `onError`) and only once it was turned on: any value, even
  * `"off"`, makes vision-camera call `setTorchMode` as soon as the camera mounts, and CameraX
@@ -100,7 +97,7 @@ export function CameraOverlayScreen({
   initialPin,
   onPinChange,
   menuPaused = false,
-  tileBar,
+  tiles,
   extraControls,
   overlay,
 }: CameraOverlayScreenProps) {
@@ -252,7 +249,7 @@ export function CameraOverlayScreen({
                 adjustments={adjustments}
                 isLocked={isLocked}
                 nudgeOpen={nudgeOpen}
-                nudgeBottom={space[10] + controlsHeight + space[4]}
+                nudgeBottom={insets.bottom + cameraDock.bottomGap + controlsHeight + space[4]}
                 onNudgeBlocked={() => showToast(t("camera.unlockToNudge"))}
                 initialPin={initialPin}
                 onPinChange={onPinChange}
@@ -290,43 +287,26 @@ export function CameraOverlayScreen({
                 onSwapSides={() => setDrawingHand(hand === "right" ? "left" : "right")}
               />
               <View
-                style={styles.controls}
+                style={[
+                  styles.controls,
+                  {
+                    left: insets.left + cameraDock.sideMargin,
+                    right: insets.right + cameraDock.sideMargin,
+                    bottom: insets.bottom + cameraDock.bottomGap,
+                  },
+                ]}
                 pointerEvents="box-none"
                 onLayout={(e) => setControlsHeight(e.nativeEvent.layout.height)}
               >
-                <FloatingPill
+                <CameraDock
                   retreated={menuIdle}
-                  towards="down"
-                  direction="column"
-                  label={t("camera.menu.top")}
-                  style={styles.bar}
-                >
-                  {tileBar}
-                  <View style={styles.sliderSlot}>
-                    <Slider
-                      label={t("camera.opacity")}
-                      value={imageOpacity}
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      format={opacityText}
-                      compact
-                      tone="camera"
-                      onChangeEnd={onOpacitySettle}
-                      onActiveChange={setSliderActive}
-                    />
-                  </View>
-                  {extraControls && (
-                    <View
-                      style={[styles.extraRow, isLocked && styles.hidden]}
-                      pointerEvents={isLocked ? "none" : "box-none"}
-                      accessibilityElementsHidden={isLocked}
-                      importantForAccessibility={isLocked ? "no-hide-descendants" : "auto"}
-                    >
-                      {extraControls}
-                    </View>
-                  )}
-                </FloatingPill>
+                  opacity={imageOpacity}
+                  onOpacitySettle={onOpacitySettle}
+                  onSliderActiveChange={setSliderActive}
+                  tiles={tiles}
+                  isLocked={isLocked}
+                  extraControls={extraControls}
+                />
               </View>
             </>
           )
@@ -358,14 +338,5 @@ const styles = StyleSheet.create({
     fontSize: typography.body.size,
     lineHeight: typography.body.lineHeight,
   },
-  controls: {
-    position: "absolute",
-    left: space[5],
-    right: space[5],
-    bottom: space[10],
-  },
-  bar: { alignSelf: "stretch" },
-  sliderSlot: { alignSelf: "stretch", paddingHorizontal: space[3] },
-  extraRow: { flexDirection: "row", justifyContent: "center", gap: space[3] },
-  hidden: { opacity: 0 },
+  controls: { position: "absolute" },
 });

@@ -23,7 +23,7 @@ import { themes } from "./index";
 import type { ColorTokens } from "./types";
 
 type Check = {
-  fg: (c: ColorTokens) => string;
+  fg: (c: ColorTokens) => string | Rgba;
   bg: (c: ColorTokens) => string | Rgba;
   min: number;
   what: string;

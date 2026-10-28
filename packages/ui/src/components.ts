@@ -53,18 +53,23 @@ export const cameraDock = {
   bottomGap: 12,
   radius: 28,
   padding: 8,
+  /** Space between the rows. */
   gap: 6,
+  /** Concentric with `radius`: the outer radius less the padding. */
   innerRadius: 20,
   edgeWidth: 1,
-  /** Height of the status and opacity zones. */
-  zoneHeight: 44,
-  /** Height of the main action row. */
-  actionHeight: 52,
+  /** Height of the status and opacity zones (the opacity slider's own touch area is this tall). */
+  zoneHeight: 48,
+  /** Height of the action row: «Anterior», undo and the main action. */
+  actionHeight: 48,
   /** Side of the minimap in the status zone. */
   minimapSide: 32,
-  /** Progress segments: height and gap. */
+  /** The progress spine along the dock's top edge: its distance from the edge and its height. */
+  spineInset: 4,
   segmentHeight: 4,
   segmentGap: 3,
+  /** Padding above the first row when the spine is there: the spine, plus a hair of air. */
+  paddingTopWithSpine: 12,
   /** Width of the opacity value, so «7 %» and «100 %» line up. */
   valueWidth: 44,
 } as const;

@@ -1,20 +1,13 @@
-import {
-  cameraCrop,
-  nextTileId,
-  type Project,
-  previousTileId,
-  samePlacement,
-  splitGridAspect,
-} from "@ar-darwin/core";
+import { cameraCrop, type Project, samePlacement, splitGridAspect } from "@ar-darwin/core";
 import { cameraBackdropColor } from "@ar-darwin/ui";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { t } from "../i18n";
 import { playHaptic } from "../theme/playHaptic";
+import type { DockTiles } from "./CameraDock";
 import { CameraNotice } from "./CameraNotice";
 import { CameraOverlayScreen } from "./CameraOverlayScreen";
-import { TileBar } from "./TileBar";
 import { TilePicker } from "./TilePicker";
 import type { OverlayPlacement } from "./useOverlayGestures";
 import { useProjectCameraSession } from "./useProjectCameraSession";
@@ -64,8 +57,9 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
     session.onTileChange(id);
     playHaptic("tileChange");
   };
-  // Marking is its own tap: the check on the bar, for the tile being traced. A mark vibrates as a
-  // success, removing it as a plain selection.
+  // Marking is its own tap: the dock's main action marks the tile being traced and its undo removes
+  // the mark. A mark vibrates as a success, removing it as a plain selection (the dock adds the
+  // celebration's thump when the last tile is marked).
   const { completedTileIds } = session;
   const toggleDone = (id: string) => {
     session.onToggleTileDone(id);
@@ -73,21 +67,18 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
   };
   const hasTiles =
     readyImage !== null && split !== undefined && crop !== null && split.rows * split.cols > 1;
-  const tileBar = hasTiles ? (
-    <TileBar
-      rows={split.rows}
-      cols={split.cols}
-      aspect={splitGridAspect({ width: readyImage.width(), height: readyImage.height() }, split)}
-      tileId={crop.tileId}
-      completedIds={completedTileIds}
-      previousId={previousTileId(split, crop.tileId)}
-      nextId={nextTileId(split, crop.tileId)}
-      onPrevious={() => goToTile(previousTileId(split, crop.tileId))}
-      onNext={() => goToTile(nextTileId(split, crop.tileId))}
-      onToggleDone={() => toggleDone(crop.tileId)}
-      onOpenPicker={() => setPickerOpen(true)}
-    />
-  ) : null;
+  const tiles: DockTiles | null = hasTiles
+    ? {
+        rows: split.rows,
+        cols: split.cols,
+        aspect: splitGridAspect({ width: readyImage.width(), height: readyImage.height() }, split),
+        tileId: crop.tileId,
+        completedIds: completedTileIds,
+        onGoTo: goToTile,
+        onToggleDone: toggleDone,
+        onOpenPicker: () => setPickerOpen(true),
+      }
+    : null;
   const tilePicker = hasTiles ? (
     <TilePicker
       open={pickerOpen}
@@ -162,7 +153,7 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
       onOpacitySettle={session.onOpacitySettle}
       initialAdjustments={session.initialAdjustments}
       onAdjustmentsSettle={session.onAdjustmentsSettle}
-      tileBar={tileBar}
+      tiles={tiles}
       menuPaused={pickerOpen}
       overlay={tilePicker}
     />
