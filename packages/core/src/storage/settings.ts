@@ -5,6 +5,10 @@ export const SETTING_KEYS = {
   magnetEnabled: "magnet_enabled",
   /** The hand that holds the pencil: "right" or "left". The camera menu sits under the other one. */
   drawingHand: "drawing_hand",
+  /** The theme: "system", "light" or "dark". */
+  themePreference: "theme_preference",
+  /** The app's language: "system", "es" or "en". Applied on the next start. */
+  language: "language",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
