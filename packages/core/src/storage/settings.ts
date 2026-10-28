@@ -9,11 +9,16 @@ export const SETTING_KEYS = {
   themePreference: "theme_preference",
   /** The app's language: "system", "es" or "en". Applied on the next start. */
   language: "language",
+  /** The first-run introduction was finished or skipped: "1" yes, "0" or missing no. */
+  onboardingDone: "onboarding_done",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
 
 export const DEFAULT_MAGNET_ENABLED = true;
+
+/** A fresh install has not seen the onboarding. */
+export const DEFAULT_ONBOARDING_DONE = false;
 
 /** Text stored for a boolean setting. */
 export function serializeBoolean(value: boolean): string {
