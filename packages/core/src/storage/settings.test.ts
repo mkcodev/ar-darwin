@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_MAGNET_ENABLED,
+  DEFAULT_ONBOARDING_DONE,
   parseBooleanSetting,
   parseChoiceSetting,
   SETTING_KEYS,
@@ -20,6 +21,13 @@ describe("parseBooleanSetting", () => {
 
   it("has the magnet on by default", () => {
     expect(DEFAULT_MAGNET_ENABLED).toBe(true);
+  });
+
+  it("has the onboarding not seen by default, and keeps it seen once stored", () => {
+    expect(DEFAULT_ONBOARDING_DONE).toBe(false);
+    expect(parseBooleanSetting(null, DEFAULT_ONBOARDING_DONE)).toBe(false);
+    expect(parseBooleanSetting(serializeBoolean(true), DEFAULT_ONBOARDING_DONE)).toBe(true);
+    expect(parseBooleanSetting("yes", DEFAULT_ONBOARDING_DONE)).toBe(false);
   });
 });
 
@@ -49,6 +57,7 @@ describe("parseChoiceSetting", () => {
     expect(SETTING_KEYS.drawingHand).toBe("drawing_hand");
     expect(SETTING_KEYS.themePreference).toBe("theme_preference");
     expect(SETTING_KEYS.language).toBe("language");
+    expect(SETTING_KEYS.onboardingDone).toBe("onboarding_done");
     expect(Object.values(SETTING_KEYS)).toHaveLength(new Set(Object.values(SETTING_KEYS)).size);
   });
 });
