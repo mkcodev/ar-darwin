@@ -193,12 +193,23 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     los borra si cambian la división o el trozo desde el divisor (sin migración), y la cámara encaja el
     trozo nuevo.
   - **Moverse entre trozos (issue #86).** Con más de un trozo, la píldora de abajo lleva encima del
-    slider la `TileBar`: un chip con `TileMinimap` (la rejilla en miniatura, con la forma de la imagen y
-    el trozo actual relleno de acento), el nombre («B2») y un chevron; la flecha «Trozo anterior»
-    (`IconButton`) y «Siguiente», la acción principal (`Button` `tone="camera"` `compact`; texto
-    visible corto «Siguiente», lo que lee TalkBack es «Siguiente trozo»). Van bajo la mano libre,
-    con «Siguiente» en el borde. Caben en 360 px: el chip mide ~94, la flecha 48 y «Siguiente» ~131
-    sobre ~288 útiles. Funcionan con el candado.
+    slider la `TileBar`, en dos filas (cuatro controles y un chip legible no caben en una fila de un
+    móvil de 360 px). Fila 1: un chip con `TileMinimap` (la rejilla en miniatura, con la forma de la
+    imagen, el trozo actual relleno de acento y los hechos en el tono apagado), el nombre («B2») sobre el
+    progreso («4/9 hechos», `typography.label` en `camera.muted`) y un chevron; y el interruptor
+    «Hecho» (`TileDoneButton`, issue #90). Fila 2: la flecha «Trozo anterior» (`IconButton`) y
+    «Siguiente trozo», la acción principal (`Button` `tone="camera"` `fullWidth`, ocupa lo que queda). Las
+    dos filas se espejan con la mano izquierda, así «Siguiente» queda en el borde. A TalkBack el chip le
+    dice «Trozo B2 de 9. Hechos: 4». Funcionan con el candado.
+  - **Progreso por trozo (issue #90).** «Hecho» marca o desmarca el trozo actual
+    (`TileDoneButton` → `ProjectCameraScreen.toggleDone` → `useProjectCameraSession.onToggleTileDone`, que usa
+    `toggleTileDone` de core y guarda en el acto, como el cambio de trozo; vibra con `tileDone` al marcar
+    y `tileChange` al quitar). «Siguiente» solo avanza: no marca ni salta los hechos. `tileProgress`
+    (core) da el «4/9» contando solo ids que existen en la rejilla. Los ids viven en
+    `Project.completedTileIds` (columna `completed_tiles`, v7); `UPDATE_PROJECT_SPLIT` los borra si cambian
+    filas, columnas, modo, papel, orientación o ancho, y los conserva si solo cambian el solape o el tinte.
+    Fuera de alcance: contador en la tarjeta de la biblioteca, marcas en la vista previa del divisor y
+    pasar el proyecto a `done` al completar todos.
   - **Elegir trozo (`TilePicker`).** Tocar el chip abre un `BottomSheet` (`dragFrom="handle"`: solo se
     cierra arrastrando el asa o el título, así el scroll de la rejilla no lo cierra) con todos los
     trozos: un solo `Canvas` Skia dibuja el pedazo de foto de cada celda (recorte al ras de
@@ -206,7 +217,9 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     la proporción de un trozo y su lado menor mide al menos `tilePicker.minCell` (44): lo calcula
     `tilePickerLayout` (core), que encaja la rejilla en el hueco del panel y, si no cabe (hasta 10×10),
     la deja en 44 y marca el scroll del eje que sobra; se abre desplazada al trozo actual. El actual lleva
-    contorno bermellón y TalkBack dice «Trozo B2, actual». Mientras está abierto, el menú no se oculta
+    contorno bermellón y TalkBack dice «Trozo B2, actual». Un trozo hecho lleva una insignia con un
+    check (círculo `tilePicker.badgeSize` en la esquina opuesta al nombre, dibujada en el mismo `Canvas`
+    con el trazo de `icons.check`) y TalkBack añade «hecho». Mientras está abierto, el menú no se oculta
     (`menuPaused` de `CameraOverlayScreen`, que se suma a las pausas de `useMenuIdle`). Con «reducir
     movimiento» el panel solo se desvanece (el `BottomSheet` ya lo hace).
   - **Qué conserva el cambio.** Anterior, siguiente y celda pasan por `goToTile` en
@@ -536,6 +549,7 @@ type Project = {
   imageAdjustments?: { brightness: number; contrast: number; invert: boolean }; // -1..1; sin él, neutro
   split?: SplitConfig;
   currentTileId?: string;
+  completedTileIds: string[]; // trozos marcados como calcados («A1»…), en orden de lectura; [] = ninguno
   status: ProjectStatus;
   resultPhotoUri?: string; // foto del dibujo terminado, ruta guardada
   resultTransform?: Transform;
@@ -778,6 +792,12 @@ sin ajustes; los neutros también se guardan como NULL. Se lee con tolerancia (`
 ignora claves desconocidas y cada campo malo o ausente vuelve a su valor neutro; JSON corrupto →
 sin ajustes): un valor malo nunca impide abrir el proyecto, y un ajuste nuevo no exige migración.
 `UPDATE_PROJECT_CAMERA` lo guarda con el resto del estado de la cámara.
+
+La v7 (issue #90) añade `completed_tiles` (JSON con la lista de ids de los trozos hechos, en TEXT). NULL =
+ninguno; la lista vacía se guarda como NULL. Se lee con tolerancia, como el pin: JSON corrupto o que no
+sea una lista de textos → ninguno, y nunca impide abrir el proyecto. `UPDATE_PROJECT_CAMERA` lo guarda con
+el resto del estado de la cámara; `UPDATE_PROJECT_SPLIT` lo vacía si cambia la rejilla (comparando
+`rows`, `cols` y `paper.paper`/`orientation`/`widthCm` del JSON de `split` con `json_extract`).
 
 La v6 (issue #70) crea la tabla `settings` (`key TEXT PRIMARY KEY`, `value TEXT`) con `CREATE TABLE IF NOT EXISTS`, para que repetirla tras un fallo antes de subir `user_version` no falle. Guarda las preferencias de la app como texto (`magnet_enabled` = `"1"`/`"0"`); una clave ausente vale su valor por defecto, y un valor corrupto también (`parseBooleanSetting`): nunca impide abrir la cámara.
 

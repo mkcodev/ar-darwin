@@ -16,13 +16,16 @@ type TileMinimapProps = {
   aspect: number;
   /** The tile being traced, as «B2». */
   tileId: string;
+  /** The tiles marked as done, as «A1»: their cells are filled in the muted tone. */
+  completedIds: readonly string[];
 };
 
 /**
- * The grid of the split in miniature, with the tile being traced filled in the accent. Hidden from
- * the screen reader: the tile's label already says where the person is.
+ * The grid of the split in miniature, with the tile being traced filled in the accent and the ones
+ * already done in the muted tone (the current one stays in the accent, done or not). Hidden from
+ * the screen reader: the tile's label already says where the person is and how many are done.
  */
-export function TileMinimap({ rows, cols, aspect, tileId }: TileMinimapProps) {
+export function TileMinimap({ rows, cols, aspect, tileId, completedIds }: TileMinimapProps) {
   const { theme } = useTheme();
   const c = theme.color.camera;
   const width = aspect >= 1 ? SIDE : Math.round(SIDE * aspect);
@@ -41,6 +44,7 @@ export function TileMinimap({ rows, cols, aspect, tileId }: TileMinimapProps) {
         <View key={row} style={styles.row}>
           {Array.from({ length: cols }, (_, col) => {
             const current = row === currentRow && col === currentCol;
+            const done = completedIds.includes(`${String.fromCharCode(65 + row)}${col + 1}`);
             return (
               <View
                 // biome-ignore lint/suspicious/noArrayIndexKey: the grid is fixed; a cell is its position
@@ -49,7 +53,9 @@ export function TileMinimap({ rows, cols, aspect, tileId }: TileMinimapProps) {
                   styles.cell,
                   current
                     ? { backgroundColor: c.accent, borderColor: c.accent }
-                    : { borderColor: c.muted },
+                    : done
+                      ? { backgroundColor: c.muted, borderColor: c.muted }
+                      : { borderColor: c.muted },
                 ]}
               />
             );

@@ -117,6 +117,9 @@ export const tilePicker = {
   tagHeight: 22,
   tagPaddingX: 6,
   tagInset: 4,
+  /** Check badge in the opposite corner of a tile that is done. */
+  badgeSize: 20,
+  badgeInset: 4,
 } as const;
 
 /** Touch-lock button over the camera: a ring fills clockwise during the long press. */

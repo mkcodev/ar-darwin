@@ -11,6 +11,8 @@ import {
 import {
   bottomSheet,
   hairline,
+  icon,
+  icons,
   opacity,
   radius,
   space,
@@ -21,10 +23,12 @@ import {
 } from "@ar-darwin/ui";
 import {
   Canvas,
+  Circle,
   FilterMode,
   Group,
   Image,
   MipmapMode,
+  Path,
   RoundedRect,
   type SkImage,
   Skia,
@@ -50,6 +54,8 @@ type TilePickerProps = {
   split: SplitConfig;
   /** The tile being traced, as «B2». */
   currentId: string;
+  /** The tiles marked as done: a check badge in their cell. */
+  completedIds: readonly string[];
   /** A tile other than the current one was chosen. The picker closes itself. */
   onPick: (id: string) => void;
 };
@@ -61,9 +67,19 @@ type TilePickerProps = {
  * shortest side (`tilePickerLayout`, core); a grid that does not fit scrolls, and opens scrolled to
  * the current tile. The sheet only closes by dragging its handle or title, so a drag in the grid
  * scrolls. The photo is drawn in one Skia canvas; the cells are real buttons over it, so a screen
- * reader gets «Trozo B2, actual» (and a tap anywhere on a cell, not only on its name, picks it).
+ * reader gets «Trozo B2, actual» (and a tap anywhere on a cell, not only on its name, picks it). A
+ * tile marked as done wears a check badge in the corner opposite its name, and its label ends in
+ * «hecho».
  */
-export function TilePicker({ open, onClose, image, split, currentId, onPick }: TilePickerProps) {
+export function TilePicker({
+  open,
+  onClose,
+  image,
+  split,
+  currentId,
+  completedIds,
+  onPick,
+}: TilePickerProps) {
   const window = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const imageWidth = image.width();
@@ -131,6 +147,7 @@ export function TilePicker({ open, onClose, image, split, currentId, onPick }: T
           cells={cells}
           layout={layout}
           currentId={currentId}
+          completedIds={completedIds}
           paper={split.paper !== undefined}
           onPress={(id) => {
             if (id !== currentId) onPick(id);
@@ -204,12 +221,13 @@ type GridProps = {
   cells: Cell[];
   layout: TilePickerLayout;
   currentId: string;
+  completedIds: readonly string[];
   /** The tiles are sheets of paper (a split by paper size). */
   paper: boolean;
   onPress: (id: string) => void;
 };
 
-function Grid({ image, cells, layout, currentId, paper, onPress }: GridProps) {
+function Grid({ image, cells, layout, currentId, completedIds, paper, onPress }: GridProps) {
   const { theme } = useTheme();
   const c = theme.color.camera;
   // A sheet of paper reaches past the photo: its blank part is painted so the cell reads as a sheet.
@@ -229,22 +247,22 @@ function Grid({ image, cells, layout, currentId, paper, onPress }: GridProps) {
             width={layout.cellWidth}
             height={layout.cellHeight}
             isCurrent={tile.id === currentId}
+            isDone={completedIds.includes(tile.id)}
             accent={c.accent}
             edge={c.pillEdge}
+            badge={c.pill}
+            ink={c.text}
           />
         ))}
       </Canvas>
       {cells.map(({ tile, x, y }) => {
         const isCurrent = tile.id === currentId;
+        const isDone = completedIds.includes(tile.id);
         return (
           <Pressable
             key={tile.id}
             accessibilityRole="button"
-            accessibilityLabel={
-              isCurrent
-                ? t("camera.tileCurrent", { id: tile.id })
-                : t("camera.tile", { id: tile.id })
-            }
+            accessibilityLabel={tileLabel(tile.id, isCurrent, isDone)}
             accessibilityState={{ selected: isCurrent }}
             onPress={() => onPress(tile.id)}
             style={[
@@ -294,9 +312,13 @@ type CellImageProps = {
   width: number;
   height: number;
   isCurrent: boolean;
+  isDone: boolean;
   /** Colours come in as props: React context does not reach inside a Skia canvas. */
   accent: string;
   edge: string;
+  /** Fill and check of the done badge. */
+  badge: string;
+  ink: string;
 };
 
 /** One cell inside the canvas: the tile's part of the photo, and its outline. */
@@ -309,8 +331,11 @@ function CellImage({
   width,
   height,
   isCurrent,
+  isDone,
   accent,
   edge,
+  badge,
+  ink,
 }: CellImageProps) {
   const clip = useMemo(
     () =>
@@ -350,8 +375,68 @@ function CellImage({
         strokeWidth={line}
         color={isCurrent ? accent : edge}
       />
+      {isDone && (
+        <DoneBadge
+          x={x + width - tilePicker.badgeInset - tilePicker.badgeSize}
+          y={y + height - tilePicker.badgeInset - tilePicker.badgeSize}
+          fill={badge}
+          edge={edge}
+          ink={ink}
+        />
+      )}
     </>
   );
+}
+
+type DoneBadgeProps = { x: number; y: number; fill: string; edge: string; ink: string };
+
+/**
+ * The «hecho» mark of a cell: a round pill with a check, the `check` icon's stroke drawn straight
+ * as a path (a `SkiaIcon` per cell would animate up to a hundred of them for nothing).
+ */
+function DoneBadge({ x, y, fill, edge, ink }: DoneBadgeProps) {
+  const check = useMemo(() => {
+    const shape = icons.check[0];
+    return shape?.type === "path" ? Skia.Path.MakeFromSVGString(shape.d) : null;
+  }, []);
+  const r = tilePicker.badgeSize / 2;
+  // The icon fills 60 % of the badge; its stroke keeps the icon set's width on screen.
+  const scale = (tilePicker.badgeSize * 0.6) / icon.grid;
+  const offset = (tilePicker.badgeSize - icon.grid * scale) / 2;
+
+  return (
+    <>
+      <Circle cx={x + r} cy={y + r} r={r} color={fill} />
+      <Circle
+        cx={x + r}
+        cy={y + r}
+        r={r - hairline / 2}
+        style="stroke"
+        strokeWidth={hairline}
+        color={edge}
+      />
+      {check && (
+        <Group transform={[{ translateX: x + offset }, { translateY: y + offset }, { scale }]}>
+          <Path
+            path={check}
+            style="stroke"
+            strokeWidth={icon.stroke / scale}
+            strokeCap="round"
+            strokeJoin="round"
+            color={ink}
+          />
+        </Group>
+      )}
+    </>
+  );
+}
+
+/** The cell's name for the screen reader: its tile, whether it is the current one and if it is done. */
+function tileLabel(id: string, isCurrent: boolean, isDone: boolean): string {
+  if (isCurrent) {
+    return isDone ? t("camera.tileCurrentIsDone", { id }) : t("camera.tileCurrent", { id });
+  }
+  return isDone ? t("camera.tileIsDone", { id }) : t("camera.tile", { id });
 }
 
 const styles = StyleSheet.create({

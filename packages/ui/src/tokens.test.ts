@@ -144,8 +144,8 @@ describe("spring sampling", () => {
 });
 
 describe("haptics, icons and handedness", () => {
-  it("has the 34 icons of the set", () => {
-    expect(Object.keys(icons)).toHaveLength(34);
+  it("has the 35 icons of the set", () => {
+    expect(Object.keys(icons)).toHaveLength(35);
   });
   it("narrows stored icon names", () => {
     expect(isIconName("animal")).toBe(true);

@@ -7,9 +7,9 @@
 export const UPSERT_PROJECT = `
 INSERT INTO projects (
   id, name, source_uri, transform, transform_viewport, pinned_placement, opacity,
-  image_adjustments, split, current_tile_id, status, result_photo_uri, result_transform,
-  completed_at, notes, difficulty, time_spent_ms, created_at, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  image_adjustments, split, current_tile_id, completed_tiles, status, result_photo_uri,
+  result_transform, completed_at, notes, difficulty, time_spent_ms, created_at, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (id) DO UPDATE SET
   name = excluded.name,
   source_uri = excluded.source_uri,
@@ -20,6 +20,7 @@ ON CONFLICT (id) DO UPDATE SET
   image_adjustments = excluded.image_adjustments,
   split = excluded.split,
   current_tile_id = excluded.current_tile_id,
+  completed_tiles = excluded.completed_tiles,
   status = excluded.status,
   result_photo_uri = excluded.result_photo_uri,
   result_transform = excluded.result_transform,
@@ -32,7 +33,7 @@ ON CONFLICT (id) DO UPDATE SET
 /**
  * Params: cameraStateParams(id, state, now). What the project camera saves: transform and the
  * canvas it is relative to always go together, plus the pinned placement, opacity, image
- * adjustments, the tile being traced, status and time spent. The tile changes here when the
+ * adjustments, the tile being traced, the tiles done, status and time spent. The tile changes here when the
  * person moves on in the camera; the placement is kept on purpose (the sheets sit in the same
  * place on the table), unlike a pick made in the splitter (UPDATE_PROJECT_SPLIT).
  */
@@ -44,6 +45,7 @@ UPDATE projects SET
   opacity = ?,
   image_adjustments = ?,
   current_tile_id = ?,
+  completed_tiles = ?,
   status = ?,
   time_spent_ms = ?,
   updated_at = ?
@@ -54,11 +56,19 @@ WHERE id = ?`;
  * tile last picked (the camera also saves the tile, as it moves between them). The placement the
  * camera saved (position and pin) belongs to the tile it was made on, so it is cleared when the
  * split or the tile changes, and the camera fits the new tile when it opens; saving the same two
- * again keeps it.
+ * again keeps it. The tiles marked done belong to the grid: they are cleared when its rows, columns,
+ * mode, paper, orientation or width change, and kept when only the overlap or the tint do.
  * (SQLite evaluates every right-hand side against the old row, so `split` below is the old one.)
  */
 export const UPDATE_PROJECT_SPLIT = `
 UPDATE projects SET
+  completed_tiles = CASE WHEN
+    json_extract(split, '$.rows') IS json_extract(?1, '$.rows')
+    AND json_extract(split, '$.cols') IS json_extract(?1, '$.cols')
+    AND json_extract(split, '$.paper.paper') IS json_extract(?1, '$.paper.paper')
+    AND json_extract(split, '$.paper.orientation') IS json_extract(?1, '$.paper.orientation')
+    AND json_extract(split, '$.paper.widthCm') IS json_extract(?1, '$.paper.widthCm')
+    THEN completed_tiles ELSE NULL END,
   transform_viewport = CASE WHEN split IS ?1 AND current_tile_id IS ?2
     THEN transform_viewport ELSE NULL END,
   pinned_placement = CASE WHEN split IS ?1 AND current_tile_id IS ?2

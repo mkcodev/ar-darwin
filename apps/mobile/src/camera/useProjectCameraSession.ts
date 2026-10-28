@@ -8,6 +8,7 @@ import {
   startClock,
   statusOnOpen,
   stopClock,
+  toggleTileDone,
 } from "@ar-darwin/core";
 import { useIsFocused } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
@@ -34,13 +35,17 @@ export type ProjectCameraSession = {
   onPinChange: (placement: OverlayPlacement | null) => void;
   /** The person moved on to another tile: saved at once. */
   onTileChange: (tileId: string) => void;
+  /** Tiles marked as traced, in reading order. */
+  completedTileIds: readonly string[];
+  /** Marks a tile as done, or removes the mark: saved at once. */
+  onToggleTileDone: (tileId: string) => void;
 };
 
 /**
  * Keeps a project in sync with its camera while `active` (its image is up: never for a missing
  * image): `pending → in_progress` on open (saved straight away), the settled transform, opacity,
  * image adjustments and pin saved after `SAVE_DEBOUNCE_MS` of quiet, a change of tile saved at
- * once, and the time spent counted only while this screen is focused and the app in the
+ * once, tiles marked done saved at once, and the time spent counted only while this screen is focused and the app in the
  * foreground. Leaving the screen, going to the background or unmounting saves at once. Every write goes through
  * `enqueueCameraSave`, which outlives the screen and keeps them in order.
  */
@@ -67,9 +72,11 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
     imageAdjustments: project.imageAdjustments,
     pinnedPlacement: project.pinnedPlacement,
     currentTileId: project.currentTileId,
+    completedTileIds: project.completedTileIds,
     status: statusOnOpen(project.status),
     timeSpentMs: project.timeSpentMs,
   });
+  const [completedTileIds, setCompletedTileIds] = useState(project.completedTileIds);
   const clock = useRef(IDLE_CLOCK);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const id = project.id;
@@ -173,6 +180,20 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
     [saveNow],
   );
 
+  // Saved at once, like a change of tile: a deliberate tap, never part of a burst. Without a split
+  // there are no tiles to mark.
+  const split = project.split;
+  const onToggleTileDone = useCallback(
+    (tileId: string) => {
+      if (split === undefined) return;
+      const next = toggleTileDone(split, state.current.completedTileIds, tileId);
+      state.current = { ...state.current, completedTileIds: next };
+      setCompletedTileIds(next);
+      saveNow();
+    },
+    [split, saveNow],
+  );
+
   return {
     initialPlacement: initial.placement,
     initialOpacity: initial.opacity,
@@ -183,5 +204,7 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
     onAdjustmentsSettle,
     onPinChange,
     onTileChange,
+    completedTileIds,
+    onToggleTileDone,
   };
 }

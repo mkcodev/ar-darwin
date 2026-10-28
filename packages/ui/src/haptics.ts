@@ -18,6 +18,8 @@ export const haptics = {
   lockToggle: { kind: "impact", style: "medium" },
   /** Next tile in the camera, or a tile picked in the splitter. */
   tileChange: { kind: "selection" },
+  /** A tile is marked as done in the camera (unmarking it is a plain `tileChange`). */
+  tileDone: { kind: "notification", type: "success" },
   /** A quick grid picked in the splitter (the rows/columns steppers vibrate on their own). */
   splitGrid: { kind: "selection" },
   /** One fine-adjust step. Not fired on long-press repeats. */

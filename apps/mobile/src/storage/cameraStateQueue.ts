@@ -34,6 +34,7 @@ export function enqueueCameraSave(
     transform: { ...state.transform },
     transformViewport: state.transformViewport && { ...state.transformViewport },
     imageAdjustments: state.imageAdjustments && { ...state.imageAdjustments },
+    completedTileIds: [...state.completedTileIds],
     pinnedPlacement: state.pinnedPlacement && {
       transform: { ...state.pinnedPlacement.transform },
       viewport: { ...state.pinnedPlacement.viewport },

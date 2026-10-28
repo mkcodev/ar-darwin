@@ -1,7 +1,12 @@
 import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
 import { NEUTRAL_ADJUSTMENTS } from "../imageAdjustments";
-import { DEFAULT_CATEGORY_IDS, IDENTITY_TRANSFORM, type Project } from "../models";
+import {
+  DEFAULT_CATEGORY_IDS,
+  IDENTITY_TRANSFORM,
+  type Project,
+  type SplitConfig,
+} from "../models";
 import { createProject, createProjectId } from "../project";
 import {
   DEFAULT_CATEGORY_STYLES,
@@ -238,7 +243,7 @@ describe("migrations on SQLite", () => {
     const db = openMigrated(1);
     const project = newProject("p", "2026-10-10T10:00:00.000Z", { categoryIds: ["animals"] });
     saveLegacy(db, project);
-    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2, 3, 4, 5, 6]);
+    expect(pendingMigrations(1).map((m) => m.version)).toEqual([2, 3, 4, 5, 6, 7]);
     migrate(db);
     expect(db.prepare(SELECT_SCHEMA_VERSION).get()?.user_version).toBe(LATEST_SCHEMA_VERSION);
     expect(load(db, project.id)).toEqual(project);
@@ -309,9 +314,18 @@ describe("migrations on SQLite", () => {
   it("v5 → v6 adds an empty settings table and keeps every project", () => {
     const db = openMigrated(5);
     const project = newProject("p", "2026-10-10T10:00:00.000Z", { categoryIds: ["objects"] });
-    save(db, project);
+    saveLegacy(db, project);
     migrate(db);
     expect(db.prepare(SELECT_SETTING).get(SETTING_KEYS.magnetEnabled)).toBeUndefined();
+    expect(load(db, project.id)).toEqual(project);
+  });
+
+  it("v6 → v7 keeps every project, with no tiles done", () => {
+    const db = openMigrated(6);
+    const project = newProject("p", "2026-10-10T10:00:00.000Z", { categoryIds: ["objects"] });
+    saveLegacy(db, project);
+    migrate(db);
+    expect(db.prepare(SELECT_PROJECT).get(project.id)).toMatchObject({ completed_tiles: null });
     expect(load(db, project.id)).toEqual(project);
   });
 
@@ -471,6 +485,7 @@ describe("project repository SQL", () => {
         viewport: { width: 400, height: 800 },
       },
       currentTileId: "B2",
+      completedTileIds: ["A1", "B2"],
       status: "in_progress" as const,
       timeSpentMs: 12345,
     };
@@ -502,6 +517,7 @@ describe("project repository SQL", () => {
           opacity: pinned.opacity,
           pinnedPlacement: undefined,
           currentTileId: undefined,
+          completedTileIds: [],
           status: "in_progress",
           timeSpentMs: 0,
         },
@@ -523,6 +539,7 @@ describe("project repository SQL", () => {
           transform: project.transform,
           opacity: project.opacity,
           currentTileId: undefined,
+          completedTileIds: [],
           status: "in_progress",
           timeSpentMs: 1500,
         },
@@ -545,6 +562,7 @@ describe("project repository SQL", () => {
         transformViewport: { width: 400, height: 800 },
         opacity: 2,
         currentTileId: undefined,
+        completedTileIds: [],
         status: "in_progress",
         timeSpentMs: 0,
       },
@@ -660,6 +678,7 @@ describe("project repository SQL", () => {
           transform: IDENTITY_TRANSFORM,
           opacity: 0.5,
           currentTileId: "B1",
+          completedTileIds: [],
           status: "in_progress",
           timeSpentMs: 800,
         },
@@ -692,6 +711,7 @@ describe("project repository SQL", () => {
           opacity: project.opacity,
           pinnedPlacement: pinned,
           currentTileId: "A2",
+          completedTileIds: [],
           status: "in_progress",
           timeSpentMs: 0,
         },
@@ -702,6 +722,125 @@ describe("project repository SQL", () => {
       currentTileId: "A2",
       transformViewport: { width: 400, height: 800 },
       pinnedPlacement: pinned,
+    });
+  });
+
+  describe("the tiles done belong to the grid", () => {
+    const split = { rows: 3, cols: 3, overlapPx: 20, showOverlapTint: true };
+    const paper = { paper: "A4", orientation: "portrait", widthCm: 60, overlapMm: 10 } as const;
+    const withDone = (overrides: Partial<Project> = {}) =>
+      newProject("p", "2026-10-10T10:00:00.000Z", {
+        split,
+        currentTileId: "A1",
+        completedTileIds: ["A1", "B2"],
+        ...overrides,
+      });
+    const saveSplit = (db: DatabaseSync, id: string, next: SplitConfig, tile = "A1") =>
+      db
+        .prepare(UPDATE_PROJECT_SPLIT)
+        .run(...splitParams(id, next, tile, new Date("2026-10-10T12:00:00.000Z")));
+
+    it("round-trips through the project row and is NULL when empty", () => {
+      const db = openMigrated();
+      const project = withDone();
+      save(db, project);
+      expect(load(db, project.id)?.completedTileIds).toEqual(["A1", "B2"]);
+      expect(db.prepare(SELECT_PROJECT).get(project.id)).toMatchObject({
+        completed_tiles: '["A1","B2"]',
+      });
+      const empty = withDone({ completedTileIds: [] });
+      save(db, empty);
+      expect(db.prepare(SELECT_PROJECT).get(empty.id)).toMatchObject({ completed_tiles: null });
+    });
+
+    it("the camera saves them and a save without them clears them", () => {
+      const db = openMigrated();
+      const project = withDone({ completedTileIds: [] });
+      save(db, project);
+      const camera = (completedTileIds: string[]) =>
+        db.prepare(UPDATE_PROJECT_CAMERA).run(
+          ...cameraStateParams(
+            project.id,
+            {
+              transform: project.transform,
+              opacity: project.opacity,
+              currentTileId: "B2",
+              completedTileIds,
+              status: "in_progress",
+              timeSpentMs: 0,
+            },
+            new Date("2026-10-10T12:00:00.000Z"),
+          ),
+        );
+      camera(["A1", "B2", "C3"]);
+      expect(load(db, project.id)?.completedTileIds).toEqual(["A1", "B2", "C3"]);
+      camera([]);
+      expect(load(db, project.id)?.completedTileIds).toEqual([]);
+    });
+
+    it("are kept when only the overlap or the tint change, or the same split is saved again", () => {
+      for (const next of [
+        split,
+        { ...split, overlapPx: 40 },
+        { ...split, showOverlapTint: false },
+      ]) {
+        const db = openMigrated();
+        const project = withDone();
+        save(db, project);
+        saveSplit(db, project.id, next);
+        expect(load(db, project.id)?.completedTileIds).toEqual(["A1", "B2"]);
+      }
+    });
+
+    it("are kept when another tile is picked in the same grid", () => {
+      const db = openMigrated();
+      const project = withDone();
+      save(db, project);
+      saveSplit(db, project.id, split, "C3");
+      expect(load(db, project.id)?.completedTileIds).toEqual(["A1", "B2"]);
+    });
+
+    it("are cleared when the rows or the columns change", () => {
+      for (const next of [
+        { ...split, rows: 2 },
+        { ...split, cols: 4 },
+      ]) {
+        const db = openMigrated();
+        const project = withDone();
+        save(db, project);
+        saveSplit(db, project.id, next);
+        expect(load(db, project.id)?.completedTileIds).toEqual([]);
+        expect(db.prepare(SELECT_PROJECT).get(project.id)).toMatchObject({ completed_tiles: null });
+      }
+    });
+
+    it("are cleared when a manual split becomes a split by paper size, even with the same grid", () => {
+      const db = openMigrated();
+      const project = withDone();
+      save(db, project);
+      saveSplit(db, project.id, { ...split, paper });
+      expect(load(db, project.id)?.completedTileIds).toEqual([]);
+    });
+
+    it("of a split by paper size: cleared by paper, orientation or width, kept by the overlap", () => {
+      const sheets = { ...split, paper };
+      const cleared = [
+        { ...sheets, paper: { ...paper, paper: "A3" } },
+        { ...sheets, paper: { ...paper, orientation: "landscape" } },
+        { ...sheets, paper: { ...paper, widthCm: 80 } },
+      ] as const;
+      for (const next of cleared) {
+        const db = openMigrated();
+        const project = withDone({ split: sheets });
+        save(db, project);
+        saveSplit(db, project.id, next);
+        expect(load(db, project.id)?.completedTileIds).toEqual([]);
+      }
+      const db = openMigrated();
+      const project = withDone({ split: sheets });
+      save(db, project);
+      saveSplit(db, project.id, { ...sheets, paper: { ...paper, overlapMm: 15 } });
+      expect(load(db, project.id)?.completedTileIds).toEqual(["A1", "B2"]);
     });
   });
 
@@ -735,6 +874,16 @@ describe("projectFromRow", () => {
         }),
       ).pinnedPlacement,
     ).toMatchObject({ viewport: { width: 400, height: 800 } });
+  });
+
+  it("loads corrupt or invalid tiles done as none, without throwing", () => {
+    const done = (text: string) =>
+      projectFromRow({ ...row, completed_tiles: text }, []).completedTileIds;
+    expect(done("{oops")).toEqual([]);
+    expect(done("42")).toEqual([]);
+    expect(done('{"A1":true}')).toEqual([]);
+    expect(done("[1,2]")).toEqual([]);
+    expect(done('["A1","B2"]')).toEqual(["A1", "B2"]);
   });
 
   it("loads corrupt, partial or neutral image adjustments without throwing", () => {

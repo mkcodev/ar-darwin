@@ -32,6 +32,7 @@ export function createProject({ id, name, sourceUri, opacity, now }: NewProject)
     sourceUri,
     transform: IDENTITY_TRANSFORM,
     opacity,
+    completedTileIds: [],
     status: "pending",
     timeSpentMs: 0,
     categoryIds: [],
