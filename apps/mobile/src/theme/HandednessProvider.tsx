@@ -12,7 +12,7 @@ type HandednessState = {
 const HandednessContext = createContext<HandednessState | null>(null);
 
 type HandednessProviderProps = {
-  /** Stored hand to start from (the Settings task loads it); defaults to DEFAULT_HANDEDNESS. */
+  /** Hand to start from; defaults to DEFAULT_HANDEDNESS. `AppSettingsProvider` applies the stored one with `setHand`. */
   initial?: Handedness;
   /** Called on every change so the caller can persist it. */
   onChange?: (hand: Handedness) => void;

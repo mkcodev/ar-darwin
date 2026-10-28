@@ -1,9 +1,14 @@
-import { locale, t } from "./i18n";
+import { useMemo } from "react";
+import { getLocale, t } from "./i18n";
 
-const decimal = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
+let decimal: Intl.NumberFormat | null = null;
 
-/** A number with up to one decimal, written the way the app's language does («59,4» / «59.4»). */
+/**
+ * A number with up to one decimal, written the way the app's language does («59,4» / «59.4»).
+ * The formatter is made on first use, once the language is applied (`applyLocale`).
+ */
 export function formatDecimal(value: number): string {
+  decimal ??= new Intl.NumberFormat(getLocale(), { maximumFractionDigits: 1 });
   return decimal.format(value);
 }
 
@@ -19,4 +24,13 @@ export function percentFormat(max: number): (value: number) => string {
     "worklet";
     return `${prefix}${Math.round((value / max) * 100)}${suffix}`;
   };
+}
+
+/**
+ * `percentFormat` made when the component first renders, not when its file is imported: the
+ * language is read from storage after the imports run, so a module-level one would keep the
+ * system's language.
+ */
+export function usePercentFormat(max: number): (value: number) => string {
+  return useMemo(() => percentFormat(max), [max]);
 }

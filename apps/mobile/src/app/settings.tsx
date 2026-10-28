@@ -1,34 +1,93 @@
-import { space, toNativeTextStyle, typography } from "@ar-darwin/ui";
+import { LANGUAGE_PREFERENCES } from "@ar-darwin/i18n";
+import {
+  type Handedness,
+  space,
+  type ThemePreference,
+  toNativeTextStyle,
+  typography,
+} from "@ar-darwin/ui";
 import { Stack } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SegmentedControl } from "../components/SegmentedControl";
 import { Toggle } from "../components/Toggle";
 import { t } from "../i18n";
 import { useAppSettings } from "../settings/AppSettingsProvider";
 import { useTheme } from "../theme/ThemeProvider";
 
-/** Settings, a secondary screen: native header from the stack defaults. The Ajustes task adds the rest. */
+const THEMES: readonly ThemePreference[] = ["system", "light", "dark"];
+const HANDS: readonly Handedness[] = ["right", "left"];
+
+/** Settings, a secondary screen: native header from the stack defaults. */
 export default function Settings() {
   const { theme } = useTheme();
-  const { magnetEnabled, setMagnetEnabled } = useAppSettings();
+  const {
+    magnetEnabled,
+    setMagnetEnabled,
+    themePreference,
+    setThemePreference,
+    drawingHand,
+    setDrawingHand,
+    languagePreference,
+    setLanguagePreference,
+    languageNeedsRestart,
+  } = useAppSettings();
+  const hint = [styles.hint, { color: theme.color.text.muted }];
+
   return (
     <>
       <Stack.Screen options={{ title: t("settings.title") }} />
       {/* Own canvas: the stack's contentStyle does not repaint when the theme changes at runtime. */}
-      <View style={[styles.screen, { backgroundColor: theme.color.bg.canvas }]}>
-        <Toggle
-          label={t("settings.magnet.label")}
-          checked={magnetEnabled}
-          onChange={setMagnetEnabled}
+      <ScrollView
+        style={{ backgroundColor: theme.color.bg.canvas }}
+        contentContainerStyle={styles.content}
+        contentInsetAdjustmentBehavior="automatic"
+      >
+        <SegmentedControl
+          label={t("settings.theme.label")}
+          options={THEMES.map((value) => ({ value, label: t(`settings.theme.${value}`) }))}
+          value={themePreference}
+          onChange={setThemePreference}
         />
-        <Text style={[styles.hint, { color: theme.color.text.muted }]}>
-          {t("settings.magnet.description")}
-        </Text>
-      </View>
+        <View style={styles.section}>
+          <SegmentedControl
+            label={t("settings.hand.label")}
+            options={HANDS.map((value) => ({ value, label: t(`settings.hand.${value}`) }))}
+            value={drawingHand}
+            onChange={setDrawingHand}
+          />
+          <Text style={hint}>{t("settings.hand.description")}</Text>
+        </View>
+        <View style={styles.section}>
+          <SegmentedControl
+            label={t("settings.language.label")}
+            options={LANGUAGE_PREFERENCES.map((value) => ({
+              value,
+              label: t(`settings.language.${value}`),
+            }))}
+            value={languagePreference}
+            onChange={setLanguagePreference}
+          />
+          {languageNeedsRestart && (
+            <Text accessibilityLiveRegion="polite" style={hint}>
+              {t("settings.language.restart")}
+            </Text>
+          )}
+        </View>
+        <View style={styles.section}>
+          <Toggle
+            label={t("settings.magnet.label")}
+            checked={magnetEnabled}
+            onChange={setMagnetEnabled}
+          />
+          <Text style={hint}>{t("settings.magnet.description")}</Text>
+        </View>
+      </ScrollView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, paddingHorizontal: space[5], paddingTop: space[4] },
-  hint: { ...toNativeTextStyle(typography.body), marginTop: space[1] },
+  content: { paddingHorizontal: space[5], paddingVertical: space[4], gap: space[6] },
+  section: { gap: space[1] },
+  hint: toNativeTextStyle(typography.body),
 });
