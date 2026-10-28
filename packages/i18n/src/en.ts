@@ -191,6 +191,25 @@ export const en = {
   },
   settings: {
     title: "Settings",
+    theme: {
+      label: "Theme",
+      system: "System",
+      light: "Light",
+      dark: "Dark",
+    },
+    hand: {
+      label: "Which hand do you draw with?",
+      right: "Right",
+      left: "Left",
+      description: "The camera menu sits under the other hand.",
+    },
+    language: {
+      label: "Language",
+      system: "System",
+      es: "Español",
+      en: "English",
+      restart: "The language changes when you reopen the app.",
+    },
     magnet: {
       label: "Magnet",
       description:

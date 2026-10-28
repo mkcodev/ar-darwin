@@ -23,6 +23,19 @@ export function resolveLocale(tags: readonly string[]): Locale {
   return FALLBACK_LOCALE;
 }
 
+/** What the person picks as the app's language: follow the system, or one language. */
+export const LANGUAGE_PREFERENCES = ["system", ...LOCALES] as const;
+export type LanguagePreference = (typeof LANGUAGE_PREFERENCES)[number];
+export const DEFAULT_LANGUAGE_PREFERENCE: LanguagePreference = "system";
+
+/** The language to use for a preference: "system" resolves `systemTags` like `resolveLocale`. */
+export function resolveLanguagePreference(
+  preference: LanguagePreference,
+  systemTags: readonly string[],
+): Locale {
+  return preference === "system" ? resolveLocale(systemTags) : preference;
+}
+
 function lookup(dictionary: Dictionary, key: string): string | undefined {
   let node: string | Dictionary | undefined = dictionary;
   for (const part of key.split(".")) {
