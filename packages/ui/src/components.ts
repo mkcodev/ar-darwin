@@ -41,6 +41,34 @@ export const cameraPill = {
   gap: 4,
 } as const;
 
+/**
+ * The camera's dock (tile status, opacity and the main action) in one surface: a single outline
+ * and, inside, zones told apart by tone (`camera.well`). The inner radius is the outer one less
+ * the padding, so corners stay concentric. Hit areas of the 44 dp zones grow to `touchTarget`.
+ */
+export const cameraDock = {
+  /** Space to the screen's sides. */
+  sideMargin: 12,
+  /** Space under the dock, over the bottom safe area. */
+  bottomGap: 12,
+  radius: 28,
+  padding: 8,
+  gap: 6,
+  innerRadius: 20,
+  edgeWidth: 1,
+  /** Height of the status and opacity zones. */
+  zoneHeight: 44,
+  /** Height of the main action row. */
+  actionHeight: 52,
+  /** Side of the minimap in the status zone. */
+  minimapSide: 32,
+  /** Progress segments: height and gap. */
+  segmentHeight: 4,
+  segmentGap: 3,
+  /** Width of the opacity value, so «7 %» and «100 %» line up. */
+  valueWidth: 44,
+} as const;
+
 /** Native slider (opacity on the camera, values in sheets). */
 export const slider = {
   trackHeight: 4,

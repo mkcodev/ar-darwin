@@ -20,6 +20,8 @@ export const haptics = {
   tileChange: { kind: "selection" },
   /** A tile is marked as done in the camera (unmarking it is a plain `tileChange`). */
   tileDone: { kind: "notification", type: "success" },
+  /** Every tile is done: follows `tileDone` a moment later, as the celebration's thump. */
+  tilesComplete: { kind: "impact", style: "heavy" },
   /** A quick grid picked in the splitter (the rows/columns steppers vibrate on their own). */
   splitGrid: { kind: "selection" },
   /** One fine-adjust step. Not fired on long-press repeats. */
