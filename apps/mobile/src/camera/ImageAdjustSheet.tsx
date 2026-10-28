@@ -5,13 +5,11 @@ import { BottomSheet } from "../components/BottomSheet";
 import { Button } from "../components/Button";
 import { Slider } from "../components/Slider";
 import { Toggle } from "../components/Toggle";
-import { percentFormat } from "../format";
+import { usePercentFormat } from "../format";
 import { t } from "../i18n";
 import { animateMove, springPlan } from "../theme/motion";
 import { useReduceMotion } from "../theme/ReduceMotionProvider";
 import type { OverlayAdjustments } from "./OverlayCanvas";
-
-const levelText = percentFormat(1);
 
 type ImageAdjustSheetProps = {
   open: boolean;
@@ -29,6 +27,7 @@ type ImageAdjustSheetProps = {
  * jump under reduced motion. Each settled change is reported once, to be saved.
  */
 export function ImageAdjustSheet({ open, onClose, adjustments, onSettle }: ImageAdjustSheetProps) {
+  const levelText = usePercentFormat(1);
   const { reduce } = useReduceMotion();
   const plan = springPlan(spring.gentle, reduce);
   const { brightness, contrast, invert } = adjustments;

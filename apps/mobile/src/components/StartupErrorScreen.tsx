@@ -9,6 +9,7 @@ import {
   typography,
 } from "@ar-darwin/ui";
 import { isLoaded } from "expo-font";
+import { SplashScreen } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useContext, useEffect } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -46,6 +47,11 @@ export function StartupErrorScreen({ error, onRetry }: StartupErrorScreenProps) 
   // The context, not the hook: without a SafeAreaProvider the hook throws, and this must not.
   const insets = useContext(SafeAreaInsetsContext);
   const newer = isSchemaTooNewError(error);
+
+  // The splash is still up (the settings that would hide it never mounted): show the screen.
+  useEffect(() => {
+    SplashScreen.hide();
+  }, []);
 
   useEffect(() => {
     console.error("AR-Darwin start-up error", error);

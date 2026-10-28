@@ -35,8 +35,20 @@ describe("parseChoiceSetting", () => {
     expect(parseChoiceSetting(raw, hands, "left")).toBe("left");
   });
 
-  it("stores the drawing hand under its own key", () => {
+  it("reads back a theme and a language, and falls back on a corrupt value", () => {
+    const themes = ["system", "light", "dark"] as const;
+    const languages = ["system", "es", "en"] as const;
+    expect(parseChoiceSetting("light", themes, "system")).toBe("light");
+    expect(parseChoiceSetting("sepia", themes, "system")).toBe("system");
+    expect(parseChoiceSetting("en", languages, "system")).toBe("en");
+    expect(parseChoiceSetting("fr", languages, "system")).toBe("system");
+    expect(parseChoiceSetting(null, languages, "system")).toBe("system");
+  });
+
+  it("stores each preference under its own key", () => {
     expect(SETTING_KEYS.drawingHand).toBe("drawing_hand");
+    expect(SETTING_KEYS.themePreference).toBe("theme_preference");
+    expect(SETTING_KEYS.language).toBe("language");
     expect(Object.values(SETTING_KEYS)).toHaveLength(new Set(Object.values(SETTING_KEYS)).size);
   });
 });

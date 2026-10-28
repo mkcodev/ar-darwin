@@ -192,6 +192,25 @@ export const es = {
   },
   settings: {
     title: "Ajustes",
+    theme: {
+      label: "Tema",
+      system: "Sistema",
+      light: "Claro",
+      dark: "Oscuro",
+    },
+    hand: {
+      label: "¿Con qué mano dibujas?",
+      right: "Derecha",
+      left: "Izquierda",
+      description: "El menú de la cámara va bajo la otra mano.",
+    },
+    language: {
+      label: "Idioma",
+      system: "Sistema",
+      es: "Español",
+      en: "English",
+      restart: "El idioma cambia al volver a abrir la app.",
+    },
     magnet: {
       label: "Imán",
       description:

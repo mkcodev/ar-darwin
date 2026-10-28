@@ -16,7 +16,7 @@ type ThemeState = {
 const ThemeContext = createContext<ThemeState | null>(null);
 
 type ThemeProviderProps = {
-  /** Stored preference to start from (the Settings task loads it); defaults to "system". */
+  /** Preference to start from; defaults to "system". `AppSettingsProvider` applies the stored one with `setPreference`. */
   initial?: ThemePreference;
   /** Called on every change so the caller can persist it. */
   onChange?: (preference: ThemePreference) => void;

@@ -18,7 +18,7 @@ import { BottomSheet } from "../components/BottomSheet";
 import { Button } from "../components/Button";
 import { Slider } from "../components/Slider";
 import { Toggle } from "../components/Toggle";
-import { percentFormat } from "../format";
+import { usePercentFormat } from "../format";
 import { t } from "../i18n";
 import { playHaptic } from "../theme/playHaptic";
 import { useTheme } from "../theme/ThemeProvider";
@@ -32,7 +32,6 @@ import { SpringRow } from "./SpringRow";
 
 const roles = Object.keys(typography) as TypeRoleName[];
 const hapticEvents = Object.keys(haptics) as HapticEvent[];
-const opacityText = percentFormat(1);
 
 /**
  * Dev-only check of packages/ui on a real phone: theme, hand and reduce motion for the whole app,
@@ -40,6 +39,7 @@ const opacityText = percentFormat(1);
  * expo-haptics and the camera's dark entry with its light status bar.
  */
 export function DevDesignScreen() {
+  const opacityText = usePercentFormat(1);
   const { theme } = useTheme();
   const [cameraOpen, setCameraOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);

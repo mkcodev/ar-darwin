@@ -14,7 +14,7 @@ import {
 import { opacity } from "@ar-darwin/ui";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import type { SQLiteDatabase } from "expo-sqlite";
-import { locale, t } from "../i18n";
+import { getLocale, t } from "../i18n";
 import { deleteProjectDir, moveToStored } from "../storage/files";
 import { saveProject } from "../storage/projectRepository";
 import type { PickedImage } from "./importSources";
@@ -29,7 +29,7 @@ const saveFormat: Record<ImportFormat, SaveFormat> = {
 
 function defaultName(now: Date): string {
   return t("library.defaultName", {
-    date: now.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" }),
+    date: now.toLocaleDateString(getLocale(), { day: "numeric", month: "short", year: "numeric" }),
   });
 }
 
