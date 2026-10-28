@@ -155,6 +155,21 @@ Momentos de firma:
   cada uno con su nota atenuada debajo (la del idioma solo aparece si el elegido no es el activo).
   Después, el interruptor del imán. El cambio de tema se ve al instante en la propia pantalla.
 
+## Onboarding
+
+- Tres pantallas sobre `bg.canvas`: cabecera con atrás (desde la 2.ª), «1/3» en Geist Mono atenuado y
+  «Saltar» (no en la 3.ª); un dibujo, el titular en Instrument Serif, el texto en `body` atenuado, y
+  abajo el indicador de tres segmentos (el actual en `accent`, el resto `border.strong`) y la acción
+  principal en bermellón.
+- Dibujos de trazo vivo, los mismos gestos de firma: el árbol del logo sobre un folio (calcar), la
+  rejilla 3 × 3 en el azul no-foto con el trozo actual en bermellón y dos con marca (dividir) y el
+  icono de cámara (permiso). Con «reducir movimiento» se funden; sin movimiento, aparecen.
+- El dibujo se encoge antes de que el texto se corte (fuente grande, 360 × 640); si ni así cabe, la
+  página se desplaza. Las páginas entran con `screen` (220–320 ms) desde el lado al que se avanza.
+- La 1.ª pregunta «¿Con qué mano dibujas?» con el mismo selector de Ajustes; el swipe no se engancha
+  sobre él.
+- Se repasa desde Ajustes, «Ver la introducción».
+
 ## Biblioteca
 
 - Rejilla de 2 columnas bajo el titular. Tarjeta: miniatura en marco vertical 3:4 (proporción de
@@ -202,7 +217,7 @@ Todo respeta la opción del sistema de reducir movimiento (sustituir por fundido
 2. Cámara con menú (imán, ajuste fino, opacidad, bloqueo, minimapa)
 3. Divisor de imagen
 4. Retos
-5. Onboarding (3 pantallas + permiso de cámara)
+5. Onboarding (3 pantallas; la tercera, el permiso de cámara)
 
 ## Proceso
 
