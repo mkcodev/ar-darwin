@@ -84,7 +84,9 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 - [x] Dock de la cámara: una sola superficie con estado del trozo, progreso segmentado, opacidad y una acción
       principal que cambia («Marcar hecho» → «Siguiente trozo» al siguiente PENDIENTE → «Completado»), con
       celebración breve al terminar; sustituye a `TileBar` (issue #94)
-- [ ] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja, reducir movimiento, idioma
+- [x] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja e idioma Sistema/Español/English (se aplica
+      al reabrir la app); el splash espera a leerlos (issue #98)
+- [ ] Ajustes: anulación propia de «reducir movimiento» (hoy sigue al sistema)
 - [ ] Onboarding de 3 pantallas y permiso de cámara explicado (es/en)
 - [ ] Pasada de `impeccable` y `web-design-guidelines` sobre cada pantalla (Prompt 7)
 - [ ] Flujo principal con Maestro (importar, dividir, calcar un trozo)

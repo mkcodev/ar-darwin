@@ -156,8 +156,8 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
       (`swapSides`) cambia la mano que dibuja: `AppSettingsProvider.setDrawingHand` la aplica
       (`useHandedness().setHand`) y la guarda en `settings` (`drawing_hand`, `"right" | "left"`, tabla v6
       sin migración). A diferencia del imán, esa lectura **sí** se espera: el proveedor no monta la pila
-      hasta que termina (lectura local de SQLite; si falla, mano por defecto) y aplica la mano en el
-      mismo paso, así el primer fotograma ya lleva el raíl en su lado y no salta al abrir la app.
+      hasta que termina (lectura local de SQLite; si falla, valores por defecto) y aplica mano, tema e
+      idioma en el mismo paso, así el primer fotograma ya lleva el raíl en su lado y no salta al abrir la app.
     - **Candado (`LockButton`)**: va en `React.memo`. Su `Gesture.LongPress()` se recrea en cada render
       y RNGH sustituye los handlers de un gesto en curso (`updateHandlers`), de modo que un re-render
       con el dedo puesto podía dejar pasar `onStart` y no bloquear. Sus props son estables (`locked`,
@@ -371,11 +371,13 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   se desplace; `Button` recibe `icon` como `IconName`. Solo en móvil (issue #55): `IconButton` `onDisabledPress` (deshabilitado pero el toque explica por qué) y `BottomSheet` `scrim={false}` (sin velo). Variante `danger` (borrar) en las dos
   apps: fondo `bg.raised`, texto y borde `danger` (contraste AA de texto en `contrast.test.ts`).
 - `apps/mobile/src/theme/`: `ThemeProvider`, `HandednessProvider` y `ReduceMotionProvider` se montan
-  en `app/_layout.tsx`. Aceptan `initial` y `onChange` para que la tarea de Ajustes cargue y guarde
-  la preferencia sin tocarlos. `ReduceMotionProvider` sigue el ajuste del sistema en vivo
+  en `app/_layout.tsx`. `AppSettingsProvider` carga y guarda sus preferencias (tema, mano, idioma)
+  con `setPreference`/`setHand` sin tocarlos. `ReduceMotionProvider` sigue el ajuste del sistema en vivo
   (`AccessibilityInfo`) y admite una anulación (la usa `/dev/design`).
-- Fuentes: `useAppFonts` en el layout raíz; el splash nativo (`SplashScreen` de expo-router) sigue
-  visible hasta que cargan o fallan, así nunca se pinta un frame con las fuentes del sistema.
+- Fuentes: `useAppFonts` en el layout raíz (no monta nada hasta que cargan o fallan). El splash nativo
+  (`SplashScreen` de expo-router) sigue visible hasta que `AppSettingsProvider` ha leído tema, mano e
+  idioma y los ha aplicado, así nunca se pinta un frame con las fuentes del sistema, el tema o el
+  idioma equivocados. `StartupErrorScreen` lo oculta también, o un fallo de la base lo dejaría fijo.
 - Movimiento: `theme/motion.ts` resuelve los tokens de `packages/ui` en planes (`full`/`fade`/`none`,
   el mismo contrato que `transitions.ts` en web) y los worklets `animateMove`/`animateFade` los
   ejecutan. Son el único helper del hilo de UI fuera de `packages/core`, porque envuelven Reanimated;
@@ -747,6 +749,7 @@ Sin librerías: unas 60 líneas de TypeScript que funcionan igual en Expo (Herme
 - `es.ts` es la fuente de verdad (`as const`). `en.ts` lleva `satisfies Messages`: si falta o sobra una clave, falla `pnpm typecheck`. Un test de tipos comprueba que cada clave tiene los mismos `{param}` en los dos idiomas.
 - `createTranslator(locale)` devuelve `t(key, params?)`. Las claves son rutas con punto (`"app.name"`) y los parámetros se infieren del texto: con `"Trozo {id}"`, `t("camera.tile", { id })` es obligatorio; sin `{…}`, no admite parámetros.
 - `resolveLocale(tags)` elige el primer idioma soportado de la lista (`"es-MX"` → `es`) y, si no hay ninguno, `en`. Cada app le pasa los idiomas del sistema: `getLocales()` de expo-localization en móvil y `navigator.languages` en PC.
+- `LanguagePreference` (`"system" | "es" | "en"`) y `resolveLanguagePreference(pref, tags)` eligen el idioma de la app. En móvil `src/i18n.ts` guarda el idioma en uso: `applyLocale` se llama una sola vez al arrancar (desde `AppSettingsProvider`, antes de montar las pantallas), `getLocale()` lo da a `Intl` y `t` delega en el traductor activo. Por eso nada que dependa del idioma se calcula al importar un módulo (`usePercentFormat` en vez de `percentFormat` a nivel de módulo). Cambiar el idioma en Ajustes solo lo guarda y avisa de que se aplica al reabrir la app.
 - Pendiente: plurales con `Intl.PluralRules` (ej. claves con forma `{ one, other }`) cuando llegue Retos; la API de `t` debe admitirlo sin romper llamadas.
 
 ## Almacenamiento
@@ -813,7 +816,7 @@ sea una lista de textos → ninguno, y nunca impide abrir el proyecto. `UPDATE_P
 el resto del estado de la cámara; `UPDATE_PROJECT_SPLIT` lo vacía si cambia la rejilla (comparando
 `rows`, `cols` y `paper.paper`/`orientation`/`widthCm` del JSON de `split` con `json_extract`).
 
-La v6 (issue #70) crea la tabla `settings` (`key TEXT PRIMARY KEY`, `value TEXT`) con `CREATE TABLE IF NOT EXISTS`, para que repetirla tras un fallo antes de subir `user_version` no falle. Guarda las preferencias de la app como texto (`magnet_enabled` = `"1"`/`"0"`); una clave ausente vale su valor por defecto, y un valor corrupto también (`parseBooleanSetting`): nunca impide abrir la cámara.
+La v6 (issue #70) crea la tabla `settings` (`key TEXT PRIMARY KEY`, `value TEXT`) con `CREATE TABLE IF NOT EXISTS`, para que repetirla tras un fallo antes de subir `user_version` no falle. Guarda las preferencias de la app como texto (`magnet_enabled` = `"1"`/`"0"`, `drawing_hand` = `"right"`/`"left"`, `theme_preference` = `"system"`/`"light"`/`"dark"`, `language` = `"system"`/`"es"`/`"en"`); una clave ausente vale su valor por defecto, y un valor corrupto también (`parseBooleanSetting`): nunca impide abrir la cámara.
 
 La v5 (issue #68) añade `pinned_placement` (JSON `{transform, viewport}` en TEXT): la posición que la
 persona fija con el pin del panel de ajuste fino. NULL = sin pin. Se lee con tolerancia, como los
