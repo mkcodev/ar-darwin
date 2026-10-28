@@ -179,6 +179,8 @@ export const en = {
     importError: "The image could not be imported. Please try again.",
     cameraDenied: "No camera permission. Turn it on in the system settings to take photos.",
     projectLabel: "{name}, {status}",
+    cardStatusProgress: "{status} · {done}/{total}",
+    projectLabelProgress: "{name}, {status}, {done} of {total} tiles done",
     projectHint: "Opens the camera. Long press for the project's actions",
     actions: {
       split: "Split",
