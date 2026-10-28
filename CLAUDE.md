@@ -32,6 +32,12 @@ Prompts por fase: docs/PROMPTS.md. Flujo de git (issue, rama, PR, squash): docs/
 ## Trampas del monorepo
 - pnpm-workspace.yaml usa `nodeLinker: hoisted` a propósito (evita copias duplicadas de
   vision-camera/nitro-image en Metro, issue #25). No lo cambies.
+- react-native-vision-camera lleva un parche (`patches/`, `patchedDependencies` en
+  pnpm-workspace.yaml) contra la fuga de la cámara (issue #62). Va fijada a 5.2.3 sin `^`. Al
+  subirla, regenera el parche o bórralo si la versión ya incluye las PRs #4185/#4186 (ver
+  docs/spikes/camera.md). Cambia código nativo: pide un development build nuevo. `pnpm patch-commit`
+  falla en Windows por rutas largas: lánzalo con
+  `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.longpaths GIT_CONFIG_VALUE_0=true`.
 - En apps/mobile, añade paquetes con `npx expo install <pkg>` (versiones compatibles con el SDK),
   no con pnpm add. Más reglas de Expo en apps/mobile/AGENTS.md. No edites ios/ ni android/ (CNG).
 - app.config.ts (variantes por APP_VARIANT) lee textos de packages/i18n en Node ESM puro:

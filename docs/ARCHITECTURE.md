@@ -348,7 +348,7 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   este proyecto» con botón para volver.
   Libera la memoria a mano (issue #62): el GC de Hermes no ve el peso nativo/GPU de una imagen de
   4096 px, así que no se deja en sus manos. (La fuga de ~7 MB por apertura de la cámara es otra, de
-  vision-camera; ver docs/spikes/camera.md.) `SkData` se
+  vision-camera, y se corrige con un parche de `pnpm patch`; ver docs/spikes/camera.md.) `SkData` se
   libera nada más crear la imagen (la imagen diferida guarda su propia referencia a los bytes); el
   `SkImage`, 1 s después de desmontar la pantalla (`DISPOSE_DELAY_MS`: usar un objeto liberado
   lanza en el hilo de UI si el Canvas aún lo pinta), o al momento si decodifica tras desmontar.
