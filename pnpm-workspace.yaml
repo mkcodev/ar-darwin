@@ -11,6 +11,12 @@ nodeLinker: hoisted
 # vacío). Skia lo necesita para colocar sus binarios nativos.
 allowBuilds:
   '@shopify/react-native-skia': true
+# Fuga de memoria de la cámara (issue #62, vision-camera#4180): PRs #4185 y #4186 de vision-camera,
+# aún sin publicar, más `session.dispose()` en `useCameraSession`. El parche va atado a la versión
+# exacta (apps/mobile la fija sin `^`). Ver docs/spikes/camera.md.
+patchedDependencies:
+  react-native-vision-camera@5.2.3: patches/react-native-vision-camera@5.2.3.patch
+
 # Retraso de versiones nuevas: pnpm 11 ya no instala versiones con menos de 24 h
 # (`minimumReleaseAge: 1440` por defecto). No lo escribas aquí: hacerlo activa
 # `minimumReleaseAgeStrict` y pnpm fallaría en vez de quedarse con la versión anterior.
