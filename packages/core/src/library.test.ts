@@ -19,6 +19,7 @@ import {
   remapProjectPath,
   setProjectDone,
   sortProjects,
+  tileMapCells,
 } from "./library";
 import type { Project, SplitConfig } from "./models";
 import { createProject } from "./project";
@@ -270,5 +271,21 @@ describe("setProjectDone", () => {
     expect(reopened.status).toBe("in_progress");
     expect(reopened.completedAt).toBeUndefined();
     expect(setProjectDone(project(2, { status: "done" }), false, later).status).toBe("pending");
+  });
+});
+
+describe("tileMapCells", () => {
+  it("marks the current tile over done ones, and falls back to A1", () => {
+    const split = { rows: 2, cols: 2 };
+    const cells = tileMapCells({ split, currentTileId: "B1", completedTileIds: ["A1", "B1"] });
+    expect(cells.map((c) => `${c.id}:${c.state}`)).toEqual([
+      "A1:done",
+      "A2:pending",
+      "B1:current",
+      "B2:pending",
+    ]);
+    expect(tileMapCells({ split, currentTileId: "Z9", completedTileIds: [] })[0]?.state).toBe(
+      "current",
+    );
   });
 });

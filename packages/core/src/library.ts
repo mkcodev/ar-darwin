@@ -1,6 +1,6 @@
 import { projectDir } from "./importImage";
-import { type Project, ProjectSchema, type ProjectStatus } from "./models";
-import { libraryTileProgress } from "./splitConfig";
+import { type Project, ProjectSchema, type ProjectStatus, type SplitConfig } from "./models";
+import { libraryTileProgress, pickedTileId } from "./splitConfig";
 
 /** Longest name a project keeps; longer input is cut (the cards show one line anyway). */
 export const MAX_PROJECT_NAME_LENGTH = 80;
@@ -234,4 +234,34 @@ export function setProjectDone(project: Project, done: boolean, now: Date): Proj
   const { completedAt: _completedAt, ...rest } = project;
   const traced = project.completedTileIds.length > 0 || project.timeSpentMs > 0;
   return { ...rest, status: traced ? "in_progress" : "pending", updatedAt };
+}
+
+export type TileMapCell = {
+  id: string;
+  row: number;
+  col: number;
+  /** `current`: the tile the camera opens on (it wins over `done`). */
+  state: "current" | "done" | "pending";
+};
+
+/**
+ * The cells of the «keep tracing» card's tile map, in reading order: the tile the camera will
+ * open on (`currentTileId`, or A1 when it is missing or outside the grid) and the tiles done.
+ */
+export function tileMapCells(
+  project: Pick<Project, "currentTileId" | "completedTileIds"> & {
+    split: Pick<SplitConfig, "rows" | "cols">;
+  },
+): TileMapCell[] {
+  const current = pickedTileId(project.split, project.currentTileId);
+  const done = new Set(project.completedTileIds);
+  const cells: TileMapCell[] = [];
+  for (let row = 0; row < project.split.rows; row++) {
+    for (let col = 0; col < project.split.cols; col++) {
+      const id = `${String.fromCharCode(65 + row)}${col + 1}`;
+      const state = id === current ? "current" : done.has(id) ? "done" : "pending";
+      cells.push({ id, row, col, state });
+    }
+  }
+  return cells;
 }
