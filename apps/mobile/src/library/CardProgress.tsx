@@ -1,4 +1,4 @@
-import { cameraDock, radius } from "@ar-darwin/ui";
+import { library, radius } from "@ar-darwin/ui";
 import { StyleSheet, View } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
 
@@ -33,6 +33,6 @@ export function CardProgress({ done, total }: CardProgressProps) {
 }
 
 const styles = StyleSheet.create({
-  track: { height: cameraDock.segmentHeight, borderRadius: radius.pill, overflow: "hidden" },
+  track: { height: library.progressHeight, borderRadius: radius.pill, overflow: "hidden" },
   fill: { height: "100%", borderRadius: radius.pill },
 });
