@@ -8,6 +8,7 @@ export const es = {
   permissions: {
     camera: "AR-Darwin necesita la cámara para superponer tu imagen y calcarla.",
     photos: "AR-Darwin necesita la galería para importar las imágenes que vas a calcar.",
+    savePhotos: "AR-Darwin guarda en tu galería la foto del dibujo terminado.",
   },
   common: {
     replay: "Repetir",
