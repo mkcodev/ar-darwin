@@ -3,11 +3,10 @@ import { StyleSheet, View } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import { Icon } from "../components/Icon";
 import { Slider } from "../components/Slider";
-import { percentFormat } from "../format";
+import { usePercentFormat } from "../format";
 import { t } from "../i18n";
 import { useTheme } from "../theme/ThemeProvider";
 
-const opacityText = percentFormat(1);
 const ICON_SIZE = 20;
 
 type DockOpacityProps = {
@@ -23,6 +22,7 @@ type DockOpacityProps = {
  * unfolding it would cost a tap every time.
  */
 export function DockOpacity({ value, onChangeEnd, onActiveChange }: DockOpacityProps) {
+  const opacityText = usePercentFormat(1);
   const { theme } = useTheme();
   const c = theme.color.camera;
 

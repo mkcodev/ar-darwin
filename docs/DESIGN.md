@@ -149,6 +149,11 @@ Momentos de firma:
   borde superior, crece hasta 1,05 desde la izquierda (solo iOS: Android estira en vez de
   desplazar). Con «reducir movimiento», solo el fundido cruzado.
 - Pantallas secundarias (Ajustes, ficha, divisor): header nativo sobre el lienzo, sin sombra.
+- Ajustes: una lista vertical de ajustes separados por `space[6]`, sin tarjetas ni divisores. Tema
+  (Sistema | Claro | Oscuro), «¿Con qué mano dibujas?» (Derecha | Izquierda) e Idioma (Sistema |
+  Español | English) son `SegmentedControl` (radiogrupo, 48 dp, la selección desliza con `snappy`);
+  cada uno con su nota atenuada debajo (la del idioma solo aparece si el elegido no es el activo).
+  Después, el interruptor del imán. El cambio de tema se ve al instante en la propia pantalla.
 
 ## Biblioteca
 

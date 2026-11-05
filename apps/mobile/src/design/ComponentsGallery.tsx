@@ -8,13 +8,11 @@ import { SegmentedControl } from "../components/SegmentedControl";
 import { Slider } from "../components/Slider";
 import { Stepper } from "../components/Stepper";
 import { Toggle } from "../components/Toggle";
-import { percentFormat } from "../format";
+import { usePercentFormat } from "../format";
 import { t } from "../i18n";
 import { useTheme } from "../theme/ThemeProvider";
 
 type Edges = "flush" | "extended";
-
-const opacityText = percentFormat(1);
 
 type ComponentsGalleryProps = {
   grid: boolean;
@@ -28,6 +26,7 @@ type ComponentsGalleryProps = {
  * texts). The bottom sheet itself lives at the screen's root, outside the ScrollView.
  */
 export function ComponentsGallery({ grid, onGrid, opacity, onOpenSheet }: ComponentsGalleryProps) {
+  const opacityText = usePercentFormat(1);
   const { theme } = useTheme();
   const c = theme.color;
   const [magnet, setMagnet] = useState(true);

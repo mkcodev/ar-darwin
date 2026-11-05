@@ -1,5 +1,4 @@
 import { type ErrorBoundaryProps, SplashScreen } from "expo-router";
-import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StartupErrorScreen } from "../components/StartupErrorScreen";
 import { AppStack } from "../navigation/AppStack";
@@ -8,7 +7,9 @@ import { ReduceMotionProvider } from "../theme/ReduceMotionProvider";
 import { ThemeProvider } from "../theme/ThemeProvider";
 import { useAppFonts } from "../theme/useAppFonts";
 
-// Keep the native splash until the fonts are in: no frame ever paints in system fonts.
+// Keep the native splash until the stored settings are read (`AppSettingsProvider` hides it), so no
+// frame paints in system fonts, the wrong theme or the wrong language. A start-up failure hides it
+// from the recovery screen.
 SplashScreen.preventAutoHideAsync().catch(() => {
   // Already hidden (fast refresh): nothing to keep.
 });
@@ -26,13 +27,8 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
 export default function RootLayout() {
   const fontsReady = useAppFonts();
 
-  useEffect(() => {
-    if (fontsReady) SplashScreen.hide();
-  }, [fontsReady]);
-
   if (!fontsReady) return null;
 
-  // The providers take `initial`/`onChange` so the Settings task can load and store them.
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>

@@ -4,13 +4,12 @@ import { StyleSheet, Text, View } from "react-native";
 import type { SharedValue } from "react-native-reanimated";
 import { IconButton } from "../components/IconButton";
 import { Slider } from "../components/Slider";
-import { percentFormat } from "../format";
+import { usePercentFormat } from "../format";
 import { t } from "../i18n";
 import { playHaptic } from "../theme/playHaptic";
 import { useTheme } from "../theme/ThemeProvider";
 
 const MIN_PERCENT = 1;
-const percentText = percentFormat(100);
 const label = toNativeTextStyle(typography.label);
 
 type OverlapControlProps = {
@@ -23,6 +22,7 @@ type OverlapControlProps = {
 
 /** The thickness of the extended edge: a slider with − and + buttons, in % of a tile. */
 export function OverlapControl({ percent, committed, onCommit }: OverlapControlProps) {
+  const percentText = usePercentFormat(100);
   const { theme } = useTheme();
 
   const step = (delta: number) => {
