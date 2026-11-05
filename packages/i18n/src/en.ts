@@ -8,6 +8,7 @@ export const en = {
   permissions: {
     camera: "AR-Darwin needs the camera to overlay your image so you can trace it.",
     photos: "AR-Darwin needs your photo library to import the images you want to trace.",
+    savePhotos: "AR-Darwin saves the photo of your finished drawing to your photo library.",
   },
   common: {
     replay: "Replay",

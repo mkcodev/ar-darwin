@@ -54,7 +54,20 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   (`apps/mobile/src/spikes.ts`: `__DEV__ ||` esa variable, que Metro inlinea al empaquetar). Sirve
   para medir rendimiento en código release. `production` se añade en la fase 4.
 - Permisos de cámara y galería (`NSCameraUsageDescription`, `expo-image-picker`) desde
-  `packages/i18n` (`permissions.camera`/`permissions.photos`, es/en), nunca a mano en el config.
+  `packages/i18n` (`permissions.camera`/`permissions.photos`/`permissions.savePhotos`, es/en), nunca
+  a mano en el config.
+- Sin permisos de lectura de la galería en Android: `android.blockedPermissions` quita
+  `READ_EXTERNAL_STORAGE`, `READ_MEDIA_IMAGES`/`VIDEO`/`AUDIO`, `READ_MEDIA_VISUAL_USER_SELECTED` y
+  `ACCESS_MEDIA_LOCATION` (`tools:node="remove"`). Los añaden el plugin de `expo-media-library`
+  (Expo lo aplica aunque no esté en `plugins`) y los manifests propios de expo-file-system,
+  expo-image-picker y expo-image, que Gradle fusiona después del prebuild. Importar va por los
+  selectores del sistema (sin permiso) y `expo-media-library` solo escribe (`writeOnly`). Google Play
+  restringe el acceso amplio a fotos.
+- Módulos nativos instalados para el rebuild de la fase 3 y aún sin usar desde JS (issue #103):
+  `expo-document-picker`, `expo-media-library`, `expo-sharing` (recibe una imagen con «Compartir»,
+  solo Android: `singleShareMimeTypes: ["image/*"]`, iOS apagado hasta la fase 4) y
+  `expo-navigation-bar` (sin plugin: no hace falta fijar valores iniciales). Hasta que un client
+  nuevo esté instalado, ningún código JS puede importarlos («Cannot find native module»).
 - `packages/i18n` expone `es`/`en` como valores (no solo tipos) para que `app.config.ts` los lea en
   tiempo de build; sus imports relativos usan extensión `.ts` explícita (`allowImportingTsExtensions`
   en `tsconfig.base.json`) porque el loader de `expo config` corre en Node ESM puro, que exige
