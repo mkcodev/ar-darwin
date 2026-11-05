@@ -168,3 +168,25 @@ export const lockButton = {
   /** Graphite track around the progress arc: the accent never sits straight on the photo. */
   ringTrackPad: 2,
 } as const;
+
+/** Library (home screen): the «keep tracing» card, its tile map, the grid cards and the undo bar. */
+export const library = {
+  /** Thumbnail of the «keep tracing» card: portrait 3:4, like a sheet of paper. */
+  continueThumbWidth: 72,
+  continueThumbHeight: 96,
+  /** Side of the tile map drawn in that card (the longer side of the grid fits in it). */
+  tileMapSide: 56,
+  /** Line width of the tile map's grid, in the guide blue. */
+  tileMapStroke: 1,
+  /** Gap between the tile map's cells, so a filled current tile never touches its neighbours. */
+  tileMapInset: 1.5,
+  /** Height of the progress bar under a grid card's thumbnail. */
+  progressHeight: 4,
+  /** Extra hit area around a card's «⋯» (drawn 24 dp) so it reaches `touchTarget`. */
+  cardMenuHitSlop: 12,
+  /** The undo bar after deleting a project stays this long; longer with a screen reader. */
+  undoMs: 5000,
+  undoScreenReaderMs: 10000,
+  /** Icon of a category next to its name on a card. */
+  categoryIconSize: 16,
+} as const;
