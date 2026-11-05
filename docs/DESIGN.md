@@ -155,6 +155,10 @@ Momentos de firma:
 - Rejilla de 2 columnas bajo el titular. Tarjeta: miniatura en marco vertical 3:4 (proporción de
   folio) sobre `bg.surface` con línea fina y radio `md`, sin sombra; debajo el nombre (`label`) y
   el estado en Geist Mono (`value`, atenuado).
+- Proyecto dividido (rejilla de más de un trozo): bajo el marco, sobre el lienzo y no sobre la
+  miniatura (así se lee igual con una imagen blanca o negra), una barra de 4 dp (`cameraDock.segmentHeight`)
+  con pista `border.strong` y relleno `text.primary`; el estado pasa a «En curso · 4/9». Sin
+  animación. La tarjeta se lee «nombre, estado, 4 de 9 trozos hechos». Sin dividir o 1×1: nada.
 - Importar: «+» en la barra y botón primario en el estado vacío; hoja con una fila por fuente.
 - Toque o pulsación larga en una tarjeta → hoja de acciones; «Eliminar» (botón `danger`) pide
   confirmación dentro de la misma hoja, sin diálogo del sistema. Con lector de pantalla, la

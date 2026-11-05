@@ -79,6 +79,8 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
       papel» de la fase 2; issue #88)
 - [x] Progreso por trozo: marcar hecho, «4/9»; migración v7 `completed_tiles`. Se une a «Minimapa y
       Siguiente trozo» (issue #90)
+- [x] Progreso por trozo en la Biblioteca: «En curso · 4/9» y barra fina bajo la miniatura de los
+      proyectos divididos (`libraryTileProgress`, issue #96)
 - [x] Minimapa y botón Siguiente trozo en la cámara: indicador del trozo, vuelta a A1 tras el último,
       zoom, opacidad y pin intactos, también con el candado (`nextTileId`, issue #86)
 - [x] Dock de la cámara: una sola superficie con estado del trozo, progreso segmentado, opacidad y una acción

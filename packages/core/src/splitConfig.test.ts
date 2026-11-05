@@ -12,6 +12,7 @@ import {
   draftFromConfig,
   hasCuts,
   isTileInGrid,
+  libraryTileProgress,
   MAX_OVERLAP_PERCENT,
   nextPendingTileId,
   nextTileId,
@@ -543,6 +544,38 @@ describe("tileProgress", () => {
   it("ignores duplicates and ids outside the grid", () => {
     expect(tileProgress({ rows: 1, cols: 2 }, ["A1", "A1", "B1", "A3"])).toEqual({
       done: 1,
+      total: 2,
+    });
+  });
+});
+
+describe("libraryTileProgress", () => {
+  it("is null for a project that was never split", () => {
+    expect(libraryTileProgress({ completedTileIds: [] })).toBeNull();
+  });
+
+  it("is null for a 1×1 split: one tile is not a division", () => {
+    expect(
+      libraryTileProgress({ split: { rows: 1, cols: 1 }, completedTileIds: ["A1"] }),
+    ).toBeNull();
+  });
+
+  it("is the tiles done out of the grid", () => {
+    const split = { rows: 3, cols: 3 };
+    expect(libraryTileProgress({ split, completedTileIds: ["A1", "B2", "C3", "B1"] })).toEqual({
+      done: 4,
+      total: 9,
+    });
+  });
+
+  it("does not count ids outside the grid, and reaches the total when all are done", () => {
+    const split = { rows: 1, cols: 2 };
+    expect(libraryTileProgress({ split, completedTileIds: ["A1", "A5"] })).toEqual({
+      done: 1,
+      total: 2,
+    });
+    expect(libraryTileProgress({ split, completedTileIds: ["A1", "A2"] })).toEqual({
+      done: 2,
       total: 2,
     });
   });

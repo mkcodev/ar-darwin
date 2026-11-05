@@ -180,6 +180,8 @@ export const es = {
     importError: "No se ha podido importar la imagen. Inténtalo de nuevo.",
     cameraDenied: "Sin permiso de cámara. Actívalo en los ajustes del sistema para hacer fotos.",
     projectLabel: "{name}, {status}",
+    cardStatusProgress: "{status} · {done}/{total}",
+    projectLabelProgress: "{name}, {status}, {done} de {total} trozos hechos",
     projectHint: "Abre la cámara. Mantén pulsado para ver las acciones",
     actions: {
       split: "Dividir",
