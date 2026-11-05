@@ -474,8 +474,17 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   de la persona. Un fallo de migración deja la base en la versión anterior (transacción), así que
   reintentar es seguro.
 - Rutas hoy: `/` Biblioteca, `/project/[id]/camera` cámara del proyecto, `/project/[id]/split`
-  divisor, `/settings` Ajustes, `/dev/design` y `/dev/camera` (solo desarrollo o `spikesEnabled`).
-  Cada tarea añade la suya (ficha del proyecto, onboarding).
+  divisor, `/settings` Ajustes, `/onboarding` introducción (`?replay=1` desde Ajustes), `/dev/design` y
+  `/dev/camera` (solo desarrollo o `spikesEnabled`). Cada tarea añade la suya (ficha del proyecto).
+- Onboarding (issue #100): `app/index.tsx` redirige a `/onboarding` mientras `onboarding_done` no sea
+  `"1"` (`AppSettingsProvider.onboardingDone`, leído con tema, mano e idioma antes de ocultar la splash:
+  la Biblioteca no asoma; si esa lectura falla se da por visto). Tres páginas de `core/onboarding.ts`
+  (`ONBOARDING_STEPS`: calcar, dividir, cámara) en `src/onboarding/`: dibujos Skia que se escriben solos
+  (`StrokeScene`), swipe con `Gesture.Pan` solo sobre el dibujo y el texto (el selector de mano queda
+  fuera), botón atrás en la cabecera, atrás de Android y acciones «Siguiente»/«Anterior» para el lector
+  de pantalla. El permiso de cámara (`cameraPermissionAction`: pedir, o abrir los ajustes del sistema
+  si ya se negó) va en la última página; `CameraPermissionGate` sigue de red en la cámara. Terminar
+  guarda `finishOnboarding()` y va a `/`; con `?replay=1` solo vuelve a Ajustes.
   Las rutas `dev/*` cargan su pantalla con `require()` tras una condición escrita en línea
   (`__DEV__` / `process.env.EXPO_PUBLIC_SPIKES`, que Metro pliega; una constante importada como `spikesEnabled` no): así un bundle de producción no lleva el spike, la galería ni las imágenes de prueba (~4,6 MB).
   Typed routes activas (`experiments.typedRoutes`): `router.push` y `href` comprueban la ruta.
@@ -816,7 +825,7 @@ sea una lista de textos → ninguno, y nunca impide abrir el proyecto. `UPDATE_P
 el resto del estado de la cámara; `UPDATE_PROJECT_SPLIT` lo vacía si cambia la rejilla (comparando
 `rows`, `cols` y `paper.paper`/`orientation`/`widthCm` del JSON de `split` con `json_extract`).
 
-La v6 (issue #70) crea la tabla `settings` (`key TEXT PRIMARY KEY`, `value TEXT`) con `CREATE TABLE IF NOT EXISTS`, para que repetirla tras un fallo antes de subir `user_version` no falle. Guarda las preferencias de la app como texto (`magnet_enabled` = `"1"`/`"0"`, `drawing_hand` = `"right"`/`"left"`, `theme_preference` = `"system"`/`"light"`/`"dark"`, `language` = `"system"`/`"es"`/`"en"`); una clave ausente vale su valor por defecto, y un valor corrupto también (`parseBooleanSetting`): nunca impide abrir la cámara.
+La v6 (issue #70) crea la tabla `settings` (`key TEXT PRIMARY KEY`, `value TEXT`) con `CREATE TABLE IF NOT EXISTS`, para que repetirla tras un fallo antes de subir `user_version` no falle. Guarda las preferencias de la app como texto (`magnet_enabled` = `"1"`/`"0"`, `drawing_hand` = `"right"`/`"left"`, `theme_preference` = `"system"`/`"light"`/`"dark"`, `language` = `"system"`/`"es"`/`"en"`, `onboarding_done` = `"1"`/`"0"`); una clave ausente vale su valor por defecto, y un valor corrupto también (`parseBooleanSetting`): nunca impide abrir la cámara.
 
 La v5 (issue #68) añade `pinned_placement` (JSON `{transform, viewport}` en TEXT): la posición que la
 persona fija con el pin del panel de ajuste fino. NULL = sin pin. Se lee con tolerancia, como los
