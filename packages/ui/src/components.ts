@@ -187,6 +187,6 @@ export const library = {
   /** The undo bar after deleting a project stays this long; longer with a screen reader. */
   undoMs: 5000,
   undoScreenReaderMs: 10000,
-  /** Icon of a category next to its name on a card. */
-  categoryIconSize: 16,
+  /** Small icons beside text: a category on a card, a check, a chip's close. */
+  smallIcon: 16,
 } as const;
