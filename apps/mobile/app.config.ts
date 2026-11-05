@@ -43,6 +43,18 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       monochromeImage: "./assets/images/android-icon-monochrome.png",
     },
     permissions: ["android.permission.CAMERA"],
+    // The app never reads the gallery: imports go through the system pickers (no permission) and
+    // expo-media-library only writes the finished photo. These come from the libraries' own
+    // manifests (merged by Gradle, so they never show in a prebuild manifest) and the
+    // media-library plugin; Google Play restricts broad photo access.
+    blockedPermissions: [
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.READ_MEDIA_IMAGES",
+      "android.permission.READ_MEDIA_VIDEO",
+      "android.permission.READ_MEDIA_AUDIO",
+      "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+      "android.permission.ACCESS_MEDIA_LOCATION",
+    ],
     predictiveBackGestureEnabled: false,
   },
   web: {
@@ -66,6 +78,22 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         photosPermission: es.permissions.photos,
         cameraPermission: es.permissions.camera,
         microphonePermission: false,
+      },
+    ],
+    [
+      "expo-media-library",
+      {
+        photosPermission: es.permissions.photos,
+        savePhotosPermission: es.permissions.savePhotos,
+        granularPermissions: [],
+      },
+    ],
+    [
+      "expo-sharing",
+      {
+        // Receiving shared images is Android-only for now (iOS share extension: phase 4).
+        ios: { enabled: false },
+        android: { enabled: true, singleShareMimeTypes: ["image/*"] },
       },
     ],
   ],
