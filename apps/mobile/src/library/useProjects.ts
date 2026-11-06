@@ -131,12 +131,16 @@ export function useProjects(): LibraryState {
     [db],
   );
 
-  /** Saves an edited project (stamping `updatedAt`) and reloads, so the order stays «recent first». */
+  /**
+   * Saves an edited project and reloads. `"touch"` stamps `updatedAt` (finishing or reopening is
+   * work on the project); `"keep"` leaves it as it was, so a new name or category moves neither
+   * «Keep tracing» nor the «Recent» order: those follow the tracing, not the filing.
+   */
   const update = useCallback(
-    async (next: Project) => {
+    async (next: Project, date: "touch" | "keep") => {
       setNotice(null);
       try {
-        await saveProject(db, next);
+        await saveProject(db, next, date === "keep" ? new Date(next.updatedAt) : new Date());
       } catch (error) {
         console.warn("useProjects: save failed", error);
         setNotice(t("library.actions.saveError"));
@@ -150,16 +154,16 @@ export function useProjects(): LibraryState {
   );
 
   const rename = useCallback(
-    (project: Project, name: string) => update({ ...project, name }),
+    (project: Project, name: string) => update({ ...project, name }, "keep"),
     [update],
   );
   const setCategories = useCallback(
     (project: Project, categoryIds: readonly string[]) =>
-      update({ ...project, categoryIds: [...categoryIds] }),
+      update({ ...project, categoryIds: [...categoryIds] }, "keep"),
     [update],
   );
   const setDone = useCallback(
-    (project: Project, done: boolean) => update(setProjectDone(project, done, new Date())),
+    (project: Project, done: boolean) => update(setProjectDone(project, done, new Date()), "touch"),
     [update],
   );
 
