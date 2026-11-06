@@ -92,7 +92,8 @@ Con poca luz, la píldora clara sería lo más brillante de la pantalla y aparta
 
 ## Tipografía
 
-- **Titulares:** Instrument Serif, cursiva (editorial, nada genérica).
+- **Titulares:** Instrument Serif, cursiva (editorial, nada genérica). También el nombre del
+  proyecto de «Seguir calcando» (rol `headline`, 26/30), y en ningún otro sitio de la Biblioteca.
 - **Interfaz:** Geist.
 - **Medidas y valores:** Geist Mono (112 %, 15 px, A1).
 
@@ -172,19 +173,67 @@ Momentos de firma:
 
 ## Biblioteca
 
-- Rejilla de 2 columnas bajo el titular. Tarjeta: miniatura en marco vertical 3:4 (proporción de
-  folio) sobre `bg.surface` con línea fina y radio `md`, sin sombra; debajo el nombre (`label`) y
-  el estado en Geist Mono (`value`, atenuado).
-- Proyecto dividido (rejilla de más de un trozo): bajo el marco, sobre el lienzo y no sobre la
-  miniatura (así se lee igual con una imagen blanca o negra), una barra de 4 dp (`cameraDock.segmentHeight`)
-  con pista `border.strong` y relleno `text.primary`; el estado pasa a «En curso · 4/9». Sin
-  animación. La tarjeta se lee «nombre, estado, 4 de 9 trozos hechos». Sin dividir o 1×1: nada.
-- Importar: «+» en la barra y botón primario en el estado vacío; hoja con una fila por fuente.
-- Toque o pulsación larga en una tarjeta → hoja de acciones; «Eliminar» (botón `danger`) pide
-  confirmación dentro de la misma hoja, sin diálogo del sistema. Con lector de pantalla, la
-  tarjeta se lee «nombre, estado» y ofrece la acción «Eliminar».
-- Al borrar, la tarjeta se desvanece y la rejilla cierra el hueco con el muelle `gentle`; con
-  «reducir movimiento», solo el fundido.
+Biblioteca 2 (issue #105). Lo memorable está en un solo sitio, el mapa de trozos de «Seguir
+calcando»; el resto es sobrio.
+
+- **Vacía:** el dibujo del onboarding (el árbol calcado sobre un folio, con trazo vivo), una frase
+  de qué hace la app (`library.emptyIntro`) y las fuentes de `IMPORT_SOURCES` como botones a todo
+  lo ancho, la primera primaria («Elegir de la galería», «Hacer una foto»; «Archivos» se suma sola
+  tras el rebuild). Sin «Importar» en la barra.
+- **Barra:** «Importar» como píldora con texto (botón secundario compacto con «+»), no un «+»
+  suelto, y el icono de Ajustes.
+- **Resumen:** una línea `body` atenuada bajo el titular, «3 en curso. Llevas 14 h calcando.»; se
+  omite la parte que vale cero.
+- **«Seguir calcando»** (`ContinueCard`, unos 190 dp): el proyecto no terminado con el `updatedAt`
+  más reciente. Renombrar o cambiar categorías no cambia la fecha (la tarjeta sigue al trabajo en
+  la cámara, no al archivo); terminar, reabrir, duplicar e importar sí. `bg.surface` con línea fina y radio `lg` (las miniaturas llevan `md`: la jerarquía
+  también está en la forma), sin sombra.
+  - Miniatura 72 × 96 (`library.continueThumb*`), nombre en Instrument Serif (`headline`, 26/30,
+    dos líneas), «Trozo B2» o «Sin dividir» en Geist Mono, y «4/9 trozos» y el tiempo en mono
+    atenuado, en elementos separados (nunca unidos con «·»).
+  - A la derecha, el **mapa de trozos** (`TileMap`, Skia, lado largo `library.tileMapSide` 56):
+    celdas en azul no-foto (`guide.default`), las hechas con tinte `guide.tint` y una marca fina, y
+    el trozo actual relleno de bermellón (con su marca en `text.onAccent` si ya está hecho: «2/6»
+    enseña dos marcas). Solo aparece, sin animación. Sin dividir: botón «Dividir».
+  - Botón primario a todo lo ancho con la cámara: «Seguir calcando», o «Empezar a calcar» si no se
+    empezó. Abre la cámara en el trozo guardado.
+  - Si todo está terminado, no hay tarjeta. Al buscar o filtrar se oculta.
+- **Búsqueda y filtros** (desde `LIBRARY_TOOLBAR_MIN_PROJECTS` = 5 proyectos, o mientras haya un
+  filtro): campo de búsqueda en píldora (`SearchField`, cursor y selección en bermellón) y botón
+  «Filtrar», que con filtros activos pasa al acento y muestra cuántos. Debajo, un chip quitable por
+  filtro activo (fila con scroll lateral).
+- **Hoja «Filtrar y ordenar»:** estado (uno: Todos, Sin empezar, En curso, Completado), categorías
+  (varias; basta una), orden con el `SegmentedControl` (Recientes, Nombre, Progreso). Los cambios
+  son un borrador hasta «Ver resultados (N)», con la cuenta en vivo; «Restablecer» no toca la
+  búsqueda.
+- **Sección:** «Otros proyectos» (o «Resultados» al filtrar) en `title`, el total en mono atenuado
+  y el orden actual a la derecha con el icono `sort` (abre la hoja). Sin resultados: «Ningún
+  proyecto coincide.» y «Quitar filtros» («Borrar búsqueda» si solo hay búsqueda). Con un solo proyecto, una pista atenuada de la pulsación larga.
+- **Rejilla:** 2 columnas; deja fuera el destacado salvo al filtrar. Tarjeta: miniatura 3:4 sobre
+  `bg.surface` con línea fina y radio `md`, sin sombra; píldora «⋯» (`bg.surface`, línea
+  `border.strong`, que se ve también sobre una miniatura blanca en el tema claro; hit slop
+  `library.cardMenuHitSlop`) arriba a la derecha sobre la miniatura. Debajo:
+  - en proyectos divididos, la barra fina de 4 dp (`library.progressHeight`) sobre el lienzo, no
+    sobre la miniatura (se lee igual con una imagen blanca o negra); sin barra, el hueco se
+    reserva igual, así los nombres de una fila quedan alineados;
+  - nombre (`label`);
+  - estado en `label` atenuado y «4/9» en mono atenuado (el mono es para valores: las palabras en
+    mono parecen código); los completados, con una marca;
+  - la primera categoría como icono en su tinta + nombre, y «+N» si hay más.
+- **Acciones** (pulsación larga o «⋯»): hoja con filas de 56 dp (`SheetRow`): Renombrar, Categorías
+  (con las actuales a la derecha, en `body`), Dividir o Volver a dividir (con «3 × 3» en mono), Duplicar, Marcar como
+  terminado o Reabrir, y Eliminar en `danger`. Renombrar y Categorías son pasos dentro de la misma
+  hoja (campo de texto con «Guardar», que no deja un nombre vacío y sube sobre el teclado; chips de selección múltiple
+  con «Listo»). «Reabrir» solo aparece si el «terminado» se marcó a mano y algún trozo sigue
+  pendiente.
+- **Eliminar con deshacer:** sin confirmación. La tarjeta se funde y la rejilla cierra el hueco
+  con `gentle` (con «reducir movimiento», solo el fundido), y sale un `Snackbar` abajo
+  (`bg.raised`, línea fina, radio `lg`, sin sombra) con «Deshacer» en bermellón durante
+  `library.undoMs` (5 s; `undoScreenReaderMs`, 10 s, con lector de pantalla). Se anuncia con
+  `announceForAccessibility`. Duplicar confirma con el mismo snackbar, sin acción.
+- **Lector de pantalla:** la tarjeta se lee «nombre, estado, 4 de 9 trozos hechos» y ofrece
+  Renombrar, Duplicar y Eliminar como acciones propias; el mapa de trozos está oculto (la tarjeta ya
+  dice «Trozo B2, 4/9 trozos»); el total de la sección es una región `polite`.
 - Cámara: sin cabecera.
 
 ## Hápticos
@@ -199,12 +248,12 @@ Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:
 | Un paso de ajuste fino (no en la repetición) | Selección |
 | Un valor llega a su límite | Aviso |
 | Abrir las acciones de un proyecto (toque o pulsación larga) | Impacto ligero |
-| Proyecto eliminado | Éxito |
-| Falla importar o eliminar | Error |
+| Proyecto eliminado (al ocultarlo, con «Deshacer» a la vista) | Éxito |
+| Falla importar, eliminar, guardar un cambio o duplicar | Error |
 
 ## Iconos
 
-Set propio en `packages/ui/src/icons.ts` (36 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
+Set propio en `packages/ui/src/icons.ts` (45 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`; los de la Biblioteca 2 son `search`, `filter`, `more`, `pencil`, `duplicate`, `close`, `tag`, `sort` y `file`, este para «Archivos» tras el rebuild). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
 
 Todo respeta la opción del sistema de reducir movimiento (sustituir por fundidos cortos o nada).
 

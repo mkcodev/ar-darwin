@@ -47,6 +47,15 @@ export const typography = {
     letterSpacing: -0.4,
     tabularNums: false,
   },
+  /** The serif at card size: the featured project's name in the library. */
+  headline: {
+    font: "display",
+    weight: 400,
+    size: 26,
+    lineHeight: 30,
+    letterSpacing: -0.2,
+    tabularNums: false,
+  },
   title: {
     font: "ui",
     weight: 600,

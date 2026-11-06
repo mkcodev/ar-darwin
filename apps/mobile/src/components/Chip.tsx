@@ -1,5 +1,7 @@
 import {
   hairline,
+  type IconName,
+  library,
   opacity,
   radius,
   space,
@@ -9,6 +11,7 @@ import {
 } from "@ar-darwin/ui";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../theme/ThemeProvider";
+import { Icon } from "./Icon";
 
 type ChipProps = {
   label: string;
@@ -17,17 +20,34 @@ type ChipProps = {
   /** One chip of a group is selected: they read as radio buttons. */
   selected: boolean;
   onPress: () => void;
+  /** `checkbox`: one of a group where several can be on (categories). Default `radio`. */
+  role?: "radio" | "checkbox";
+  /** Leading icon, e.g. a category's, drawn in `iconColor` (its ink) so the colour is never alone. */
+  icon?: IconName;
+  iconColor?: string;
+  /** `label`: words in the interface face. Default `value` (mono), for symbols such as «2×3». */
+  text?: "value" | "label";
 };
 
-const text = toNativeTextStyle(typography.value);
+const valueText = toNativeTextStyle(typography.value);
+const labelText = toNativeTextStyle(typography.label);
 
 /** A quick choice (a preset grid): pill-shaped, 48 px tall, the selected one in the accent. */
-export function Chip({ label, accessibilityLabel, selected, onPress }: ChipProps) {
+export function Chip({
+  label,
+  accessibilityLabel,
+  selected,
+  onPress,
+  role = "radio",
+  icon,
+  iconColor,
+  text = "value",
+}: ChipProps) {
   const { theme } = useTheme();
   const c = theme.color;
   return (
     <Pressable
-      accessibilityRole="radio"
+      accessibilityRole={role}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ checked: selected }}
       onPress={onPress}
@@ -44,7 +64,12 @@ export function Chip({ label, accessibilityLabel, selected, onPress }: ChipProps
           {pressed && !selected && (
             <View style={[styles.ink, { backgroundColor: c.text.primary, opacity: opacity.ink }]} />
           )}
-          <Text style={[text, { color: c.text.primary }]}>{label}</Text>
+          {icon !== undefined && (
+            <Icon name={icon} size={library.smallIcon} color={iconColor ?? c.text.primary} />
+          )}
+          <Text style={[text === "label" ? labelText : valueText, { color: c.text.primary }]}>
+            {label}
+          </Text>
         </>
       )}
     </Pressable>
@@ -58,8 +83,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: space[4],
     borderRadius: radius.pill,
     borderWidth: hairline,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: space[2],
   },
   ink: { position: "absolute", top: 0, right: 0, bottom: 0, left: 0, borderRadius: radius.pill },
 });

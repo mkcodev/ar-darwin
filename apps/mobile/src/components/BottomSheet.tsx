@@ -27,6 +27,7 @@ import { scheduleOnRN } from "react-native-worklets";
 import { animateFade, animateMove, springPlan } from "../theme/motion";
 import { useReduceMotion } from "../theme/ReduceMotionProvider";
 import { useTheme } from "../theme/ThemeProvider";
+import { useKeyboardHeight } from "./useKeyboardHeight";
 
 type BottomSheetProps = {
   open: boolean;
@@ -101,6 +102,8 @@ function SheetBody({
   const { reduce } = useReduceMotion();
   const insets = useSafeAreaInsets();
   const window = useWindowDimensions();
+  // A text field in the sheet (rename) must stay above the keyboard.
+  const keyboard = useKeyboardHeight();
   const c = theme.color;
   const plan = springPlan(spring.sheet, reduce);
   const full = plan.mode === "full";
@@ -208,8 +211,13 @@ function SheetBody({
       style={[
         styles.sheet,
         {
-          maxHeight: window.height * bottomSheet.maxHeightRatio,
-          paddingBottom: space[8] + insets.bottom,
+          bottom: keyboard,
+          maxHeight: Math.min(
+            window.height * bottomSheet.maxHeightRatio,
+            window.height - keyboard - insets.top,
+          ),
+          // Over the keyboard the system bar is covered: only the sheet's own margin is left.
+          paddingBottom: keyboard > 0 ? space[5] : space[8] + insets.bottom,
           backgroundColor: c.bg.surface,
           borderColor: c.border.subtle,
         },

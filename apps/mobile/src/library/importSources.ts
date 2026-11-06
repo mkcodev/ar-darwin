@@ -25,6 +25,8 @@ export type ImportSource = {
   id: ImportSourceId;
   icon: IconName;
   label: () => string;
+  /** The verb form for a button on its own (the empty Library): «Choose from gallery». */
+  actionLabel: () => string;
   pick: () => Promise<PickResult>;
 };
 
@@ -54,6 +56,7 @@ export const IMPORT_SOURCES: readonly ImportSource[] = [
     id: "gallery",
     icon: "image",
     label: () => t("library.sources.gallery"),
+    actionLabel: () => t("library.sources.galleryAction"),
     // The Android photo picker and iOS PHPicker need no library permission.
     pick: async () => fromPickerResult(await ImagePicker.launchImageLibraryAsync(PICKER_OPTIONS)),
   },
@@ -61,6 +64,7 @@ export const IMPORT_SOURCES: readonly ImportSource[] = [
     id: "camera",
     icon: "camera",
     label: () => t("library.sources.camera"),
+    actionLabel: () => t("library.sources.camera"),
     pick: async () => {
       const permission = await ImagePicker.requestCameraPermissionsAsync();
       if (!permission.granted) return "denied";

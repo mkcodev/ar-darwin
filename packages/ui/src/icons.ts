@@ -109,6 +109,30 @@ export const icons = {
     path("M6 7l1 13h10l1-13"),
     path("M10 11v5M14 11v5"),
   ],
+  // Library: search, filter, a project's menu and its actions.
+  search: [{ type: "circle", cx: 10.5, cy: 10.5, r: 6 }, path("M15 15l5 5")],
+  // Lines that narrow down: fewer projects pass. Not the sliders of `settings`.
+  filter: [path("M4 7h16M7 12h10M10 17h4")],
+  // The library's sort order: an arrow down and an arrow up, side by side.
+  sort: [path("M8 4v16M4 16l4 4 4-4M16 20V4M12 8l4-4 4 4")],
+  more: [
+    { type: "circle", cx: 6, cy: 12, r: 1.4, filled: true },
+    { type: "circle", cx: 12, cy: 12, r: 1.4, filled: true },
+    { type: "circle", cx: 18, cy: 12, r: 1.4, filled: true },
+  ],
+  // A pencil, the app's own tool: rename.
+  pencil: [path("M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5Z"), path("M13.5 7l3 3")],
+  duplicate: [
+    { type: "rect", x: 8, y: 8, width: 12, height: 12, rx: 1.5 },
+    path("M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"),
+  ],
+  close: [path("M6 6l12 12M18 6 6 18")],
+  tag: [
+    path("M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.4 1.4 0 0 1 0 2l-6.2 6.2a1.4 1.4 0 0 1-2 0Z"),
+    { type: "circle", cx: 8, cy: 8, r: 1.2, filled: true },
+  ],
+  // A sheet with a folded corner: importing from the system's Files.
+  file: [path("M6 3h8l5 5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"), path("M14 3v5h5")],
   // Built-in categories (the migration stores these names in `categories.icon`).
   animal: [
     path("M5 12.5V6l4 3.5h6l4-3.5v6.5a7 7 0 0 1-14 0Z"),

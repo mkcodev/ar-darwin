@@ -1,4 +1,11 @@
-import { type Category, createProject, createProjectId, type Project } from "@ar-darwin/core";
+import {
+  type Category,
+  createProject,
+  createProjectId,
+  type DefaultCategoryId,
+  type Project,
+  type ProjectStatus,
+} from "@ar-darwin/core";
 import { opacity, space, type TypeRoleName, toNativeTextStyle, typography } from "@ar-darwin/ui";
 import { ImageFormat, useImage } from "@shopify/react-native-skia";
 import { useSQLiteContext } from "expo-sqlite";
@@ -19,6 +26,42 @@ import {
 import { useTheme } from "../theme/ThemeProvider";
 
 const calibration = require("../../assets/images/test/calibration.png");
+
+const HOUR_MS = 3_600_000;
+
+type SeedSpec = {
+  /** rows × cols; absent = never split. */
+  split?: readonly [number, number];
+  /** Tiles traced, in reading order. */
+  done: number;
+  /** Forced status (a project finished by hand, one in progress without a split). */
+  status?: ProjectStatus;
+  minutes: number;
+  categories: readonly DefaultCategoryId[];
+};
+
+const SEED: readonly SeedSpec[] = [
+  { split: [3, 3], done: 4, minutes: 135, categories: ["animals"] },
+  { done: 0, minutes: 0, categories: ["landscapes"] },
+  { split: [2, 2], done: 4, minutes: 300, categories: ["people"] },
+  { split: [2, 3], done: 1, minutes: 45, categories: ["animals", "objects"] },
+  { done: 0, status: "in_progress", minutes: 20, categories: ["lettering"] },
+  { split: [4, 4], done: 0, minutes: 0, categories: ["lettering"] },
+  { split: [3, 2], done: 3, minutes: 90, categories: ["manga", "animals", "objects"] },
+  { done: 0, status: "done", minutes: 240, categories: ["lettering"] },
+  { done: 0, minutes: 0, categories: [] },
+  { split: [2, 2], done: 2, minutes: 60, categories: ["landscapes"] },
+  { split: [3, 3], done: 8, minutes: 400, categories: ["animals"] },
+  { done: 0, minutes: 0, categories: ["objects"] },
+];
+
+/** «A1», «A2»… in reading order, as the splitter names them. */
+function tileIds(rows: number, cols: number): string[] {
+  return Array.from({ length: rows * cols }, (_, i) => {
+    const row = Math.floor(i / cols);
+    return `${String.fromCharCode(65 + row)}${(i % cols) + 1}`;
+  });
+}
 
 function fileState(stored: string): string {
   return storedFileExists(stored)
@@ -79,6 +122,57 @@ export function ProjectsDebug() {
       await saveProject(db, { ...project, categoryIds: first ? [first.id] : [] });
     });
 
+  // Twelve projects that cover every state the Library draws, an hour apart (newest first).
+  const seed = () =>
+    run(async () => {
+      if (image === null) return;
+      const bytes = image.encodeToBytes(ImageFormat.JPEG, 80);
+      const names = t("devDesign.projects.seedNames").split(", ");
+      const now = Date.now();
+      for (const [index, spec] of SEED.entries()) {
+        const id = createProjectId();
+        const sourceUri = writeProjectFile(id, "source.jpg", bytes);
+        // The cards show the thumbnail; the calibration image is small enough to be its own.
+        writeProjectFile(id, "thumb.jpg", bytes);
+        const at = new Date(now - index * HOUR_MS);
+        const base = createProject({
+          id,
+          name: names[index] ?? t("devDesign.projects.testName", { n: index + 1 }),
+          sourceUri,
+          opacity: opacity.overlayImage,
+          now: at,
+        });
+        const ids = spec.split === undefined ? [] : tileIds(spec.split[0], spec.split[1]);
+        const completedTileIds = ids.slice(0, spec.done);
+        const allDone = ids.length > 1 && completedTileIds.length === ids.length;
+        const status =
+          spec.status ?? (allDone ? "done" : spec.done > 0 ? "in_progress" : "pending");
+        // `at` as the save time too: saveProject stamps `updatedAt`, which orders «Recent».
+        await saveProject(
+          db,
+          {
+            ...base,
+            split:
+              spec.split === undefined
+                ? undefined
+                : {
+                    rows: spec.split[0],
+                    cols: spec.split[1],
+                    overlapPx: 0,
+                    showOverlapTint: false,
+                  },
+            currentTileId: ids[Math.min(spec.done, ids.length - 1)],
+            completedTileIds,
+            status,
+            completedAt: status === "done" ? at.toISOString() : undefined,
+            timeSpentMs: spec.minutes * 60_000,
+            categoryIds: [...spec.categories],
+          },
+          at,
+        );
+      }
+    });
+
   const remove = (project: Project) =>
     run(async () => {
       await deleteProject(db, project.id);
@@ -115,6 +209,9 @@ export function ProjectsDebug() {
       </View>
       <Button variant="primary" icon="plus" disabled={image === null} onPress={create}>
         {t("devDesign.projects.create")}
+      </Button>
+      <Button icon="plus" disabled={image === null} onPress={seed}>
+        {t("devDesign.projects.seed")}
       </Button>
       {projects.length === 0 && (
         <Text style={[text("body"), { color: c.text.muted }]}>{t("devDesign.projects.empty")}</Text>

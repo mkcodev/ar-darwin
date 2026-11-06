@@ -1,3 +1,4 @@
+import { durationParts } from "@ar-darwin/core";
 import { useMemo } from "react";
 import { getLocale, t } from "./i18n";
 
@@ -33,4 +34,13 @@ export function percentFormat(max: number): (value: number) => string {
  */
 export function usePercentFormat(max: number): (value: number) => string {
   return useMemo(() => percentFormat(max), [max]);
+}
+
+/** Time spent tracing, the way the library writes it: «2 h 15 min», «45 min», «menos de 1 min». */
+export function formatDuration(ms: number): string {
+  const { hours, minutes } = durationParts(ms);
+  if (hours > 0 && minutes > 0) return t("library.duration.hoursMinutes", { hours, minutes });
+  if (hours > 0) return t("library.duration.hours", { hours });
+  if (minutes > 0) return t("library.duration.minutes", { minutes });
+  return t("library.duration.underMinute");
 }

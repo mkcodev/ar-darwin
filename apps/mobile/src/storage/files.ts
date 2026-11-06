@@ -53,6 +53,23 @@ export async function moveToStored(uri: string, stored: string): Promise<string>
   return toStoredUri(file.uri, documentDir());
 }
 
+/**
+ * Copies the files of `projects/<fromId>/` (image, thumbnail…) into a new `projects/<toId>/`, for a
+ * duplicate. If a copy fails, the new folder is removed before the error goes up.
+ */
+export async function copyProjectDir(fromId: string, toId: string): Promise<void> {
+  const target = projectDirectory(toId);
+  target.create({ intermediates: true, idempotent: true });
+  try {
+    for (const entry of projectDirectory(fromId).list()) {
+      if (entry instanceof File) await entry.copy(new File(target, entry.name));
+    }
+  } catch (error) {
+    if (target.exists) target.delete();
+    throw error;
+  }
+}
+
 /** Deletes `projects/<projectId>/` with everything in it (image, thumbnail…). */
 export function deleteProjectDir(projectId: string): void {
   const dir = projectDirectory(projectId);

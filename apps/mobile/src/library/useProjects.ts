@@ -1,10 +1,17 @@
-import type { Project } from "@ar-darwin/core";
+import {
+  copyName,
+  createProjectId,
+  duplicateProject,
+  type Project,
+  setProjectDone,
+} from "@ar-darwin/core";
 import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
 import { t } from "../i18n";
-import { deleteProject, listProjects } from "../storage/projectRepository";
+import { copyProjectDir, deleteProjectDir } from "../storage/files";
+import { deleteProject, listProjects, saveProject } from "../storage/projectRepository";
 import { playHaptic } from "../theme/playHaptic";
 import { importProject } from "./importProject";
 import { fromPickerResult, type ImportSource, type PickedImage } from "./importSources";
@@ -22,10 +29,16 @@ export type LibraryState = {
   /** Last error or warning to show (import failed, camera permission denied…). */
   notice: string | null;
   importFrom: (source: ImportSource) => Promise<void>;
+  /** Deletes for good (the screen hides it first and calls this once the undo window is over). */
   remove: (project: Project) => Promise<boolean>;
+  rename: (project: Project, name: string) => Promise<boolean>;
+  setCategories: (project: Project, categoryIds: readonly string[]) => Promise<boolean>;
+  setDone: (project: Project, done: boolean) => Promise<boolean>;
+  /** A clean copy (see `duplicateProject`); resolves to it, or `null` if it failed. */
+  duplicate: (project: Project) => Promise<Project | null>;
 };
 
-/** The library's projects in SQLite, plus importing and deleting them. */
+/** The library's projects in SQLite, plus importing, editing, duplicating and deleting them. */
 export function useProjects(): LibraryState {
   const db = useSQLiteContext();
   const [projects, setProjects] = useState<Project[] | null>(null);
@@ -112,12 +125,92 @@ export function useProjects(): LibraryState {
         playHaptic("error");
         return false;
       }
-      playHaptic("projectDeleted");
       setProjects((current) => current?.filter((p) => p.id !== project.id) ?? null);
       return true;
     },
     [db],
   );
 
-  return { projects, importing, notice, importFrom, remove };
+  /**
+   * Saves an edited project and reloads. `"touch"` stamps `updatedAt` (finishing or reopening is
+   * work on the project); `"keep"` leaves it as it was, so a new name or category moves neither
+   * «Keep tracing» nor the «Recent» order: those follow the tracing, not the filing.
+   */
+  const update = useCallback(
+    async (next: Project, date: "touch" | "keep") => {
+      setNotice(null);
+      try {
+        await saveProject(db, next, date === "keep" ? new Date(next.updatedAt) : new Date());
+      } catch (error) {
+        console.warn("useProjects: save failed", error);
+        setNotice(t("library.actions.saveError"));
+        playHaptic("error");
+        return false;
+      }
+      await reload();
+      return true;
+    },
+    [db, reload],
+  );
+
+  const rename = useCallback(
+    (project: Project, name: string) => update({ ...project, name }, "keep"),
+    [update],
+  );
+  const setCategories = useCallback(
+    (project: Project, categoryIds: readonly string[]) =>
+      update({ ...project, categoryIds: [...categoryIds] }, "keep"),
+    [update],
+  );
+  const setDone = useCallback(
+    (project: Project, done: boolean) => update(setProjectDone(project, done, new Date()), "touch"),
+    [update],
+  );
+
+  const duplicate = useCallback(
+    async (project: Project) => {
+      setNotice(null);
+      const id = createProjectId();
+      const name = copyName(
+        project.name,
+        (projects ?? []).map((p) => p.name),
+        (base, n) =>
+          n === 1
+            ? t("library.actions.copyName", { name: base })
+            : t("library.actions.copyNameNumbered", { name: base, n }),
+      );
+      try {
+        await copyProjectDir(project.id, id);
+        const copy = await saveProject(
+          db,
+          duplicateProject(project, { id, name, now: new Date() }),
+        );
+        await reload();
+        return copy;
+      } catch (error) {
+        console.warn("useProjects: duplicate failed", error);
+        try {
+          deleteProjectDir(id);
+        } catch (cleanup) {
+          console.warn("useProjects: could not remove the half-made copy", cleanup);
+        }
+        setNotice(t("library.actions.duplicateError"));
+        playHaptic("error");
+        return null;
+      }
+    },
+    [db, projects, reload],
+  );
+
+  return {
+    projects,
+    importing,
+    notice,
+    importFrom,
+    remove,
+    rename,
+    setCategories,
+    setDone,
+    duplicate,
+  };
 }
