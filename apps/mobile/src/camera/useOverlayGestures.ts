@@ -27,12 +27,12 @@ import {
   useAnimatedReaction,
   useDerivedValue,
   useFrameCallback,
-  useReducedMotion,
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 import { playHaptic } from "../theme/playHaptic";
+import { useReduceMotion } from "../theme/ReduceMotionProvider";
 
 /** A saved transform and the canvas its x/y are px of (`Project.transformViewport`). */
 export type OverlayPlacement = { transform: Transform; viewport: Size };
@@ -164,7 +164,7 @@ export function useOverlayGestures({
   onTouchingChange,
   onNudgeHoldChange,
 }: Options) {
-  const reduce = useReducedMotion();
+  const { reduce } = useReduceMotion();
 
   const x = useSharedValue(0);
   const y = useSharedValue(0);

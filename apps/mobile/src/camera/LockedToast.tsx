@@ -3,12 +3,12 @@ import { useEffect } from "react";
 import { StyleSheet, Text } from "react-native";
 import Animated, {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withDelay,
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+import { useReduceMotion } from "../theme/ReduceMotionProvider";
 
 type LockedToastProps = {
   /** Bumped by `CameraOverlayScreen` every time the blocked hardware back press needs re-showing
@@ -25,7 +25,7 @@ type LockedToastProps = {
  * "Unlock to mirror" for the mirror buttons.
  */
 export function LockedToast({ trigger, message, top }: LockedToastProps) {
-  const reduce = useReducedMotion();
+  const { reduce } = useReduceMotion();
   const opacity = useSharedValue(0);
 
   useEffect(() => {
