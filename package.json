@@ -12,7 +12,8 @@
     "dev:desktop:lan": "pnpm --filter @ar-darwin/desktop exec vite --host",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
-    "lint": "biome check ."
+    "lint": "biome check .",
+    "gen:licenses": "node scripts/generate-licenses.mts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
