@@ -368,7 +368,9 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   estados que `apps/desktop/src/components/`. Diferencias: el `Slider` recibe un `SharedValue`
   (el valor vive en el hilo de UI y `format` es un worklet, p. ej. `percentFormat` de
   `src/format.ts`); el `SegmentedControl` usa segmentos de igual ancho para que el indicador solo
-  se desplace; `Button` recibe `icon` como `IconName`. Solo en móvil (issue #55): `IconButton` `onDisabledPress` (deshabilitado pero el toque explica por qué) y `BottomSheet` `scrim={false}` (sin velo). Variante `danger` (borrar) en las dos
+  se desplace; `Button` recibe `icon` como `IconName`. Solo en móvil (issue #55): `IconButton` `onDisabledPress` (deshabilitado pero el toque explica por qué) y `BottomSheet` `scrim={false}` (sin velo). El `BottomSheet` móvil sube sobre el teclado con
+  `useKeyboardHeight` (eventos de `Keyboard`, medido desde `screenY`: en Android la altura no
+  cuenta la barra de navegación). Variante `danger` (borrar) en las dos
   apps: fondo `bg.raised`, texto y borde `danger` (contraste AA de texto en `contrast.test.ts`).
 - `apps/mobile/src/theme/`: `ThemeProvider`, `HandednessProvider` y `ReduceMotionProvider` se montan
   en `app/_layout.tsx`. `AppSettingsProvider` carga y guarda sus preferencias (tema, mano, idioma)
@@ -895,12 +897,14 @@ esquemas (`ProjectSchema` lo valida).
     categorías; progreso, tiempo, foto del resultado, notas y `completedAt` fuera; sin `currentTileId`,
     así la cámara abre en el primer trozo; `sourceUri` remapeada con `remapProjectPath`), y
     `setProjectDone`;
-  - `tileMapCells`, las celdas del mapa de trozos (`current` gana a `done`).
+  - `tileMapCells`, las celdas del mapa de trozos (`current` gana a `done` en `state`; `done`
+    dice además si el trozo está calcado, también el actual).
 - Sin migración: `status`, `completedAt`, `categoryIds` y `timeSpentMs` ya existían.
 - Hooks de `apps/mobile/src/library/`:
   - `useProjects` gana `rename`, `setCategories`, `setDone` y `duplicate`; todos guardan con
-    `saveProject` (que pone `updatedAt` = ahora) y recargan, así «Recientes» sube el proyecto
-    tocado. Duplicar copia la carpeta (`copyProjectDir` en `storage/files.ts`, con `File.copy`;
+    `saveProject` y recargan. `setDone` y `duplicate` ponen `updatedAt` = ahora, así «Recientes»
+    sube el proyecto; `rename` y `setCategories` conservan su `updatedAt` (pasan la fecha que
+    tenía), así archivar no cambia «Seguir calcando». Duplicar copia la carpeta (`copyProjectDir` en `storage/files.ts`, con `File.copy`;
     si falla a medias borra la carpeta nueva) y luego guarda la fila.
   - `useLibraryQuery`: búsqueda, filtros y orden en memoria durante la sesión.
   - `useCategories`: lee `listCategories` una vez por montaje.

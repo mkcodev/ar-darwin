@@ -185,14 +185,16 @@ calcando»; el resto es sobrio.
 - **Resumen:** una línea `body` atenuada bajo el titular, «3 en curso. Llevas 14 h calcando.»; se
   omite la parte que vale cero.
 - **«Seguir calcando»** (`ContinueCard`, unos 190 dp): el proyecto no terminado con el `updatedAt`
-  más reciente. `bg.surface` con línea fina y radio `lg` (las miniaturas llevan `md`: la jerarquía
+  más reciente. Renombrar o cambiar categorías no cambia la fecha (la tarjeta sigue al trabajo en
+  la cámara, no al archivo); terminar, reabrir, duplicar e importar sí. `bg.surface` con línea fina y radio `lg` (las miniaturas llevan `md`: la jerarquía
   también está en la forma), sin sombra.
   - Miniatura 72 × 96 (`library.continueThumb*`), nombre en Instrument Serif (`headline`, 26/30,
     dos líneas), «Trozo B2» o «Sin dividir» en Geist Mono, y «4/9 trozos» y el tiempo en mono
     atenuado, en elementos separados (nunca unidos con «·»).
   - A la derecha, el **mapa de trozos** (`TileMap`, Skia, lado largo `library.tileMapSide` 56):
     celdas en azul no-foto (`guide.default`), las hechas con tinte `guide.tint` y una marca fina, y
-    el trozo actual relleno de bermellón. Solo aparece, sin animación. Sin dividir: botón «Dividir».
+    el trozo actual relleno de bermellón (con su marca en `text.onAccent` si ya está hecho: «2/6»
+    enseña dos marcas). Solo aparece, sin animación. Sin dividir: botón «Dividir».
   - Botón primario a todo lo ancho con la cámara: «Seguir calcando», o «Empezar a calcar» si no se
     empezó. Abre la cámara en el trozo guardado.
   - Si todo está terminado, no hay tarjeta. Al buscar o filtrar se oculta.
@@ -205,20 +207,23 @@ calcando»; el resto es sobrio.
   son un borrador hasta «Ver resultados (N)», con la cuenta en vivo; «Restablecer» no toca la
   búsqueda.
 - **Sección:** «Otros proyectos» (o «Resultados» al filtrar) en `title`, el total en mono atenuado
-  y el orden actual a la derecha (abre la hoja). Sin resultados: «Ningún proyecto coincide.» y
-  «Quitar filtros». Con un solo proyecto, una pista atenuada de la pulsación larga.
+  y el orden actual a la derecha con el icono `sort` (abre la hoja). Sin resultados: «Ningún
+  proyecto coincide.» y «Quitar filtros» («Borrar búsqueda» si solo hay búsqueda). Con un solo proyecto, una pista atenuada de la pulsación larga.
 - **Rejilla:** 2 columnas; deja fuera el destacado salvo al filtrar. Tarjeta: miniatura 3:4 sobre
-  `bg.surface` con línea fina y radio `md`, sin sombra; píldora «⋯» (`bg.surface`, línea fina,
-  hit slop `library.cardMenuHitSlop`) arriba a la derecha sobre la miniatura. Debajo:
+  `bg.surface` con línea fina y radio `md`, sin sombra; píldora «⋯» (`bg.surface`, línea
+  `border.strong`, que se ve también sobre una miniatura blanca en el tema claro; hit slop
+  `library.cardMenuHitSlop`) arriba a la derecha sobre la miniatura. Debajo:
   - en proyectos divididos, la barra fina de 4 dp (`library.progressHeight`) sobre el lienzo, no
-    sobre la miniatura (se lee igual con una imagen blanca o negra);
+    sobre la miniatura (se lee igual con una imagen blanca o negra); sin barra, el hueco se
+    reserva igual, así los nombres de una fila quedan alineados;
   - nombre (`label`);
-  - estado y «4/9» en mono atenuado; los completados, con una marca;
+  - estado en `label` atenuado y «4/9» en mono atenuado (el mono es para valores: las palabras en
+    mono parecen código); los completados, con una marca;
   - la primera categoría como icono en su tinta + nombre, y «+N» si hay más.
 - **Acciones** (pulsación larga o «⋯»): hoja con filas de 56 dp (`SheetRow`): Renombrar, Categorías
-  (con las actuales a la derecha), Dividir o Volver a dividir (con «3 × 3»), Duplicar, Marcar como
+  (con las actuales a la derecha, en `body`), Dividir o Volver a dividir (con «3 × 3» en mono), Duplicar, Marcar como
   terminado o Reabrir, y Eliminar en `danger`. Renombrar y Categorías son pasos dentro de la misma
-  hoja (campo de texto con «Guardar», que no deja un nombre vacío; chips de selección múltiple
+  hoja (campo de texto con «Guardar», que no deja un nombre vacío y sube sobre el teclado; chips de selección múltiple
   con «Listo»). «Reabrir» solo aparece si el «terminado» se marcó a mano y algún trozo sigue
   pendiente.
 - **Eliminar con deshacer:** sin confirmación. La tarjeta se funde y la rejilla cierra el hueco
@@ -248,7 +253,7 @@ Semánticos en `packages/ui/src/haptics.ts`; la app los traduce a expo-haptics:
 
 ## Iconos
 
-Set propio en `packages/ui/src/icons.ts` (44 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`; los de la Biblioteca 2 son `search`, `filter`, `more`, `pencil`, `duplicate`, `close`, `tag` y `file`, este para «Archivos» tras el rebuild). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
+Set propio en `packages/ui/src/icons.ts` (45 iconos, retícula 24, trazo 1,75, extremos redondeados, sin rellenos; 6 son de las categorías de serie: `animal`, `person`, `landscape`, `manga`, `object`, `lettering`; los de la Biblioteca 2 son `search`, `filter`, `more`, `pencil`, `duplicate`, `close`, `tag`, `sort` y `file`, este para «Archivos» tras el rebuild). Web los pinta en SVG; móvil, con Skia (sin react-native-svg). Al activarse, el icono se vuelve a dibujar como un trazo, cada uno 60 ms después del anterior (`icon.drawStaggerMs`).
 
 Todo respeta la opción del sistema de reducir movimiento (sustituir por fundidos cortos o nada).
 
