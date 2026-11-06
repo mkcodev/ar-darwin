@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
-import { AccessibilityInfo } from "react-native";
+import { AccessibilityInfo, LogBox } from "react-native";
 import { ReducedMotionConfig, ReduceMotion } from "react-native-reanimated";
 
 type ReduceMotionState = {
@@ -12,6 +12,10 @@ type ReduceMotionState = {
 };
 
 const ReduceMotionContext = createContext<ReduceMotionState | null>(null);
+
+// `ReducedMotionConfig` below warns once per mount in development that it overrides the setting:
+// that is its whole job here, so the warning would only be noise on every start.
+LogBox.ignoreLogs(["Reduced motion setting is overwritten"]);
 
 type ReduceMotionProviderProps = {
   /** Stored override to start from (the Settings task loads it); null follows the system. */
@@ -29,8 +33,7 @@ type ReduceMotionProviderProps = {
  * Components read `reduce` and pick their own reduced version. Any Reanimated animation that does
  * not (a bare `withTiming`, an `entering` preset) follows Reanimated's global default, which on its
  * own reads only the system, once: `ReducedMotionConfig` keeps that default equal to `reduce`, so
- * the override and a live change of the system reach those too. (In development Reanimated logs
- * once that the setting is overwritten: expected.)
+ * the override and a live change of the system reach those too.
  */
 export function ReduceMotionProvider({ initial, onChange, children }: ReduceMotionProviderProps) {
   const [system, setSystem] = useState(false);
