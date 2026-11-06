@@ -61,6 +61,7 @@ export const es = {
     trash: "Eliminar",
     search: "Buscar",
     filter: "Filtrar",
+    sort: "Ordenar",
     more: "Más acciones",
     pencil: "Lápiz",
     duplicate: "Duplicar",
@@ -214,6 +215,7 @@ export const es = {
     oneProjectHint: "Mantén pulsado un proyecto para renombrarlo, dividirlo o duplicarlo.",
     noResults: "Ningún proyecto coincide.",
     clearFilters: "Quitar filtros",
+    clearSearch: "Borrar búsqueda",
     search: {
       placeholder: "Buscar",
       label: "Buscar proyectos",

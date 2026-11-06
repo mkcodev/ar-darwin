@@ -61,6 +61,7 @@ export const en = {
     trash: "Delete",
     search: "Search",
     filter: "Filter",
+    sort: "Sort",
     more: "More actions",
     pencil: "Pencil",
     duplicate: "Duplicate",
@@ -213,6 +214,7 @@ export const en = {
     oneProjectHint: "Long press a project to rename, split or duplicate it.",
     noResults: "No project matches.",
     clearFilters: "Clear filters",
+    clearSearch: "Clear search",
     search: {
       placeholder: "Search",
       label: "Search projects",
