@@ -113,6 +113,8 @@ export const icons = {
   search: [{ type: "circle", cx: 10.5, cy: 10.5, r: 6 }, path("M15 15l5 5")],
   // Lines that narrow down: fewer projects pass. Not the sliders of `settings`.
   filter: [path("M4 7h16M7 12h10M10 17h4")],
+  // The library's sort order: an arrow down and an arrow up, side by side.
+  sort: [path("M8 4v16M4 16l4 4 4-4M16 20V4M12 8l4-4 4 4")],
   more: [
     { type: "circle", cx: 6, cy: 12, r: 1.4, filled: true },
     { type: "circle", cx: 12, cy: 12, r: 1.4, filled: true },
