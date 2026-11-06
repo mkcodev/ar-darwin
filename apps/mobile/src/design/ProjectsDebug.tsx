@@ -132,6 +132,8 @@ export function ProjectsDebug() {
       for (const [index, spec] of SEED.entries()) {
         const id = createProjectId();
         const sourceUri = writeProjectFile(id, "source.jpg", bytes);
+        // The cards show the thumbnail; the calibration image is small enough to be its own.
+        writeProjectFile(id, "thumb.jpg", bytes);
         const at = new Date(now - index * HOUR_MS);
         const base = createProject({
           id,
@@ -145,19 +147,29 @@ export function ProjectsDebug() {
         const allDone = ids.length > 1 && completedTileIds.length === ids.length;
         const status =
           spec.status ?? (allDone ? "done" : spec.done > 0 ? "in_progress" : "pending");
-        await saveProject(db, {
-          ...base,
-          split:
-            spec.split === undefined
-              ? undefined
-              : { rows: spec.split[0], cols: spec.split[1], overlapPx: 0, showOverlapTint: false },
-          currentTileId: ids[Math.min(spec.done, ids.length - 1)],
-          completedTileIds,
-          status,
-          completedAt: status === "done" ? at.toISOString() : undefined,
-          timeSpentMs: spec.minutes * 60_000,
-          categoryIds: [...spec.categories],
-        });
+        // `at` as the save time too: saveProject stamps `updatedAt`, which orders «Recent».
+        await saveProject(
+          db,
+          {
+            ...base,
+            split:
+              spec.split === undefined
+                ? undefined
+                : {
+                    rows: spec.split[0],
+                    cols: spec.split[1],
+                    overlapPx: 0,
+                    showOverlapTint: false,
+                  },
+            currentTileId: ids[Math.min(spec.done, ids.length - 1)],
+            completedTileIds,
+            status,
+            completedAt: status === "done" ? at.toISOString() : undefined,
+            timeSpentMs: spec.minutes * 60_000,
+            categoryIds: [...spec.categories],
+          },
+          at,
+        );
       }
     });
 
