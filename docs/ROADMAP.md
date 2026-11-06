@@ -91,9 +91,11 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 - [ ] Ajustes: anulación propia de «reducir movimiento» (hoy sigue al sistema)
 - [x] Onboarding de 3 pantallas (calcar, dividir, cámara con su permiso explicado), es/en; se guarda en
       `settings` (`onboarding_done`) y se repasa desde Ajustes (issue #100)
-- [x] Biblioteca 2: «Seguir calcando» con mapa de trozos, resumen, búsqueda, filtros y orden,
+- [ ] Biblioteca 2: «Seguir calcando» con mapa de trozos, resumen, búsqueda, filtros y orden,
       categorías en las tarjetas, renombrar, duplicar, terminar/reabrir y eliminar con deshacer;
-      estado vacío con las fuentes de importación (issue #105)
+      estado vacío con las fuentes de importación (issue #105). Hecho, falta probarlo en el móvil:
+  - [ ] «Reabrir» no se ofrece si todos los trozos están hechos
+  - [ ] «Crear 12 proyectos de prueba» en `/dev/design`: con miniatura y una hora entre cada uno
 - [ ] Pasada de `impeccable` y `web-design-guidelines` sobre cada pantalla (Prompt 7)
 - [ ] Flujo principal con Maestro (importar, dividir, calcar un trozo)
 
