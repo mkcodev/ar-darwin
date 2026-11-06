@@ -51,6 +51,8 @@ export const opacity = {
   disabled: 0.38,
   /** Default opacity of the overlaid image in the camera. */
   overlayImage: 0.62,
+  /** Opacities a new project can start with (Settings): lighter, the default, stronger. */
+  overlayChoices: [0.4, 0.62, 0.8],
   pressedContent: 0.88,
   /** The camera's fine-adjust pad while nothing presses it: it covers less of the drawing. */
   nudgePadIdle: 0.72,
