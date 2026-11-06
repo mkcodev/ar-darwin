@@ -303,6 +303,50 @@ export const en = {
       description:
         "The image snaps to the canvas axes, to right angles and to the pinned position, with a guide and a light vibration.",
     },
+    sections: {
+      appearance: "Appearance",
+      camera: "Camera",
+      newProjects: "New projects",
+      accessibility: "Accessibility",
+      about: "About",
+    },
+    reduceMotion: {
+      label: "Reduce motion",
+      system: "System",
+      on: "On",
+      off: "Off",
+      systemOn: "It is on in your phone's settings.",
+      systemOff: "It is off in your phone's settings.",
+    },
+    haptics: {
+      label: "Vibration",
+      description: "A short vibration when you pin the image, change tiles and with the magnet.",
+    },
+    defaults: {
+      opacity: "Image opacity",
+      description: "Only for projects you import from now on. The ones you have stay as they are.",
+    },
+    about: {
+      version: "Version {version}",
+      author: "Made by {author}",
+      repo: "Code on GitHub",
+      licenses: "Licenses",
+    },
+    feedback: {
+      action: "Send feedback",
+      hint: "Opens a GitHub issue with the version and your phone already filled in.",
+      issueTitle: "Feedback on AR-Darwin",
+      issueIntro: "Tell us what you would change or what went wrong:",
+      version: "Version",
+      system: "System",
+      language: "Language",
+    },
+  },
+  licenses: {
+    title: "Licenses",
+    intro: "AR-Darwin uses these open-source libraries.",
+    entry: "{name} {version}, {license} license",
+    unknown: "not stated",
   },
   onboarding: {
     progress: "{step}/{total}",

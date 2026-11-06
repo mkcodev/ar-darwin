@@ -304,6 +304,51 @@ export const es = {
       description:
         "La imagen se engancha a los ejes del lienzo, a los ángulos rectos y a la posición fijada, con una guía y una vibración ligera.",
     },
+    sections: {
+      appearance: "Apariencia",
+      camera: "Cámara",
+      newProjects: "Proyectos nuevos",
+      accessibility: "Accesibilidad",
+      about: "Acerca de",
+    },
+    reduceMotion: {
+      label: "Reducir movimiento",
+      system: "Sistema",
+      on: "Sí",
+      off: "No",
+      systemOn: "El móvil lo tiene activado.",
+      systemOff: "El móvil lo tiene desactivado.",
+    },
+    haptics: {
+      label: "Vibración",
+      description: "Una vibración breve al fijar la imagen, al cambiar de trozo y con el imán.",
+    },
+    defaults: {
+      opacity: "Opacidad de la imagen",
+      description:
+        "Solo para los proyectos que importes a partir de ahora. Los que ya tienes no cambian.",
+    },
+    about: {
+      version: "Versión {version}",
+      author: "Hecha por {author}",
+      repo: "Código en GitHub",
+      licenses: "Licencias",
+    },
+    feedback: {
+      action: "Enviar comentarios",
+      hint: "Abre un issue en GitHub con la versión y el móvil ya escritos.",
+      issueTitle: "Comentario sobre AR-Darwin",
+      issueIntro: "Cuéntanos qué te gustaría cambiar o qué ha fallado:",
+      version: "Versión",
+      system: "Sistema",
+      language: "Idioma",
+    },
+  },
+  licenses: {
+    title: "Licencias",
+    intro: "AR-Darwin usa estas bibliotecas de código abierto.",
+    entry: "{name} {version}, licencia {license}",
+    unknown: "sin indicar",
   },
   onboarding: {
     progress: "{step}/{total}",
