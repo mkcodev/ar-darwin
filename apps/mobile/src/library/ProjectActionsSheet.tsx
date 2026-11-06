@@ -173,6 +173,7 @@ export function ProjectActionsSheet({
           <SheetRow
             icon="tag"
             label={t("library.actions.categories")}
+            valueKind="text"
             value={
               own.length === 0
                 ? t("library.actions.noCategories")

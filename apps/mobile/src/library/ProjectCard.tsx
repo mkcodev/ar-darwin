@@ -31,6 +31,8 @@ const THUMB_ASPECT = 3 / 4;
 const nameStyle = toNativeTextStyle(typography.label);
 const valueStyle = toNativeTextStyle(typography.value);
 const categoryStyleText = toNativeTextStyle(typography.label);
+/** The status word: in the body face like the category, the mono is only for «4/9». */
+const wordStyle = categoryStyleText;
 
 type ProjectCardProps = {
   project: Project;
@@ -48,8 +50,8 @@ type ProjectCardProps = {
 
 /**
  * A project in the grid: its thumbnail (never the full image), the tile progress under it, the
- * name with a «⋯» menu, the status (with «4/9» for a split project) and its first category as
- * icon + name in the category's ink (never the colour alone; «+1» when there are more).
+ * name with a «⋯» menu, the status (with «4/9» in the mono for a split project) and its first
+ * category as icon + name in the category's ink (never the colour alone; «+1» when there are more).
  */
 export function ProjectCard({
   project,
@@ -112,14 +114,19 @@ export function ProjectCard({
             accessible={false}
           />
         </View>
-        {progress && <CardProgress done={progress.done} total={progress.total} />}
+        {/* The slot stays without a bar, so names line up across the row. */}
+        {progress ? (
+          <CardProgress done={progress.done} total={progress.total} />
+        ) : (
+          <View style={styles.progressSlot} />
+        )}
         <View style={styles.text}>
           <Text style={[nameStyle, { color: c.text.primary }]} numberOfLines={1}>
             {project.name}
           </Text>
           <View style={styles.status}>
             {status === "done" && <Icon name="check" size={library.smallIcon} />}
-            <Text style={[valueStyle, styles.shrink, { color: c.text.muted }]} numberOfLines={1}>
+            <Text style={[wordStyle, styles.shrink, { color: c.text.muted }]} numberOfLines={1}>
               {statusText}
             </Text>
             {progress && (
@@ -157,7 +164,8 @@ export function ProjectCard({
           styles.menu,
           {
             backgroundColor: pressed ? c.bg.raised : c.bg.surface,
-            borderColor: c.border.subtle,
+            // Strong, not subtle: in the light theme the pill is white over (often) white paper.
+            borderColor: c.border.strong,
           },
         ]}
       >
@@ -178,6 +186,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   thumb: { flex: 1 },
+  progressSlot: { height: library.progressHeight },
   text: { gap: space[1] },
   status: { flexDirection: "row", alignItems: "center", gap: space[1] },
   category: { flexDirection: "row", alignItems: "center", gap: space[1] },

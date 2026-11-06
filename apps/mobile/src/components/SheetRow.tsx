@@ -13,12 +13,18 @@ import { Icon } from "./Icon";
 
 const labelStyle = toNativeTextStyle(typography.body);
 const valueStyle = toNativeTextStyle(typography.value);
+const wordStyle = toNativeTextStyle(typography.body);
 
 type SheetRowProps = {
   icon: IconName;
   label: string;
   /** Current value on the right, muted («3 × 3», «Animales»). Read after the label. */
   value?: string;
+  /**
+   * `number` (default): a measure in the mono («3 × 3»). `text`: words in the body face
+   * («Animales», «Ninguna»): the mono is for values, and words in it read as code.
+   */
+  valueKind?: "number" | "text";
   /** `danger`: destructive (delete), in the theme's danger colour. */
   variant?: "default" | "danger";
   onPress: () => void;
@@ -28,7 +34,14 @@ type SheetRowProps = {
  * One action of a sheet: icon, label and, on the right, its current value. A full-width row of
  * `touchTarget` + 8 dp, like a list, not a stack of buttons: a sheet of six actions reads as a menu.
  */
-export function SheetRow({ icon, label, value, variant = "default", onPress }: SheetRowProps) {
+export function SheetRow({
+  icon,
+  label,
+  value,
+  valueKind = "number",
+  variant = "default",
+  onPress,
+}: SheetRowProps) {
   const { theme } = useTheme();
   const c = theme.color;
   const ink = variant === "danger" ? c.danger : c.text.primary;
@@ -47,7 +60,14 @@ export function SheetRow({ icon, label, value, variant = "default", onPress }: S
             {label}
           </Text>
           {value !== undefined && (
-            <Text style={[valueStyle, styles.value, { color: c.text.muted }]} numberOfLines={1}>
+            <Text
+              style={[
+                valueKind === "text" ? wordStyle : valueStyle,
+                styles.value,
+                { color: c.text.muted },
+              ]}
+              numberOfLines={1}
+            >
               {value}
             </Text>
           )}

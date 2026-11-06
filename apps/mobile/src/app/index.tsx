@@ -37,6 +37,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "../components/Button";
+import { Icon } from "../components/Icon";
 import { IconButton } from "../components/IconButton";
 import { LargeTitle } from "../components/LargeTitle";
 import { LargeTitleHeader, useLargeTitleBarHeight } from "../components/LargeTitleHeader";
@@ -191,6 +192,8 @@ function LibraryScreen() {
 
   const empty = visible !== null && visible.length === 0;
   const filtering = isFilterActive(query.filter);
+  // With only a search typed, «Clear filters» would name something the person never set.
+  const onlySearch = filtering && activeFilterCount(query.filter) === 0;
   const { featured, grid } = query.view;
   const showToolbar =
     visible !== null && (visible.length >= LIBRARY_TOOLBAR_MIN_PROJECTS || filtering);
@@ -264,6 +267,7 @@ function LibraryScreen() {
                   })}
                   style={styles.sort}
                 >
+                  <Icon name="sort" size={library.smallIcon} color={c.text.muted} />
                   <Text style={[labelStyle, { color: c.text.muted }]}>
                     {t(`library.sort.${query.sort}`)}
                   </Text>
@@ -275,7 +279,7 @@ function LibraryScreen() {
             <View style={styles.noResults}>
               <Text style={[body, { color: c.text.primary }]}>{t("library.noResults")}</Text>
               <Button variant="secondary" icon="close" onPress={clearFilters}>
-                {t("library.clearFilters")}
+                {t(onlySearch ? "library.clearSearch" : "library.clearFilters")}
               </Button>
             </View>
           )}
@@ -394,7 +398,13 @@ const styles = StyleSheet.create({
     minHeight: touchTarget,
   },
   sectionTitle: { flexDirection: "row", alignItems: "baseline", gap: space[2], flexShrink: 1 },
-  sort: { minHeight: touchTarget, justifyContent: "center", paddingLeft: space[3] },
+  sort: {
+    minHeight: touchTarget,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space[1],
+    paddingLeft: space[3],
+  },
   noResults: { gap: space[3], alignItems: "flex-start" },
   grid: {
     flexDirection: "row",
