@@ -12,6 +12,7 @@ import {
 import { useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAppSettings } from "../settings/AppSettingsProvider";
 import { enqueueSplitSave, whenSavesSettle } from "../storage/cameraStateQueue";
 import { getProject } from "../storage/projectRepository";
 
@@ -37,7 +38,8 @@ export type SplitterDraft = {
 };
 
 /**
- * The splitter's draft of a project: its saved split (or 2×2 with 8 % extended edges), the tile
+ * The splitter's draft of a project: its saved split (or 2×2 with 8 % extended edges, and the
+ * sheet chosen in Settings for «Folios»), the tile
  * picked last, and the saves. Edits are stored after `SAVE_DELAY_MS` of quiet and when the screen
  * goes, through the camera's queue so the two never write out of order. A save only happens when
  * what would be stored differs from what was last stored (or loaded): opening the screen and
@@ -47,8 +49,12 @@ export type SplitterDraft = {
  */
 export function useSplitterDraft(project: Project, image: ImageSize): SplitterDraft {
   const db = useSQLiteContext();
+  const { paperDefaults } = useAppSettings();
+  // The sheet chosen in Settings only seeds a draft: changing it later does not touch this one.
   const [draft, setDraft] = useState<SplitDraft>(() =>
-    project.split ? draftFromConfig(image, project.split) : defaultSplitDraft(),
+    project.split
+      ? draftFromConfig(image, project.split, paperDefaults)
+      : defaultSplitDraft(paperDefaults),
   );
   const [currentTileId, setCurrentTileId] = useState(project.currentTileId);
   const plan = useMemo(() => splitPlan(image, draft), [image, draft]);

@@ -10,6 +10,7 @@ import { useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
 import { t } from "../i18n";
+import { useAppSettings } from "../settings/AppSettingsProvider";
 import { copyProjectDir, deleteProjectDir } from "../storage/files";
 import { deleteProject, listProjects, saveProject } from "../storage/projectRepository";
 import { playHaptic } from "../theme/playHaptic";
@@ -44,6 +45,7 @@ export function useProjects(): LibraryState {
   const [projects, setProjects] = useState<Project[] | null>(null);
   const [importing, setImporting] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const { defaultOpacity } = useAppSettings();
 
   const reload = useCallback(async () => {
     try {
@@ -64,7 +66,7 @@ export function useProjects(): LibraryState {
     async (picked: PickedImage) => {
       setImporting(true);
       try {
-        await importProject(db, picked);
+        await importProject(db, picked, defaultOpacity);
         await reload();
       } catch (error) {
         console.warn("useProjects: import failed", error);
@@ -74,7 +76,7 @@ export function useProjects(): LibraryState {
         setImporting(false);
       }
     },
-    [db, reload],
+    [db, reload, defaultOpacity],
   );
 
   useEffect(() => {
