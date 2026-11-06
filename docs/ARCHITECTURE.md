@@ -373,9 +373,30 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   cuenta la barra de navegación). Variante `danger` (borrar) en las dos
   apps: fondo `bg.raised`, texto y borde `danger` (contraste AA de texto en `contrast.test.ts`).
 - `apps/mobile/src/theme/`: `ThemeProvider`, `HandednessProvider` y `ReduceMotionProvider` se montan
-  en `app/_layout.tsx`. `AppSettingsProvider` carga y guarda sus preferencias (tema, mano, idioma)
-  con `setPreference`/`setHand` sin tocarlos. `ReduceMotionProvider` sigue el ajuste del sistema en vivo
-  (`AccessibilityInfo`) y admite una anulación (la usa `/dev/design`).
+  en `app/_layout.tsx`. `AppSettingsProvider` carga y guarda sus preferencias (tema, mano, idioma,
+  «reducir movimiento») con `setPreference`/`setHand`/`setOverride` sin tocarlos. `ReduceMotionProvider`
+  sigue el ajuste del sistema en vivo (`AccessibilityInfo`) y admite una anulación: la de Ajustes
+  (Sistema | Sí | No, `reduceMotionOverride` de core) o la de `/dev/design`. Monta además
+  `ReducedMotionConfig` de Reanimated con `Always`/`Never` según `reduce`, para que cualquier animación
+  que no lea `useReduceMotion` (un `withTiming` suelto, un preset `entering`) obedezca también a la
+  anulación y a un cambio del sistema en vivo. Nada usa `useReducedMotion` de Reanimated (lo lee una vez
+  y solo el sistema).
+- Hápticos: todos pasan por `theme/playHaptic.ts`, también los del imán (desde worklets vía
+  `scheduleOnRN`). El interruptor «Vibración» de Ajustes es un flag de módulo (`setHapticsEnabled`), no
+  contexto, porque se llega a `playHaptic` desde funciones sin árbol de React; `AppSettingsProvider` lo
+  fija al leer los ajustes y al cambiarlo.
+- Proyectos nuevos: `AppSettingsProvider` da `defaultOpacity` (uno de `opacity.overlayChoices`) y
+  `paperDefaults` (papel y orientación). `importProject` crea el proyecto con esa opacidad y
+  `useSplitterDraft` pasa el papel a `defaultSplitDraft`/`draftFromConfig` cuando el proyecto no tiene
+  folio guardado. Los proyectos existentes no cambian.
+- Acerca de: la versión sale de `Constants.expoConfig.version` (expo-constants, solo JS), los enlaces se
+  abren con expo-web-browser y «Enviar comentarios» abre un issue nuevo del repo con versión, sistema e
+  idioma (`feedbackIssueUrl`/`feedbackBody` en `packages/core/src/about.ts`). La lista de licencias
+  (`/licenses`) lee `apps/mobile/src/about/licenses.json`, generado por `pnpm gen:licenses`
+  (`scripts/generate-licenses.mts`, Node con tipos quitados): recorre de forma transitiva las
+  dependencias de producción de la app móvil en el `node_modules` hoisted, sin opcionales (binarios
+  por plataforma que cambian entre Windows y el CI). El CI ejecuta `pnpm gen:licenses --check`: al
+  cambiar dependencias hay que regenerarlo (también en las PRs de Dependabot).
 - Fuentes: `useAppFonts` en el layout raíz (no monta nada hasta que cargan o fallan). El splash nativo
   (`SplashScreen` de expo-router) sigue visible hasta que `AppSettingsProvider` ha leído tema, mano e
   idioma y los ha aplicado, así nunca se pinta un frame con las fuentes del sistema, el tema o el
@@ -476,7 +497,7 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   de la persona. Un fallo de migración deja la base en la versión anterior (transacción), así que
   reintentar es seguro.
 - Rutas hoy: `/` Biblioteca, `/project/[id]/camera` cámara del proyecto, `/project/[id]/split`
-  divisor, `/settings` Ajustes, `/onboarding` introducción (`?replay=1` desde Ajustes), `/dev/design` y
+  divisor, `/settings` Ajustes, `/licenses` licencias, `/onboarding` introducción (`?replay=1` desde Ajustes), `/dev/design` y
   `/dev/camera` (solo desarrollo o `spikesEnabled`). Cada tarea añade la suya (ficha del proyecto).
 - Onboarding (issue #100): `app/index.tsx` redirige a `/onboarding` mientras `onboarding_done` no sea
   `"1"` (`AppSettingsProvider.onboardingDone`, leído con tema, mano e idioma antes de ocultar la splash:
@@ -827,7 +848,10 @@ sea una lista de textos → ninguno, y nunca impide abrir el proyecto. `UPDATE_P
 el resto del estado de la cámara; `UPDATE_PROJECT_SPLIT` lo vacía si cambia la rejilla (comparando
 `rows`, `cols` y `paper.paper`/`orientation`/`widthCm` del JSON de `split` con `json_extract`).
 
-La v6 (issue #70) crea la tabla `settings` (`key TEXT PRIMARY KEY`, `value TEXT`) con `CREATE TABLE IF NOT EXISTS`, para que repetirla tras un fallo antes de subir `user_version` no falle. Guarda las preferencias de la app como texto (`magnet_enabled` = `"1"`/`"0"`, `drawing_hand` = `"right"`/`"left"`, `theme_preference` = `"system"`/`"light"`/`"dark"`, `language` = `"system"`/`"es"`/`"en"`, `onboarding_done` = `"1"`/`"0"`); una clave ausente vale su valor por defecto, y un valor corrupto también (`parseBooleanSetting`): nunca impide abrir la cámara.
+La v6 (issue #70) crea la tabla `settings` (`key TEXT PRIMARY KEY`, `value TEXT`) con `CREATE TABLE IF NOT EXISTS`, para que repetirla tras un fallo antes de subir `user_version` no falle. Guarda las preferencias de la app como texto (`magnet_enabled` = `"1"`/`"0"`, `drawing_hand` = `"right"`/`"left"`, `theme_preference` = `"system"`/`"light"`/`"dark"`, `language` = `"system"`/`"es"`/`"en"`, `onboarding_done` = `"1"`/`"0"`, `reduce_motion` =
+`"system"`/`"on"`/`"off"`, `haptics_enabled` = `"1"`/`"0"`, `default_opacity` = el número como texto,
+uno de `opacity.overlayChoices` (`parseNumberChoiceSetting`), `default_paper` = `"A4"`/`"A3"`/`"Letter"`,
+`default_orientation` = `"portrait"`/`"landscape"`); una clave ausente vale su valor por defecto, y un valor corrupto también (`parseBooleanSetting`): nunca impide abrir la cámara.
 
 La v5 (issue #68) añade `pinned_placement` (JSON `{transform, viewport}` en TEXT): la posición que la
 persona fija con el pin del panel de ajuste fino. NULL = sin pin. Se lee con tolerancia, como los
