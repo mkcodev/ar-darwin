@@ -850,7 +850,8 @@ esquemas (`ProjectSchema` lo valida).
 ### Importar imágenes (issue #36)
 
 - Fuentes: `apps/mobile/src/library/importSources.ts` es un registro (`IMPORT_SOURCES`) de
-  `{ id, icon, label, pick }`; `pick` devuelve `PickedImage` (`uri`, `width`, `height`,
+  `{ id, icon, label, actionLabel, pick }` (`actionLabel` es la forma de botón suelto de la
+  Biblioteca vacía, «Elegir de la galería»); `pick` devuelve `PickedImage` (`uri`, `width`, `height`,
   `mimeType`, `fileName`), `"cancelled"` o `"denied"`. Hoy: galería (`launchImageLibraryAsync`, el
   selector de fotos del sistema, sin permiso) y cámara del sistema (`requestCameraPermissionsAsync`
   + `launchCameraAsync`). Añadir «archivos» (expo-document-picker, próximo rebuild) es una entrada
@@ -876,7 +877,48 @@ esquemas (`ProjectSchema` lo valida).
   las transiciones de layout de Reanimated (cerrar el hueco de una tarjeta borrada) solo funcionan
   en FlatList de una columna, y una biblioteca personal es pequeña. Si crece, FlashList.
 
+### Biblioteca 2 (issue #105)
+
+- Lógica pura en `packages/core/src/library.ts`, con tests:
+  - `libraryStatus` (`done` si está guardado así o si todos los trozos de una división de más de
+    uno están hechos; `in_progress` si se empezó o hay algún trozo; si no, `pending`),
+    `progressRatio` y `doneAction` («Reabrir» solo deshace un `done` guardado y nunca cuando los
+    trozos ya lo dan por terminado);
+  - `normalizeSearch` (sin tildes ni mayúsculas), `filterProjects` (nombre, estado y basta una
+    categoría), `sortProjects` (`recent`, `name` con el `Intl.Collator` del idioma, `progress`;
+    estable), `featuredProject` y `libraryView`, que reparte destacado y rejilla (sin destacado al
+    filtrar; la rejilla nunca repite el destacado);
+  - `librarySummary`, `durationParts` (el texto lo pone `formatDuration` de la app con i18n),
+    `normalizeProjectName` (recorta, máx. `MAX_PROJECT_NAME_LENGTH` 80, `null` si queda vacío) y
+    `copyName` («Búho (copia)», «Búho (copia 2)»…);
+  - `duplicateProject`: copia limpia (imagen, división, posición, opacidad, ajustes y
+    categorías; progreso, tiempo, foto del resultado, notas y `completedAt` fuera; sin `currentTileId`,
+    así la cámara abre en el primer trozo; `sourceUri` remapeada con `remapProjectPath`), y
+    `setProjectDone`;
+  - `tileMapCells`, las celdas del mapa de trozos (`current` gana a `done`).
+- Sin migración: `status`, `completedAt`, `categoryIds` y `timeSpentMs` ya existían.
+- Hooks de `apps/mobile/src/library/`:
+  - `useProjects` gana `rename`, `setCategories`, `setDone` y `duplicate`; todos guardan con
+    `saveProject` (que pone `updatedAt` = ahora) y recargan, así «Recientes» sube el proyecto
+    tocado. Duplicar copia la carpeta (`copyProjectDir` en `storage/files.ts`, con `File.copy`;
+    si falla a medias borra la carpeta nueva) y luego guarda la fila.
+  - `useLibraryQuery`: búsqueda, filtros y orden en memoria durante la sesión.
+  - `useCategories`: lee `listCategories` una vez por montaje.
+  - `usePendingDeletion`: ver «Borrado».
+- Pantalla (`app/index.tsx`): compone `EmptyLibrary`, `ContinueCard` (+ `TileMap`, Skia con los
+  colores por props), `LibraryToolbar` (+ `components/SearchField`), `ActiveFilters`,
+  `FilterSheet`, la rejilla de `ProjectCard`, `ProjectActionsSheet` (filas de
+  `components/SheetRow`) y `components/Snackbar`.
+- `/dev/design` (solo en desarrollo) tiene «Crear 12 proyectos de prueba» con todos los estados,
+  divisiones, categorías y tiempos, una hora entre cada uno.
+
 ### Borrado
+
+Desde la Biblioteca 2, «Eliminar» no pide confirmación: `usePendingDeletion` oculta el proyecto al
+momento y lo borra de verdad cuando acaba la ventana de «Deshacer» (`library.undoMs`, o
+`undoScreenReaderMs` con lector de pantalla), cuando la Biblioteca pierde el foco (abrir la cámara,
+el divisor o Ajustes) o cuando la app pasa a segundo plano (`AppState`). Un borrado nuevo confirma
+el anterior. Si la app muere dentro de la ventana, el proyecto sobrevive: es lo seguro.
 
 `deleteProject` borra primero la fila (sus enlaces a categorías caen en cascada) y después los
 archivos que son de la app (`isAppOwnedFile`: rutas relativas, nunca assets): la carpeta entera del
