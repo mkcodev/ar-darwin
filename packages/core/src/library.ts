@@ -34,13 +34,14 @@ export function progressRatio(
 
 /**
  * Which «done» action a project's sheet offers. «Reopen» only undoes a stored «done»: a project that
- * is done because every tile is traced has nothing to reopen (unmark a tile in the camera instead).
+ * is done because every tile is traced has nothing to reopen (unmark a tile in the camera instead),
+ * even if it was also marked done by hand.
  */
 export function doneAction(
   project: Pick<Project, "status" | "split" | "completedTileIds">,
 ): "finish" | "reopen" | null {
-  if (project.status === "done") return "reopen";
-  return libraryStatus(project) === "done" ? null : "finish";
+  if (libraryStatus({ ...project, status: "pending" }) === "done") return null;
+  return project.status === "done" ? "reopen" : "finish";
 }
 
 const COMBINING_MARKS = /[̀-ͯ]/g;

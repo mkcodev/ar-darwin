@@ -92,6 +92,10 @@ describe("progressRatio and doneAction", () => {
     expect(doneAction(project(1, { status: "done" }))).toBe("reopen");
     const all = ["A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3"];
     expect(doneAction(project(1, { split: GRID_3X3, completedTileIds: all }))).toBeNull();
+    // Reopening would change nothing: the traced tiles keep it done.
+    expect(
+      doneAction(project(1, { split: GRID_3X3, completedTileIds: all, status: "done" })),
+    ).toBeNull();
   });
 });
 
