@@ -123,6 +123,7 @@ export function ContinueCard({ project, onOpen, onActions, onSplit }: ContinueCa
               doneFill: c.guide.tint,
               current: c.accent.default,
               check: c.text.primary,
+              checkOnCurrent: c.text.onAccent,
             }}
           />
         ) : (
