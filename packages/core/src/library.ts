@@ -243,6 +243,8 @@ export type TileMapCell = {
   col: number;
   /** `current`: the tile the camera opens on (it wins over `done`). */
   state: "current" | "done" | "pending";
+  /** Traced, also when it is the current tile (a done tile can be reopened in the camera). */
+  done: boolean;
 };
 
 /**
@@ -260,8 +262,9 @@ export function tileMapCells(
   for (let row = 0; row < project.split.rows; row++) {
     for (let col = 0; col < project.split.cols; col++) {
       const id = `${String.fromCharCode(65 + row)}${col + 1}`;
-      const state = id === current ? "current" : done.has(id) ? "done" : "pending";
-      cells.push({ id, row, col, state });
+      const traced = done.has(id);
+      const state = id === current ? "current" : traced ? "done" : "pending";
+      cells.push({ id, row, col, state, done: traced });
     }
   }
   return cells;

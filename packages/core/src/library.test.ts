@@ -288,6 +288,8 @@ describe("tileMapCells", () => {
       "B1:current",
       "B2:pending",
     ]);
+    // The current tile still says it was traced, so the map can draw its check.
+    expect(cells.map((c) => c.done)).toEqual([true, false, true, false]);
     expect(tileMapCells({ split, currentTileId: "Z9", completedTileIds: [] })[0]?.state).toBe(
       "current",
     );
