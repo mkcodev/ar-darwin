@@ -29,6 +29,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
+      # The license list in Settings must match the installed dependencies (pnpm gen:licenses).
+      - run: pnpm gen:licenses --check
       # Every check blocks except the SDK version one: a new Expo patch must not turn CI red.
       # expo-doctor is pinned; bump it by hand when upgrading the Expo SDK.
       - name: Expo doctor
