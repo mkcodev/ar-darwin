@@ -15,6 +15,10 @@ tercero. La app no hace ninguna de las dos cosas:
 - Proyectos, imágenes y ajustes viven en SQLite y en el almacenamiento privado de la app.
 - La cámara se procesa en el momento (vision-camera + Skia) y no se graba.
 - Las imágenes llegan por el selector del sistema; la app no lee la galería.
+- La copia de seguridad de Android (Auto Backup, activa porque `app.config.ts` no fija `allowBackup`)
+  no cuenta como recogida: la hace el sistema, en la cuenta de Google del usuario, bajo las
+  condiciones de Google, y la app no la transmite ni puede leerla. La ayuda de Google no la nombra:
+  es el mismo caso que su FAQ de datos que el usuario sube a Drive sin que la app acceda a ellos.
 - «Enviar comentarios» abre una URL de GitHub en el navegador. La app no transmite nada: es el usuario
   quien decide publicar el issue, fuera de la app.
 

@@ -30,7 +30,17 @@ Everything you create in the app is stored **only on your phone**, in the app's 
   image sits on the paper and how long you have been drawing.
 - Your settings: theme, language, drawing hand and other preferences.
 
-No one but you can access this data. Not even mkcodev.
+The app sends it nowhere and mkcodev has no access to it. The only copy off your phone is Android's
+own backup, if you turn it on (see "Android backup").
+
+## Android backup
+
+If Android backup is turned on, the system may include the app's data in the backup stored in your
+Google account, as it does with other apps. That backup is made and managed by Google, not mkcodev:
+the app plays no part in it and mkcodev cannot see it. It lets you get your projects back when you
+switch phones or reinstall the app. It is covered by
+[Google's privacy policy](https://policies.google.com/privacy?hl=en) and you can turn it off or
+delete it in your Google settings (Settings › Google › Backup).
 
 ## Permissions
 
@@ -60,7 +70,11 @@ is covered by [GitHub's privacy statement](https://docs.github.com/en/site-polic
 - To delete a project, remove it from the Library.
 - To delete everything, uninstall the app or clear its data in your system settings.
 
-Since there is no copy on any server, once deleted the data is gone for good and cannot be recovered.
+- To delete the copy Android keeps, if backup is on, delete it in your Google settings
+  (Settings › Google › Backup) or in your Google Drive account.
+
+mkcodev keeps no copy, so it cannot recover anything you delete. If an Android backup exists, the
+system may restore it when you reinstall the app.
 
 ## Children
 

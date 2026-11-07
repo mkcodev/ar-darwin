@@ -30,7 +30,17 @@ Todo lo que creas en la app se guarda **solo en tu móvil**, en el almacenamient
   de la imagen sobre el papel y el tiempo que llevas dibujando.
 - Tus ajustes: tema, idioma, mano con la que dibujas y demás preferencias.
 
-Nadie más que tú tiene acceso a estos datos. mkcodev tampoco.
+La app no los envía a ningún sitio y mkcodev no tiene acceso a ellos. La única copia fuera del móvil
+es la de Android, si la activas (ver «Copia de seguridad de Android»).
+
+## Copia de seguridad de Android
+
+Si tienes activada la copia de seguridad de Android, el sistema puede incluir los datos de la app en
+la copia de tu cuenta de Google, como hace con las demás apps. Esa copia la hace y la gestiona Google,
+no mkcodev: la app no interviene y mkcodev no puede verla. Sirve para recuperar tus proyectos al
+cambiar de móvil o reinstalar la app. Se rige por la
+[política de privacidad de Google](https://policies.google.com/privacy?hl=es) y se desactiva o se
+borra desde los ajustes de Google (Ajustes › Google › Copia de seguridad).
 
 ## Permisos
 
@@ -60,7 +70,11 @@ GitHub queda sujeto a la [política de privacidad de GitHub](https://docs.github
 - Para borrar un proyecto, elimínalo desde la Biblioteca.
 - Para borrarlo todo, desinstala la app o borra sus datos desde los ajustes del sistema.
 
-Como no hay copia en ningún servidor, al borrarlos desaparecen del todo y no se pueden recuperar.
+- Para borrar la copia que guarda Android, si la tienes activada, bórrala desde los ajustes de Google
+  (Ajustes › Google › Copia de seguridad) o desde tu cuenta de Google Drive.
+
+mkcodev no guarda ninguna copia, así que no puede recuperar lo que borres. Si existe la copia de
+Android, al reinstalar la app el sistema puede restaurarla.
 
 ## Menores
 
