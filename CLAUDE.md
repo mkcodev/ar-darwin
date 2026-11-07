@@ -8,6 +8,7 @@ App para calcar dibujos con la cámara (móvil) y preparar/proyectar imágenes (
 Sin anuncios. Prioridad: precisión, fluidez y un diseño propio.
 Contexto en docs/PRD.md, docs/ARCHITECTURE.md, docs/DESIGN.md y docs/ROADMAP.md: léelos cuando la tarea lo necesite.
 Prompts por fase: docs/PROMPTS.md. Flujo de git (issue, rama, PR, squash): docs/FLUJO.md.
+Lanzamiento en Google Play (privacidad, Seguridad de los datos, ficha, checklist): docs/launch/.
 
 ## Estructura
 - apps/mobile   Expo (development build, Expo Router), vision-camera, Skia, Reanimated

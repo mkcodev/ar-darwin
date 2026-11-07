@@ -116,9 +116,15 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 
 ## 4 · Beta y lanzamiento
 
+Documentación de Google Play en docs/launch/ (issue #111): política de privacidad es/en, respuestas de
+«Seguridad de los datos», ficha, recursos gráficos y checklist de subida. Lo que espera al nombre y
+al dominio definitivos va marcado con `[NOMBRE]`, `[DOMINIO]` y `[EMAIL]`.
+
 - [ ] Nombre, icono y splash definitivos en la config
-- [ ] Perfiles `preview`/`production` en eas.json, firma y versión
-- [ ] Política de privacidad (la exigen las tiendas por el permiso de cámara)
+- [ ] Perfiles `preview`/`production` en eas.json, firma y versión (propuesta en
+      docs/launch/play-checklist.md)
+- [ ] Política de privacidad (la exigen las tiendas por el permiso de cámara). Redactada en
+      docs/launch/; falta alojarla en mkcodev.com/ar-darwin/privacidad
 - [ ] Prueba interna de Google Play (y TestFlight si se decide iOS)
 - [ ] Landing con vídeo de demo (issue #12)
 - [ ] Capturas y fichas de las tiendas
