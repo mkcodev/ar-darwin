@@ -27,7 +27,7 @@ AR-Darwin: calcar dibujos
 Calca imágenes con la cámara, sin anuncios. Divide dibujos grandes en folios.
 ```
 
-**Descripción larga** (1735/4000)
+**Descripción larga** (1750/4000)
 
 ```
 AR-Darwin superpone tu imagen a lo que ve la cámara para que la calques sobre papel. Coloca el móvil encima del folio, ajusta la imagen y dibuja siguiendo sus líneas. Sin anuncios, sin cuentas y sin conexión.
@@ -57,7 +57,7 @@ TU BIBLIOTECA
 • Al terminar, guarda la foto de tu dibujo en la galería. (si llega al lanzamiento)
 
 PRIVADA DE VERDAD
-Todo se queda en tu móvil. La app no recoge datos, no tiene anuncios ni analítica y funciona sin internet.
+La app no envía nada a ningún servidor: tus proyectos se guardan en tu móvil. Sin anuncios, sin analítica y sin conexión.
 
 En español e inglés, con tema claro y oscuro, y respeta la opción de reducir movimiento del sistema.
 ```
@@ -76,7 +76,7 @@ AR-Darwin: Trace & Draw
 Trace any image with your camera, ad-free. Split big drawings into paper sheets.
 ```
 
-**Full description** (1696/4000)
+**Full description** (1708/4000)
 
 ```
 AR-Darwin overlays your image on the camera view so you can trace it onto paper. Hold your phone above the sheet, line up the image and draw along its lines. No ads, no accounts, no internet needed.
@@ -106,7 +106,7 @@ YOUR LIBRARY
 • When you finish, save a photo of your drawing to your gallery. (if it ships at launch)
 
 PRIVATE FOR REAL
-Everything stays on your phone. The app collects no data, has no ads or analytics and works offline.
+The app sends nothing to any server: your projects are saved on your phone. No ads, no analytics, works offline.
 
 In English and Spanish, with light and dark themes, and it respects your system's reduce motion setting.
 ```
