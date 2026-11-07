@@ -3,6 +3,7 @@ import {
   addTimeSpent,
   drainClock,
   IDLE_CLOCK,
+  peekClock,
   type SessionClock,
   startClock,
   statusOnOpen,
@@ -36,6 +37,19 @@ describe("stopClock", () => {
 
   it("rounds to whole milliseconds", () => {
     expect(stopClock(running(1000.4), 2000.9).elapsedMs).toBe(1001);
+  });
+});
+
+describe("peekClock", () => {
+  it("gives the time so far without moving the clock", () => {
+    const clock = running(1000);
+    expect(peekClock(clock, 3000)).toBe(2000);
+    expect(drainClock(clock, 3500).elapsedMs).toBe(2500);
+  });
+
+  it("an idle clock, or one set back by the system, gives 0", () => {
+    expect(peekClock(IDLE_CLOCK, 3000)).toBe(0);
+    expect(peekClock(running(5000), 1000)).toBe(0);
   });
 });
 
