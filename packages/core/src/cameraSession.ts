@@ -39,6 +39,11 @@ export function drainClock(clock: SessionClock, now: number): ClockReading {
   return { clock: { runningSince: now }, elapsedMs: elapsedSince(clock.runningSince, now) };
 }
 
+/** The time since the last start or drain, leaving the clock as it is (to show it, not to save it). */
+export function peekClock(clock: SessionClock, now: number): number {
+  return clock.runningSince === null ? 0 : elapsedSince(clock.runningSince, now);
+}
+
 /** `timeSpentMs` plus `elapsedMs`, as whole ms; a negative amount adds nothing. */
 export function addTimeSpent(timeSpentMs: number, elapsedMs: number): number {
   return timeSpentMs + Math.max(0, Math.round(elapsedMs));

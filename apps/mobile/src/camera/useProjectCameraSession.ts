@@ -5,6 +5,7 @@ import {
   IDLE_CLOCK,
   type ImageAdjustments,
   type Project,
+  peekClock,
   startClock,
   statusOnOpen,
   stopClock,
@@ -39,6 +40,8 @@ export type ProjectCameraSession = {
   completedTileIds: readonly string[];
   /** Marks a tile as done, or removes the mark: saved at once. */
   onToggleTileDone: (tileId: string) => void;
+  /** Time spent drawing so far, counting the stretch still running (to show, not to save). */
+  readTimeSpent: () => number;
 };
 
 /**
@@ -194,6 +197,11 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
     [split, saveNow],
   );
 
+  const readTimeSpent = useCallback(
+    () => state.current.timeSpentMs + peekClock(clock.current, Date.now()),
+    [],
+  );
+
   return {
     initialPlacement: initial.placement,
     initialOpacity: initial.opacity,
@@ -206,5 +214,6 @@ export function useProjectCameraSession(project: Project, active: boolean): Proj
     onTileChange,
     completedTileIds,
     onToggleTileDone,
+    readTimeSpent,
   };
 }

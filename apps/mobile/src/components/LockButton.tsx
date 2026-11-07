@@ -1,6 +1,6 @@
 import { cameraColors, lockButton, radius, signature, space } from "@ar-darwin/ui";
 import { Canvas, Group, Path, Skia } from "@shopify/react-native-skia";
-import { memo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -84,6 +84,10 @@ export const LockButton = memo(function LockButton({
   // padlock and the gestures disagreeing: the image locked but the icon not, or the other way
   // round, "sometimes".
   const lockedRef = useRef(isLocked);
+  // The screen can also unlock on its own (leaving from the «Drawing finished» sheet): follow it.
+  useEffect(() => {
+    lockedRef.current = isLocked;
+  }, [isLocked]);
   const toggle = () => {
     const next = !lockedRef.current;
     lockedRef.current = next;

@@ -22,6 +22,8 @@ export default function ProjectCamera() {
     if (router.canGoBack()) router.back();
     else router.replace("/");
   }, [router]);
+  // Back to the Library also when the camera was opened from the splitter (the stack in between goes).
+  const finish = useCallback(() => router.dismissTo("/"), [router]);
 
   useEffect(() => {
     let alive = true;
@@ -48,7 +50,7 @@ export default function ProjectCamera() {
           <StatusBar style="light" />
         </View>
       ) : (
-        <ProjectCameraScreen project={project} onLeave={leave} />
+        <ProjectCameraScreen project={project} onLeave={leave} onFinish={finish} />
       )}
     </>
   );

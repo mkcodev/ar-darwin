@@ -36,6 +36,8 @@ export type DockTiles = {
   onToggleDone: (id: string) => void;
   /** The tile picker opens. */
   onOpenPicker: () => void;
+  /** «Completed»: the summary of the finished drawing opens. */
+  onOpenFinished: () => void;
 };
 
 type CameraDockProps = {
@@ -60,7 +62,8 @@ const COMPLETE_THUMP_MS = 140;
  * The camera's bottom dock, one surface with one outline (paper edge) and, inside, zones told apart
  * by tone. Row one: the tile status (a tap opens the picker) and the opacity slider. Row two:
  * «Anterior», the undo of the mark when the tile is done, and the main action, which is the only one
- * in the accent: «Marcar hecho» → «Siguiente trozo» (the next PENDING tile, wrapping) → «Completado».
+ * in the accent: «Marcar hecho» → «Siguiente trozo» (the next PENDING tile, wrapping) → «Completado»
+ * (which opens the summary of the finished drawing).
  * A spine of segments along the top edge shows the progress. A project with no split gets only the
  * opacity row. The main action and the opacity sit on the free hand's side (`useHandedness`), the
  * rest on the other; both rows mirror with the left hand. It retreats when the menu is idle
@@ -195,7 +198,7 @@ export function CameraDock({
                 if (model.phase === "pending") tiles.onToggleDone(model.tileId);
                 else if (model.phase === "done" && model.nextPendingId !== undefined) {
                   tiles.onGoTo(model.nextPendingId);
-                } else if (model.phase === "complete") tiles.onOpenPicker();
+                } else if (model.phase === "complete") tiles.onOpenFinished();
               }}
               celebrateKey={celebrateKey}
             />
