@@ -33,10 +33,12 @@ Lo que depende de decisiones aún abiertas va marcado así en todos los archivos
 | `[DOMINIO]` | Dominio propio de la app, si lo hay | Web de la ficha, landing (issue #12) |
 | `[EMAIL]` | Email de contacto público (se decide junto al nombre y el dominio) | Política, ficha |
 
-Al cambiar el nombre, «AR-Darwin» aparece también en el código: `app.config.ts` (nombre de la app),
-`packages/i18n` (textos de los permisos y de la app) y el identificador `com.mkcodev.ardarwin`.
-**El identificador del paquete no se puede cambiar después de la primera subida a Play**: decídelo
-antes (ver play-checklist.md).
+Al cambiar el nombre, «AR-Darwin» aparece también en el código: `app.config.ts` (nombre de la app) y
+`packages/i18n` (textos de los permisos y de la app).
+
+El identificador del paquete, `com.mkcodev.ardarwin`, **se queda aunque cambie el nombre** (decidido
+el 2026-11-07). No se ve en la tienda salvo en la URL, y Play no deja cambiarlo tras la primera
+subida.
 
 ## Qué depende de que se publique #104
 

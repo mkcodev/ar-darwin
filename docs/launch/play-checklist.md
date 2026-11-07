@@ -11,10 +11,6 @@ una prueba cerrada antes de producción (paso 5).
 - [ ] MVP con la puerta de la fase 3 pasada («terminas un dibujo real de 4 trozos solo con la app»)
       y las PR abiertas (#102, #104, #108, #110) mergeadas.
 - [ ] `[NOMBRE]` Nombre definitivo decidido (roadmap, «Decisiones pendientes»).
-- [ ] `[NOMBRE]` **Identificador del paquete decidido.** Hoy `com.mkcodev.ardarwin`
-      (`app.config.ts`). No se puede cambiar después de la primera subida: si el nombre cambia y el
-      identificador debe reflejarlo, cámbialo antes del paso 4. Puede quedarse como está aunque cambie
-      el nombre (no es visible en la tienda salvo en la URL).
 - [ ] `[EMAIL]` Email de contacto público creado (p. ej. en `[DOMINIO]` o en mkcodev.com).
 
 ## 1. Cuenta de desarrollador
