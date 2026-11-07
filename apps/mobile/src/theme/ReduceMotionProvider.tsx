@@ -1,5 +1,6 @@
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
-import { AccessibilityInfo } from "react-native";
+import { AccessibilityInfo, LogBox } from "react-native";
+import { ReducedMotionConfig, ReduceMotion } from "react-native-reanimated";
 
 type ReduceMotionState = {
   /** What animations follow: the override when set, else the system setting. */
@@ -12,6 +13,10 @@ type ReduceMotionState = {
 
 const ReduceMotionContext = createContext<ReduceMotionState | null>(null);
 
+// `ReducedMotionConfig` below warns once per mount in development that it overrides the setting:
+// that is its whole job here, so the warning would only be noise on every start.
+LogBox.ignoreLogs(["Reduced motion setting is overwritten"]);
+
 type ReduceMotionProviderProps = {
   /** Stored override to start from (the Settings task loads it); null follows the system. */
   initial?: boolean | null;
@@ -22,8 +27,13 @@ type ReduceMotionProviderProps = {
 
 /**
  * The system's «reduce motion», live (AccessibilityInfo, unlike Reanimated's
- * `useReducedMotion`, which reads it once), with an override so /dev/design (and later
- * Settings) can check both versions of every animation without touching the system.
+ * `useReducedMotion`, which reads it once), with an override: the one stored in Settings
+ * (`AppSettingsProvider` sets it once read) or the /dev/design toggle.
+ *
+ * Components read `reduce` and pick their own reduced version. Any Reanimated animation that does
+ * not (a bare `withTiming`, an `entering` preset) follows Reanimated's global default, which on its
+ * own reads only the system, once: `ReducedMotionConfig` keeps that default equal to `reduce`, so
+ * the override and a live change of the system reach those too.
  */
 export function ReduceMotionProvider({ initial, onChange, children }: ReduceMotionProviderProps) {
   const [system, setSystem] = useState(false);
@@ -58,7 +68,12 @@ export function ReduceMotionProvider({ initial, onChange, children }: ReduceMoti
     [override, system, onChange],
   );
 
-  return <ReduceMotionContext.Provider value={value}>{children}</ReduceMotionContext.Provider>;
+  return (
+    <ReduceMotionContext.Provider value={value}>
+      <ReducedMotionConfig mode={value.reduce ? ReduceMotion.Always : ReduceMotion.Never} />
+      {children}
+    </ReduceMotionContext.Provider>
+  );
 }
 
 export function useReduceMotion(): ReduceMotionState {

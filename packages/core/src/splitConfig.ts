@@ -29,6 +29,12 @@ export const DEFAULT_PAPER_OVERLAP_MM = 10;
 
 type Image = { width: number; height: number };
 
+/** The sheet a split by paper size starts with (Settings, «Proyectos nuevos»). */
+export type PaperDefaults = { paper: PaperSize; orientation: Orientation };
+
+/** Without a stored choice: A4 upright. */
+export const DEFAULT_PAPER_DEFAULTS: PaperDefaults = { paper: "A4", orientation: "portrait" };
+
 export type SplitEdges = "flush" | "extended";
 
 /** «Manual» cuts the picture in rows × cols; «paper» lays real sheets over it. */
@@ -75,8 +81,13 @@ export function overlapPercent(image: Image, rows: number, cols: number, px: num
   return Math.min(MAX_OVERLAP_PERCENT, Math.round((px / side) * 100));
 }
 
-/** The splitter of a new project: manual 2×2 with 8 % extended edges and the tint on; A4 upright as paper. */
-export function defaultSplitDraft(): SplitDraft {
+/**
+ * The splitter of a new project: manual 2×2 with 8 % extended edges and the tint on; as paper, the
+ * sheet chosen in Settings (A4 upright without one).
+ */
+export function defaultSplitDraft(
+  paperDefaults: PaperDefaults = DEFAULT_PAPER_DEFAULTS,
+): SplitDraft {
   return {
     mode: "manual",
     rows: 2,
@@ -84,15 +95,22 @@ export function defaultSplitDraft(): SplitDraft {
     edges: "extended",
     overlapPercent: DEFAULT_OVERLAP_PERCENT,
     showOverlapTint: true,
-    paper: "A4",
-    orientation: "portrait",
+    paper: paperDefaults.paper,
+    orientation: paperDefaults.orientation,
     widthCm: DEFAULT_PAPER_WIDTH_CM,
     overlapMm: DEFAULT_PAPER_OVERLAP_MM,
   };
 }
 
-/** The draft a saved config reopens as. «Extended» is simply `overlapPx > 0`. */
-export function draftFromConfig(image: Image, config: SplitConfig): SplitDraft {
+/**
+ * The draft a saved config reopens as. «Extended» is simply `overlapPx > 0`. A manual split has no
+ * sheet stored: switching it to «Folios» starts from `paperDefaults`.
+ */
+export function draftFromConfig(
+  image: Image,
+  config: SplitConfig,
+  paperDefaults: PaperDefaults = DEFAULT_PAPER_DEFAULTS,
+): SplitDraft {
   const extended = config.overlapPx > 0;
   const percent = extended
     ? overlapPercent(image, config.rows, config.cols, config.overlapPx)
@@ -104,8 +122,8 @@ export function draftFromConfig(image: Image, config: SplitConfig): SplitDraft {
     edges: extended ? "extended" : "flush",
     overlapPercent: percent > 0 ? percent : DEFAULT_OVERLAP_PERCENT,
     showOverlapTint: config.showOverlapTint,
-    paper: config.paper?.paper ?? "A4",
-    orientation: config.paper?.orientation ?? "portrait",
+    paper: config.paper?.paper ?? paperDefaults.paper,
+    orientation: config.paper?.orientation ?? paperDefaults.orientation,
     widthCm: config.paper?.widthCm ?? DEFAULT_PAPER_WIDTH_CM,
     overlapMm: config.paper?.overlapMm ?? DEFAULT_PAPER_OVERLAP_MM,
   };

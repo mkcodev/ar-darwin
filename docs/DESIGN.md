@@ -150,11 +150,25 @@ Momentos de firma:
   borde superior, crece hasta 1,05 desde la izquierda (solo iOS: Android estira en vez de
   desplazar). Con «reducir movimiento», solo el fundido cruzado.
 - Pantallas secundarias (Ajustes, ficha, divisor): header nativo sobre el lienzo, sin sombra.
-- Ajustes: una lista vertical de ajustes separados por `space[6]`, sin tarjetas ni divisores. Tema
-  (Sistema | Claro | Oscuro), «¿Con qué mano dibujas?» (Derecha | Izquierda) e Idioma (Sistema |
-  Español | English) son `SegmentedControl` (radiogrupo, 48 dp, la selección desliza con `snappy`);
-  cada uno con su nota atenuada debajo (la del idioma solo aparece si el elegido no es el activo).
-  Después, el interruptor del imán. El cambio de tema se ve al instante en la propia pantalla.
+- Ajustes: una lista vertical por secciones, sin tarjetas ni divisores. Cada sección lleva su título
+  en `title` (cabecera para el lector de pantalla); las secciones van a `space[8]` y los ajustes de
+  dentro a `space[6]`. Las elecciones son `SegmentedControl` (radiogrupo, 48 dp, la selección desliza
+  con `snappy`) y los sí/no, `Toggle`; cada uno con su nota atenuada debajo cuando hace falta.
+  - **Apariencia:** Tema (Sistema | Claro | Oscuro), que se ve al instante en la propia pantalla, e
+    Idioma (Sistema | Español | English), con la nota de reabrir solo si el elegido no es el activo.
+  - **Cámara:** «¿Con qué mano dibujas?» (Derecha | Izquierda), Imán y Vibración (al activarla suena
+    un toque, para notarla).
+  - **Proyectos nuevos:** opacidad de la imagen (40 % | 62 % | 80 %, de `opacity.overlayChoices`; el
+    62 % es el de siempre), Papel (A4 | A3 | Carta) y Orientación (Vertical | Horizontal) de «Folios»,
+    con una sola nota: solo se aplica a lo que se importe después.
+  - **Accesibilidad:** Reducir movimiento (Sistema | Sí | No), con la nota de qué tiene el móvil, que
+    cambia en vivo. Se respeta en toda la app, transiciones del stack incluidas.
+  - **Acerca de:** «Versión X» y «Hecha por mkcodev» en `body` (la autoría atenuada); «Código en
+    GitHub» y «Licencias» en una fila de botones secundarios; «Enviar comentarios» (abre un issue con
+    la versión y el móvil escritos) y «Ver la introducción», cada uno con su nota.
+- Licencias: header nativo, una frase atenuada y la lista generada, una fila de 48 dp por paquete:
+  el nombre en `body` y «versión · licencia» en `value` (Geist Mono) atenuado. Sin buscador ni
+  enlaces: es una lista de consulta.
 
 ## Onboarding
 
