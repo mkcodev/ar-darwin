@@ -107,6 +107,9 @@ Las tres tienen licencia OFL; los archivos y sus licencias van en `packages/ui/a
   anidados. Los radios interiores son concéntricos (28 − 8 de relleno = 20). Una sola acción principal en
   bermellón; el resto, secundario.
 - Hojas inferiores con esquinas de 24 px.
+- Al terminar todos los trozos, tras la celebración del dock sube la hoja **«¡Dibujo terminado!»**:
+  miniatura, «9/9 trozos» (mono) y el tiempo, «Volver a la Biblioteca» (principal, bermellón) y
+  «Repasar trozos» (ghost). «Completado» en el dock la vuelve a abrir. Con el candado espera a que se quite.
 - Objetivos táctiles de 48 px como mínimo: se usan con un lápiz en la mano.
 - Espaciado en base 4.
 - Sombras mínimas o ninguna; la profundidad viene del contraste de superficies.

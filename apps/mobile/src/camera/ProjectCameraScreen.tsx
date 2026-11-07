@@ -1,13 +1,20 @@
-import { cameraCrop, type Project, samePlacement, splitGridAspect } from "@ar-darwin/core";
-import { cameraBackdropColor } from "@ar-darwin/ui";
+import {
+  cameraCrop,
+  justCompleted,
+  type Project,
+  samePlacement,
+  splitGridAspect,
+} from "@ar-darwin/core";
+import { cameraBackdropColor, cameraDock } from "@ar-darwin/ui";
 import { StatusBar } from "expo-status-bar";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { t } from "../i18n";
 import { playHaptic } from "../theme/playHaptic";
 import type { DockTiles } from "./CameraDock";
 import { CameraNotice } from "./CameraNotice";
 import { CameraOverlayScreen } from "./CameraOverlayScreen";
+import { FinishedSheet, type FinishedSheetState } from "./FinishedSheet";
 import { TilePicker } from "./TilePicker";
 import type { OverlayPlacement } from "./useOverlayGestures";
 import { useProjectCameraSession } from "./useProjectCameraSession";
@@ -17,6 +24,8 @@ type ProjectCameraScreenProps = {
   project: Project;
   /** Leaves the camera (the image is missing). */
   onLeave: () => void;
+  /** «Back to the Library» from the «Drawing finished» sheet. */
+  onFinish: () => void;
 };
 
 /**
@@ -24,13 +33,15 @@ type ProjectCameraScreenProps = {
  * restores and saves it). While the image decodes, the dark backdrop; if it can't be found or
  * decoded, a notice with a way back instead of an empty camera.
  */
-export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenProps) {
+export function ProjectCameraScreen({ project, onLeave, onFinish }: ProjectCameraScreenProps) {
   const image = useProjectImage(project.sourceUri);
   const session = useProjectCameraSession(project, image.status === "ready");
   const [choice, setChoice] = useState<"last" | "pin" | null>(null);
   // The camera moves between tiles on its own; the session saves each one.
   const [tileId, setTileId] = useState(project.currentTileId);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [finished, setFinished] = useState<FinishedSheetState>("closed");
+  const [finishedTimeMs, setFinishedTimeMs] = useState(0);
 
   // A split project traces its current tile, not the whole image (a project that was never split,
   // or whose grid no longer fits the image, shows all of it).
@@ -67,6 +78,25 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
   };
   const hasTiles =
     readyImage !== null && split !== undefined && crop !== null && split.rows * split.cols > 1;
+  const total = split === undefined ? 0 : split.rows * split.cols;
+  const done = completedTileIds.length;
+
+  // Marking the last pending tile: once the dock's celebration has played, the «Drawing finished»
+  // sheet asks for its turn (it waits while the camera is locked). Opening a project that was
+  // already complete asks for nothing (the ref starts at the count it opened with).
+  const previousDone = useRef(done);
+  useEffect(() => {
+    const complete = justCompleted(previousDone.current, done, total);
+    previousDone.current = done;
+    if (!complete) return;
+    const timer = setTimeout(() => setFinished("waiting"), cameraDock.finishedSheetDelayMs);
+    return () => clearTimeout(timer);
+  }, [done, total]);
+  const openFinished = () => {
+    setFinishedTimeMs(session.readTimeSpent());
+    setFinished("open");
+  };
+
   const tiles: DockTiles | null = hasTiles
     ? {
         rows: split.rows,
@@ -77,6 +107,7 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
         onGoTo: goToTile,
         onToggleDone: toggleDone,
         onOpenPicker: () => setPickerOpen(true),
+        onOpenFinished: openFinished,
       }
     : null;
   const tilePicker = hasTiles ? (
@@ -154,8 +185,30 @@ export function ProjectCameraScreen({ project, onLeave }: ProjectCameraScreenPro
       initialAdjustments={session.initialAdjustments}
       onAdjustmentsSettle={session.onAdjustmentsSettle}
       tiles={tiles}
-      menuPaused={pickerOpen}
-      overlay={tilePicker}
+      menuPaused={pickerOpen || finished === "open"}
+      overlay={({ isLocked, unlock }) => (
+        <>
+          {tilePicker}
+          {hasTiles && (
+            <FinishedSheet
+              state={finished}
+              isLocked={isLocked}
+              unlock={unlock}
+              onOpen={openFinished}
+              onClose={() => setFinished("closed")}
+              projectId={project.id}
+              done={done}
+              total={total}
+              timeSpentMs={finishedTimeMs}
+              onFinish={onFinish}
+              onReviewTiles={() => {
+                setFinished("closed");
+                setPickerOpen(true);
+              }}
+            />
+          )}
+        </>
+      )}
     />
   );
 }

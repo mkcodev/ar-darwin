@@ -60,8 +60,17 @@ type CameraOverlayScreenProps = {
   tiles?: DockTiles | null;
   /** Extra controls under the slider; hidden (keeping their space) while locked. */
   extraControls?: ReactNode;
-  /** Drawn over everything, also while locked (e.g. the spike's fps meter). */
-  overlay?: ReactNode;
+  /**
+   * Drawn over everything, also while locked (e.g. the spike's fps meter, the project's sheets).
+   * As a function it gets the lock, and a way to undo it (to leave from a sheet).
+   */
+  overlay?: ReactNode | ((camera: CameraLockState) => ReactNode);
+};
+
+export type CameraLockState = {
+  isLocked: boolean;
+  /** Unlocks the image, the same as a hold on the padlock but without its haptic. */
+  unlock: () => void;
 };
 
 /**
@@ -201,6 +210,11 @@ export function CameraOverlayScreen({
   // Android back gesture still left the screen — so this works at the navigation level, where
   // every way of leaving (button, gesture, `router.back()`) ends up. The iOS swipe-back, which
   // native-stack can't intercept this way, is disabled with `gestureEnabled` below.
+  const unlock = useCallback(() => {
+    locked.value = false;
+    setIsLocked(false);
+  }, [locked]);
+
   usePreventRemove(isLocked, () => {
     showToast(t("cameraSpike.unlockToExit"));
   });
@@ -317,7 +331,7 @@ export function CameraOverlayScreen({
         )}
       </CameraPermissionGate>
       <LockButton locked={locked} isLocked={isLocked} onLockedChange={setIsLocked} />
-      {overlay}
+      {typeof overlay === "function" ? overlay({ isLocked, unlock }) : overlay}
       <ImageAdjustSheet
         open={adjustOpen}
         onClose={() => setAdjustOpen(false)}
