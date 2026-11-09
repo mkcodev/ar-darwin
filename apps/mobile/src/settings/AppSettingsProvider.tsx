@@ -1,10 +1,21 @@
 import {
+  DEFAULT_HAPTICS_ENABLED,
   DEFAULT_MAGNET_ENABLED,
   DEFAULT_ONBOARDING_DONE,
+  DEFAULT_PAPER_DEFAULTS,
+  DEFAULT_REDUCE_MOTION_PREFERENCE,
+  OrientationSchema,
+  type PaperDefaults,
+  PaperSizeSchema,
   parseBooleanSetting,
   parseChoiceSetting,
+  parseNumberChoiceSetting,
+  REDUCE_MOTION_PREFERENCES,
+  type ReduceMotionPreference,
+  reduceMotionOverride,
   SETTING_KEYS,
   serializeBoolean,
+  serializeNumber,
 } from "@ar-darwin/core";
 import {
   DEFAULT_LANGUAGE_PREFERENCE,
@@ -15,6 +26,7 @@ import {
   DEFAULT_HANDEDNESS,
   DEFAULT_THEME_PREFERENCE,
   type Handedness,
+  opacity,
   type ThemePreference,
 } from "@ar-darwin/ui";
 import { SplashScreen } from "expo-router";
@@ -31,6 +43,8 @@ import {
 import { applyLocale, getLocale, localeFor } from "../i18n";
 import { getSetting, setSetting } from "../storage/settingsRepository";
 import { useHandedness } from "../theme/HandednessProvider";
+import { setHapticsEnabled as applyHaptics, playHaptic } from "../theme/playHaptic";
+import { useReduceMotion } from "../theme/ReduceMotionProvider";
 import { useTheme } from "../theme/ThemeProvider";
 
 const HANDS = ["right", "left"] as const satisfies readonly Handedness[];
@@ -56,6 +70,20 @@ type AppSettings = {
   onboardingDone: boolean;
   /** Saves that the introduction was seen: the Library stops redirecting to it. */
   finishOnboarding: () => void;
+  /** «Reduce motion» of Settings: follow the phone, or force it. */
+  reduceMotionPreference: ReduceMotionPreference;
+  /** Saves it and applies it (`useReduceMotion`) at once. */
+  setReduceMotionPreference: (preference: ReduceMotionPreference) => void;
+  /** Haptics in the whole app (`playHaptic`). */
+  hapticsEnabled: boolean;
+  /** Saves and applies it; turning them on plays one tick to feel it. */
+  setHapticsEnabled: (enabled: boolean) => void;
+  /** Overlay opacity a newly imported project starts with: one of `opacity.overlayChoices`. */
+  defaultOpacity: number;
+  setDefaultOpacity: (value: number) => void;
+  /** Sheet the splitter starts with in «Folios» for a project without one stored. */
+  paperDefaults: PaperDefaults;
+  setPaperDefaults: (next: PaperDefaults) => void;
 };
 
 const AppSettingsContext = createContext<AppSettings | null>(null);
@@ -67,7 +95,14 @@ type StoredSettings = {
   theme: ThemePreference;
   language: LanguagePreference;
   onboardingDone: boolean;
+  reduceMotion: ReduceMotionPreference;
+  haptics: boolean;
+  opacity: number;
+  paper: PaperDefaults;
 };
+
+const PAPERS = PaperSizeSchema.options;
+const ORIENTATIONS = OrientationSchema.options;
 
 function logWriteFailed(error: unknown): void {
   if (__DEV__) console.warn("[settings] write failed", error);
@@ -89,7 +124,8 @@ function logWriteFailed(error: unknown): void {
  * app opens anyway.
  *
  * The onboarding flag is read in the same step, so a fresh install goes to the introduction without
- * showing the Library first. The language is applied once (`applyLocale`): a change made in Settings is only saved, and takes
+ * showing the Library first. So are «reduce motion» (no animation plays before it is known), the
+ * haptics switch, and the opacity and sheet new projects start with. The language is applied once (`applyLocale`): a change made in Settings is only saved, and takes
  * effect on the next start.
  */
 export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
@@ -100,6 +136,15 @@ export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
   setHandRef.current = setHand;
   const setThemeRef = useRef(setTheme);
   setThemeRef.current = setTheme;
+  const { setOverride: setReduceMotionOverride } = useReduceMotion();
+  const setReduceMotionRef = useRef(setReduceMotionOverride);
+  setReduceMotionRef.current = setReduceMotionOverride;
+  const [reduceMotionPreference, setReduceMotionState] = useState<ReduceMotionPreference>(
+    DEFAULT_REDUCE_MOTION_PREFERENCE,
+  );
+  const [hapticsEnabled, setHapticsState] = useState(DEFAULT_HAPTICS_ENABLED);
+  const [defaultOpacity, setDefaultOpacityState] = useState<number>(opacity.overlayImage);
+  const [paperDefaults, setPaperDefaultsState] = useState<PaperDefaults>(DEFAULT_PAPER_DEFAULTS);
   const [magnetEnabled, setMagnetState] = useState(DEFAULT_MAGNET_ENABLED);
   const [languagePreference, setLanguageState] = useState<LanguagePreference>(
     DEFAULT_LANGUAGE_PREFERENCE,
@@ -114,11 +159,26 @@ export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
     (async () => {
       let stored: StoredSettings | null = null;
       try {
-        const [rawHand, rawTheme, rawLanguage, rawOnboarding] = await Promise.all([
+        const [
+          rawHand,
+          rawTheme,
+          rawLanguage,
+          rawOnboarding,
+          rawReduceMotion,
+          rawHaptics,
+          rawOpacity,
+          rawPaper,
+          rawOrientation,
+        ] = await Promise.all([
           getSetting(db, SETTING_KEYS.drawingHand),
           getSetting(db, SETTING_KEYS.themePreference),
           getSetting(db, SETTING_KEYS.language),
           getSetting(db, SETTING_KEYS.onboardingDone),
+          getSetting(db, SETTING_KEYS.reduceMotion),
+          getSetting(db, SETTING_KEYS.hapticsEnabled),
+          getSetting(db, SETTING_KEYS.defaultOpacity),
+          getSetting(db, SETTING_KEYS.defaultPaper),
+          getSetting(db, SETTING_KEYS.defaultOrientation),
         ]);
         stored = {
           hand: parseChoiceSetting(rawHand, HANDS, DEFAULT_HANDEDNESS),
@@ -129,6 +189,25 @@ export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
             DEFAULT_LANGUAGE_PREFERENCE,
           ),
           onboardingDone: parseBooleanSetting(rawOnboarding, DEFAULT_ONBOARDING_DONE),
+          reduceMotion: parseChoiceSetting(
+            rawReduceMotion,
+            REDUCE_MOTION_PREFERENCES,
+            DEFAULT_REDUCE_MOTION_PREFERENCE,
+          ),
+          haptics: parseBooleanSetting(rawHaptics, DEFAULT_HAPTICS_ENABLED),
+          opacity: parseNumberChoiceSetting(
+            rawOpacity,
+            opacity.overlayChoices,
+            opacity.overlayImage,
+          ),
+          paper: {
+            paper: parseChoiceSetting(rawPaper, PAPERS, DEFAULT_PAPER_DEFAULTS.paper),
+            orientation: parseChoiceSetting(
+              rawOrientation,
+              ORIENTATIONS,
+              DEFAULT_PAPER_DEFAULTS.orientation,
+            ),
+          },
         };
       } catch (error: unknown) {
         if (__DEV__) console.warn("[settings] read failed", error);
@@ -141,6 +220,12 @@ export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
         applyLocale(stored.language);
         setLanguageState(stored.language);
         setOnboardingDone(stored.onboardingDone);
+        setReduceMotionState(stored.reduceMotion);
+        setReduceMotionRef.current(reduceMotionOverride(stored.reduceMotion));
+        setHapticsState(stored.haptics);
+        applyHaptics(stored.haptics);
+        setDefaultOpacityState(stored.opacity);
+        setPaperDefaultsState(stored.paper);
       } else {
         // The read failed: do not trap the person in an introduction that cannot be saved as seen.
         setOnboardingDone(true);
@@ -202,8 +287,45 @@ export function AppSettingsProvider({ children }: AppSettingsProviderProps) {
         setOnboardingDone(true);
         setSetting(db, SETTING_KEYS.onboardingDone, serializeBoolean(true)).catch(logWriteFailed);
       },
+      reduceMotionPreference,
+      setReduceMotionPreference: (next) => {
+        setReduceMotionState(next);
+        setReduceMotionRef.current(reduceMotionOverride(next));
+        setSetting(db, SETTING_KEYS.reduceMotion, next).catch(logWriteFailed);
+      },
+      hapticsEnabled,
+      setHapticsEnabled: (enabled) => {
+        setHapticsState(enabled);
+        applyHaptics(enabled);
+        if (enabled) playHaptic("tileChange");
+        setSetting(db, SETTING_KEYS.hapticsEnabled, serializeBoolean(enabled)).catch(
+          logWriteFailed,
+        );
+      },
+      defaultOpacity,
+      setDefaultOpacity: (value) => {
+        setDefaultOpacityState(value);
+        setSetting(db, SETTING_KEYS.defaultOpacity, serializeNumber(value)).catch(logWriteFailed);
+      },
+      paperDefaults,
+      setPaperDefaults: (next) => {
+        setPaperDefaultsState(next);
+        setSetting(db, SETTING_KEYS.defaultPaper, next.paper).catch(logWriteFailed);
+        setSetting(db, SETTING_KEYS.defaultOrientation, next.orientation).catch(logWriteFailed);
+      },
     }),
-    [db, magnetEnabled, hand, themePreference, languagePreference, onboardingDone],
+    [
+      db,
+      magnetEnabled,
+      hand,
+      themePreference,
+      languagePreference,
+      onboardingDone,
+      reduceMotionPreference,
+      hapticsEnabled,
+      defaultOpacity,
+      paperDefaults,
+    ],
   );
 
   // Nothing mounts before the stored settings are known (the splash covers the wait).

@@ -24,6 +24,8 @@ Lanzamiento en Google Play (privacidad, Seguridad de los datos, ficha, checklist
 - pnpm test        (Vitest)
 - pnpm typecheck
 - pnpm lint        (Biome)
+- pnpm gen:licenses  (lista de licencias de Ajustes; el CI la comprueba con --check: regenérala
+  al cambiar dependencias de la app móvil)
 - Un paquete: pnpm --filter @ar-darwin/core test  (o typecheck)
 - Un test: pnpm --filter @ar-darwin/core exec vitest run src/transform.test.ts  (-t "nombre" para filtrar)
 - Turbo: test y typecheck dependen del typecheck de las dependencias (^typecheck).

@@ -6,6 +6,7 @@ import {
   cameraCrop,
   configFromDraft,
   DEFAULT_OVERLAP_PERCENT,
+  DEFAULT_PAPER_DEFAULTS,
   DEFAULT_PAPER_OVERLAP_MM,
   DEFAULT_PAPER_WIDTH_CM,
   defaultSplitDraft,
@@ -159,6 +160,32 @@ describe("the splitter draft", () => {
   it("keeps the config the draft came from", () => {
     const config = { rows: 3, cols: 4, overlapPx: 24, showOverlapTint: true };
     expect(configFromDraft(IMAGE, draftFromConfig(IMAGE, config))).toEqual(config);
+  });
+
+  it("takes the sheet chosen in Settings, and nothing else changes", () => {
+    const draft = defaultSplitDraft({ paper: "A3", orientation: "landscape" });
+    expect(draft).toEqual({ ...defaultSplitDraft(), paper: "A3", orientation: "landscape" });
+    expect(defaultSplitDraft(DEFAULT_PAPER_DEFAULTS)).toEqual(defaultSplitDraft());
+  });
+
+  it("gives a manual split the sheet chosen in Settings for «Folios»", () => {
+    const config = { rows: 2, cols: 2, overlapPx: 0, showOverlapTint: true };
+    expect(
+      draftFromConfig(IMAGE, config, { paper: "Letter", orientation: "landscape" }),
+    ).toMatchObject({ mode: "manual", paper: "Letter", orientation: "landscape" });
+  });
+
+  it("keeps the stored sheet of a split by paper size over the one in Settings", () => {
+    const config = {
+      rows: 1,
+      cols: 2,
+      overlapPx: 10,
+      showOverlapTint: true,
+      paper: { paper: "A4" as const, orientation: "portrait" as const, widthCm: 41, overlapMm: 10 },
+    };
+    expect(draftFromConfig(IMAGE, config, { paper: "A3", orientation: "landscape" })).toMatchObject(
+      { mode: "paper", paper: "A4", orientation: "portrait" },
+    );
   });
 });
 

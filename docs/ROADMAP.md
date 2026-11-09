@@ -88,7 +88,12 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
       celebración breve al terminar; sustituye a `TileBar` (issue #94)
 - [x] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja e idioma Sistema/Español/English (se aplica
       al reabrir la app); el splash espera a leerlos (issue #98)
-- [ ] Ajustes: anulación propia de «reducir movimiento» (hoy sigue al sistema)
+- [x] Ajustes: anulación propia de «reducir movimiento» (Sistema | Sí | No, también para Reanimated
+      con `ReducedMotionConfig`; issue #107)
+- [x] Ajustes extras: secciones, vibración sí/no, opacidad y papel por defecto de los proyectos nuevos,
+      Acerca de (versión, autor, repo), licencias generadas (`pnpm gen:licenses`, comprobadas en CI) y
+      «Enviar comentarios» como issue de GitHub (issue #107). Falta probarlo en el móvil
+- [ ] Ajustes: tiempo de ocultado del menú de la cámara (hoy fijo, `signature.menuIdleMs`, 3 s)
 - [x] Hoja «¡Dibujo terminado!» al marcar el último trozo: miniatura, trozos y tiempo, «Volver a la
       Biblioteca» y «Repasar trozos»; «Completado» la reabre y con el candado espera (issue #109)
 - [x] Onboarding de 3 pantallas (calcar, dividir, cámara con su permiso explicado), es/en; se guarda en

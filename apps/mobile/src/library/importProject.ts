@@ -42,10 +42,13 @@ function defaultName(now: Date): string {
  *    image (the picker can report 0 × 0).
  * 3. Save it and a `THUMB_MAX_SIDE` JPEG thumbnail into `projects/<id>/`, then the row.
  * If anything fails after the folder exists, the folder goes too: no half-imported projects.
+ *
+ * The project starts at `startOpacity`: the default opacity chosen in Settings.
  */
 export async function importProject(
   db: SQLiteDatabase,
   picked: PickedImage,
+  startOpacity: number = opacity.overlayImage,
   now: Date = new Date(),
 ): Promise<Project> {
   const id = createProjectId();
@@ -80,7 +83,7 @@ export async function importProject(
         id,
         name: projectNameFromFileName(picked.fileName) ?? defaultName(now),
         sourceUri,
-        opacity: opacity.overlayImage,
+        opacity: startOpacity,
         now,
       });
       return await saveProject(db, project, now);

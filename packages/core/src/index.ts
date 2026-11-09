@@ -1,3 +1,4 @@
+export * from "./about";
 export * from "./cameraIssue";
 export * from "./cameraSession";
 export { computeTiles, maxOverlapPx, shortestTileSide } from "./computeTiles";
@@ -8,6 +9,7 @@ export * from "./imageAdjustments";
 export * from "./imageHit";
 export * from "./importImage";
 export * from "./library";
+export * from "./licenses";
 export * from "./magnet";
 export * from "./models";
 export * from "./nudgeHold";

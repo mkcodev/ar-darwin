@@ -3,7 +3,7 @@ import { isCategoryColorKey } from "./categoryColors";
 import { lockButton } from "./components";
 import { haptics } from "./haptics";
 import { icons, isIconName } from "./icons";
-import { controlsSide, radius, space, touchTarget } from "./layout";
+import { controlsSide, opacity, radius, space, touchTarget } from "./layout";
 import {
   dampingRatio,
   duration,
@@ -32,6 +32,17 @@ describe("spacing and shape", () => {
     expect(lockButton.ringSize).toBeGreaterThanOrEqual(72);
     const outerArcEdge = lockButton.ringSize / 2 - lockButton.ringTrackPad;
     expect(outerArcEdge).toBeGreaterThan(lockButton.size / 2);
+  });
+});
+
+describe("overlay opacity choices", () => {
+  it("offer the default, ascending, inside 0..1", () => {
+    expect(opacity.overlayChoices).toContain(opacity.overlayImage);
+    expect([...opacity.overlayChoices].sort((a, b) => a - b)).toEqual([...opacity.overlayChoices]);
+    for (const value of opacity.overlayChoices) {
+      expect(value).toBeGreaterThan(0);
+      expect(value).toBeLessThanOrEqual(1);
+    }
   });
 });
 
