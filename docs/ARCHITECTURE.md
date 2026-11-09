@@ -208,7 +208,7 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
   - **Qué hace la acción principal.** Lo decide `dockModel` (core): «Marcar hecho» (`pending`: marca el
     trozo), «Siguiente trozo» (`done`: lleva a `nextPendingId`, el primer trozo PENDIENTE después del actual
     en orden de lectura, dando la vuelta, así que puede ser uno anterior) y «Completado» (`complete`: solo
-    con todos hechos; tocarlo abre el selector). Al cambiar de estado el contenido se intercambia en el
+    con todos hechos; tocarlo abre la hoja «¡Dibujo terminado!»). Al cambiar de estado el contenido se intercambia en el
     sitio (el viejo sube y se funde, el nuevo sube a su sitio y su icono se dibuja) sin mover el botón.
     Con la mano izquierda las dos filas se espejan: la acción principal y la opacidad quedan del lado del
     pulgar. Sigue usable con el candado y se retira con el menú (`useRetreat`).
@@ -224,6 +224,16 @@ monorepos con pnpm (docs.expo.dev/guides/monorepos). Ver issue #25.
     borde que escala y se funde, 600 ms) sale del botón y, 140 ms tras el háptico de éxito, suena un
     impacto fuerte (`tilesComplete`). Con «reducir movimiento» solo quedan los hápticos. Todo con
     Reanimated en el hilo de UI; el estado de React solo cambia al pulsar.
+  - **Hoja «¡Dibujo terminado!» (`FinishedSheet`, issue #109).** `cameraDock.finishedSheetDelayMs`
+    (900 ms) tras la celebración, `ProjectCameraScreen` pasa la hoja a `waiting`; sube en cuanto la
+    cámara no está bloqueada (con el candado espera a que se quite). Muestra la miniatura, «9/9 trozos» y
+    el tiempo (`readTimeSpent` de la sesión: lo guardado más el tramo en marcha, `peekClock` de core, sin
+    vaciar el reloj). «Volver a la Biblioteca» hace `router.dismissTo("/")` (también si se llegó desde el
+    divisor); con el candado puesto lo quita antes (`unlock`) y navega en el render siguiente, cuando
+    `usePreventRemove` ya no bloquea. «Repasar trozos» abre el `TilePicker`; cerrarla deja en la cámara.
+    El estado del proyecto no cambia: `libraryStatus` ya lo da por terminado con todos los trozos hechos.
+    Para darle el candado, `overlay` de `CameraOverlayScreen` acepta una función
+    `({ isLocked, unlock }) => ReactNode`; `LockButton` sigue a `isLocked` si la pantalla desbloquea sola.
   - **Elegir trozo (`TilePicker`).** Tocar el chip abre un `BottomSheet` (`dragFrom="handle"`: solo se
     cierra arrastrando el asa o el título, así el scroll de la rejilla no lo cierra) con todos los
     trozos: un solo `Canvas` Skia dibuja el pedazo de foto de cada celda (recorte al ras de

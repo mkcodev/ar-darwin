@@ -89,6 +89,8 @@ Pasada el 2026-10-10 (resultado cualitativo, ver docs/spikes/camera.md).
 - [x] Ajustes: tema Sistema/Claro/Oscuro, mano que dibuja e idioma Sistema/Español/English (se aplica
       al reabrir la app); el splash espera a leerlos (issue #98)
 - [ ] Ajustes: anulación propia de «reducir movimiento» (hoy sigue al sistema)
+- [x] Hoja «¡Dibujo terminado!» al marcar el último trozo: miniatura, trozos y tiempo, «Volver a la
+      Biblioteca» y «Repasar trozos»; «Completado» la reabre y con el candado espera (issue #109)
 - [x] Onboarding de 3 pantallas (calcar, dividir, cámara con su permiso explicado), es/en; se guarda en
       `settings` (`onboarding_done`) y se repasa desde Ajustes (issue #100)
 - [ ] Biblioteca 2: «Seguir calcando» con mapa de trozos, resumen, búsqueda, filtros y orden,

@@ -72,6 +72,17 @@ export const cameraDock = {
   paddingTopWithSpine: 12,
   /** Width of the opacity value, so «7 %» and «100 %» line up. */
   valueWidth: 44,
+  /**
+   * From marking the last tile to the «Drawing finished» sheet: the ring of the celebration (600 ms)
+   * has spread and the thump has landed. The same with reduced motion, so the haptic still comes first.
+   */
+  finishedSheetDelayMs: 900,
+} as const;
+
+/** The «Drawing finished» sheet of the camera. */
+export const finishedSheet = {
+  /** Width of the project's thumbnail (portrait, 3:4 like the library's cards). */
+  thumbWidth: 72,
 } as const;
 
 /** Native slider (opacity on the camera, values in sheets). */
