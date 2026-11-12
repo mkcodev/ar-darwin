@@ -149,7 +149,28 @@ sigue registrado, así que se filtra una `HybridCameraSession` por apertura.
   - llamar a `previewOutput.dispose()`: en desarrollo, Fabric congela las props de los componentes
     nativos (`deepFreezeAndThrowOnMutationInDev`) y Hermes ya no puede quitar el `NativeState`.
 
-**Arreglo previsto:** en el próximo rebuild nativo (ver docs/ROADMAP.md), parche de
-react-native-vision-camera con las PRs #4185 (`onDropView()` suelta la vista y desconecta el
-output) y #4186 (se destruye el `CustomLifecycle` en cada `configure`), más `session.dispose()` en
-el teardown de `useCameraSession`.
+**Arreglo:** parche de react-native-vision-camera 5.2.3 con `pnpm patch`
+(`patches/react-native-vision-camera@5.2.3.patch`, declarado en `patchedDependencies` de
+pnpm-workspace.yaml). Lleva tres cambios:
+- [#4185](https://github.com/mrousavy/react-native-vision-camera/pull/4185), Kotlin:
+  `HybridPreviewView.onDropView()` desconecta el preview output y suelta la `PreviewView`.
+- [#4186](https://github.com/mrousavy/react-native-vision-camera/pull/4186), Kotlin:
+  `HybridCameraSession` crea un `CustomLifecycle` nuevo en cada `configure` y destruye el anterior.
+- JS (`src/` y `lib/`): el teardown de `useCameraSession` llama a `session.dispose()` después de
+  `stop()` y `configure([])`, sin esperar al GC de Hermes.
+
+Las dos PRs seguían abiertas el 28 oct 2026. Al subir vision-camera:
+- si la versión nueva ya las incluye, se borra el parche (salvo el `dispose()`, si sigue haciendo
+  falta);
+- si no, se regenera el parche para la versión nueva.
+
+La versión va fijada sin `^` en apps/mobile/package.json, porque el parche solo aplica a 5.2.3.
+
+**Riesgos que hay que probar:**
+- Reintentar (remonta `<Camera>` con otra `key`).
+- Ir a segundo plano y bloquear el móvil.
+- Entrar y salir 10 veces seguidas.
+- Que `dispose()` no deje un `configure` a medias atado a un `CustomLifecycle` nuevo.
+
+**Mediciones:** las tablas «antes» y «después» del parche, con el mismo protocolo (10 aperturas, GC
+forzado), quedan pendientes del development build nuevo.

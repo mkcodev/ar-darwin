@@ -1,0 +1,222 @@
+diff --git a/android/src/main/java/com/margelo/nitro/camera/hybrids/HybridCameraSession.kt b/android/src/main/java/com/margelo/nitro/camera/hybrids/HybridCameraSession.kt
+index ab21e76c672ebd6bfb679aa5ebf7b4ca291c8f27..66314d1e6388336c2552c7a96be212bb8230a849 100644
+--- a/android/src/main/java/com/margelo/nitro/camera/hybrids/HybridCameraSession.kt
++++ b/android/src/main/java/com/margelo/nitro/camera/hybrids/HybridCameraSession.kt
+@@ -37,7 +37,8 @@ class HybridCameraSession(
+   ActiveCameraSession.LifecycleListener {
+   private val context: ReactApplicationContext
+     get() = NitroModules.applicationContext ?: throw Error("No Context!")
+-  private val lifecycleOwner = CustomLifecycle(context)
++  private var lifecycleOwner: CustomLifecycle? = null
++  private var isActive = false
+   private val uiScope = CoroutineScope(Dispatchers.Main)
+ 
+   override val isRunning: Boolean
+@@ -66,6 +67,9 @@ class HybridCameraSession(
+       cameraProvider.unbindAll()
+       activeSession?.close()
+       activeSession = null
++      // Only `destroy()` releases the owner from CameraX and the `ReactApplicationContext`
++      lifecycleOwner?.destroy()
++      lifecycleOwner = null
+ 
+       // 2. Build up Camera depending on connections count
+       when (connections.size) {
+@@ -87,7 +91,9 @@ class HybridCameraSession(
+             connection.onSessionConfigSelected(hybridConfig)
+           }
+ 
+-          val camera = cameraProvider.bindToLifecycle(lifecycleOwner, cameraInfo.cameraSelector, config.sessionConfig)
++          val owner = CustomLifecycle(context, isActive)
++          lifecycleOwner = owner
++          val camera = cameraProvider.bindToLifecycle(owner, cameraInfo.cameraSelector, config.sessionConfig)
+           // Notify outputs that their use-cases are now attached to the Camera
+           config.preparedUseCases.forEach { it.notifyAttached() }
+           activeSession = ActiveCameraSessionSingle(camera, this)
+@@ -100,6 +106,8 @@ class HybridCameraSession(
+           // TODO: In Multi-Cam we cannot use the CameraX `SessionConfig` API, so we cannot use `ConstraintsResolver`!
+           //       This effectively means that no special features (FPS, HDR, Stabilization, ...) are supported in multi-cam... :(
+           //       Implement this once CameraX supports it - feature request: https://issuetracker.google.com/issues/470629644
++          val owner = CustomLifecycle(context, isActive)
++          lifecycleOwner = owner
+           val allPreparedUseCases = mutableListOf<NativeCameraOutput.PreparedUseCase>()
+           val configs =
+             connections.map { connection ->
+@@ -117,7 +125,7 @@ class HybridCameraSession(
+               ConcurrentCamera.SingleCameraConfig(
+                 cameraInfo.cameraSelector,
+                 useCaseGroup.build(),
+-                lifecycleOwner,
++                owner,
+               )
+             }
+           Log.i(TAG, "Binding configs: ${configs.joinToString { it.useCaseGroup.useCases.joinToString { it.name } }}")
+@@ -137,13 +145,15 @@ class HybridCameraSession(
+ 
+   override fun start(): Promise<Unit> {
+     return Promise.async(uiScope) {
+-      lifecycleOwner.setActive(true)
++      isActive = true
++      lifecycleOwner?.setActive(true)
+     }
+   }
+ 
+   override fun stop(): Promise<Unit> {
+     return Promise.async(uiScope) {
+-      lifecycleOwner.setActive(false)
++      isActive = false
++      lifecycleOwner?.setActive(false)
+     }
+   }
+ 
+@@ -151,7 +161,8 @@ class HybridCameraSession(
+     super.dispose()
+     Log.i(TAG, "Destroying CameraSession...")
+     Promise.async(uiScope) {
+-      lifecycleOwner.destroy()
++      lifecycleOwner?.destroy()
++      lifecycleOwner = null
+       activeSession?.close()
+       cameraProvider.unbindAll()
+     }
+diff --git a/android/src/main/java/com/margelo/nitro/camera/utils/CustomLifecycle.kt b/android/src/main/java/com/margelo/nitro/camera/utils/CustomLifecycle.kt
+index baf31f05b7a3ae250ea52298873290b98a3d189c..1988f24a4ca4fbf9b5d2a9e86bb16e76e7750641 100644
+--- a/android/src/main/java/com/margelo/nitro/camera/utils/CustomLifecycle.kt
++++ b/android/src/main/java/com/margelo/nitro/camera/utils/CustomLifecycle.kt
+@@ -20,6 +20,7 @@ import kotlinx.coroutines.withContext
+  */
+ class CustomLifecycle(
+   private val context: ReactApplicationContext,
++  initialIsActive: Boolean,
+ ) : LifecycleEventListener,
+   LifecycleOwner {
+   companion object {
+@@ -29,7 +30,7 @@ class CustomLifecycle(
+   private val lifecycleRegistry = LifecycleRegistry(this)
+   private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+ 
+-  @Volatile private var isActive: Boolean = false
++  @Volatile private var isActive: Boolean = initialIsActive
+ 
+   @Volatile private var isDestroyed = false
+ 
+diff --git a/android/src/main/java/com/margelo/nitro/camera/views/HybridPreviewView.kt b/android/src/main/java/com/margelo/nitro/camera/views/HybridPreviewView.kt
+index 8bddc44b58345fadeafae6fddf49f66010145814..6c8f5f466d7d21ecbd3c4d25f3949dd8c16cf033 100644
+--- a/android/src/main/java/com/margelo/nitro/camera/views/HybridPreviewView.kt
++++ b/android/src/main/java/com/margelo/nitro/camera/views/HybridPreviewView.kt
+@@ -37,7 +37,10 @@ class HybridPreviewView(
+ ) : HybridPreviewViewSpec(),
+   View.OnTouchListener,
+   Observer<PreviewView.StreamState> {
+-  private val previewView = PreviewView(context)
++  // released on drop; JS may hold this object long after unmount
++  private var previewViewOrNull: PreviewView? = PreviewView(context)
++  private val previewView: PreviewView
++    get() = previewViewOrNull ?: throw Error("PreviewView has already been dropped from the React tree!")
+   private val uiScope = CoroutineScope(Dispatchers.Main.immediate)
+   override val view: View
+     get() = previewView
+@@ -67,6 +70,7 @@ class HybridPreviewView(
+         field = newImplementationMode
+         uiScope.launch {
+           // Update ImplementationMode and reconnect output
++          val previewView = previewViewOrNull ?: return@launch
+           previewView.implementationMode = newImplementationMode.toImplementationMode()
+           previewOutput?.let { previewOutput -> connectPreviewOutput(previewOutput) }
+         }
+@@ -80,6 +84,7 @@ class HybridPreviewView(
+         field = newResizeMode
+         uiScope.launch {
+           // Update scaleType
++          val previewView = previewViewOrNull ?: return@launch
+           previewView.scaleType = newResizeMode.toScaleType()
+         }
+       }
+@@ -100,9 +105,30 @@ class HybridPreviewView(
+     pixelRatio = context.resources.displayMetrics.density
+   }
+ 
++  override fun onDropView() {
++    super.onDropView()
++    uiScope.launch {
++      releasePreviewView()
++    }
++  }
++
+   override fun dispose() {
+     super.dispose()
++    uiScope.launch {
++      releasePreviewView()
++    }
++  }
++
++  /**
++   * Detaches the `PreviewView` from its Preview Output and releases it.
++   * Safe to call from both `onDropView()` and `dispose()`.
++   */
++  @UiThread
++  private fun releasePreviewView() {
++    val previewView = previewViewOrNull ?: return
+     previewView.previewStreamState.removeObserver(this)
++    previewOutput?.let { previewOutput -> disconnectPreviewOutput(previewOutput) }
++    previewViewOrNull = null
+   }
+ 
+   override fun createMeteringPoint(
+@@ -168,7 +194,9 @@ class HybridPreviewView(
+   private fun connectPreviewOutput(previewOutput: HybridCameraPreviewOutputSpec) {
+     // 1. Downcast
+     val previewOutput = previewOutput as? NativePreviewOutput ?: throw Error("PreviewOutput is not of type `NativePreviewOutput`!")
+-    // 2. Set surfaceProvider on UI Thread
++    // 2. Skip if the PreviewView was already dropped
++    val previewView = previewViewOrNull ?: return
++    // 3. Set surfaceProvider on UI Thread
+     previewOutput.setSurfaceProvider(previewView.surfaceProvider)
+   }
+ 
+@@ -176,7 +204,9 @@ class HybridPreviewView(
+   private fun disconnectPreviewOutput(previewOutput: HybridCameraPreviewOutputSpec) {
+     // 1. Downcast
+     val previewOutput = previewOutput as? NativePreviewOutput ?: throw Error("PreviewOutput is not of type `NativePreviewOutput`!")
+-    // 2. Remove surfaceProvider on UI Thread
++    // 2. Skip if the PreviewView was already dropped
++    val previewView = previewViewOrNull ?: return
++    // 3. Remove surfaceProvider on UI Thread
+     previewOutput.removeSurfaceProvider(previewView.surfaceProvider)
+   }
+ 
+@@ -201,7 +231,7 @@ class HybridPreviewView(
+   // since it's accessible from the UI-Thread only.
+   private fun updateCameraSpaceToViewPixelsMatrix() {
+     val matrix =
+-      previewView.sensorToViewTransform
++      previewViewOrNull?.sensorToViewTransform
+         ?: return
+     this.cameraSpaceToViewPixelsMatrix = matrix
+   }
+diff --git a/lib/hooks/internal/useCameraSession.js b/lib/hooks/internal/useCameraSession.js
+index 39d5ef082b80ff740a8a203d73812bcd9d4e5d77..704aaf4d35c17735983e0d82cc9ad512815b9f26 100644
+--- a/lib/hooks/internal/useCameraSession.js
++++ b/lib/hooks/internal/useCameraSession.js
+@@ -31,6 +31,8 @@ export function useCameraSession({ enableMultiCamSupport, onError, }) {
+             // remove all connections
+             session?.stop();
+             session?.configure([]);
++            // release the native session (and its lifecycle owner) instead of waiting for Hermes' GC
++            session?.dispose();
+         };
+     }, [session]);
+     return session;
+diff --git a/src/hooks/internal/useCameraSession.ts b/src/hooks/internal/useCameraSession.ts
+index 366b90c2d1550e39da656a293f7d53a7f31c7289..09d3ac3111080684f92d5108990d4bab099cd105 100644
+--- a/src/hooks/internal/useCameraSession.ts
++++ b/src/hooks/internal/useCameraSession.ts
+@@ -42,6 +42,8 @@ export function useCameraSession({
+       // remove all connections
+       session?.stop()
+       session?.configure([])
++      // release the native session (and its lifecycle owner) instead of waiting for Hermes' GC
++      session?.dispose()
+     }
+   }, [session])
+ 
